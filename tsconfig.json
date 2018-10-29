@@ -1,6 +1,6 @@
 {
   "compilerOptions": {
-    "jsx": "preserve",
+    "jsx": "react",
     "target": "es5",
     "allowJs": true,
     "skipLibCheck": true,
