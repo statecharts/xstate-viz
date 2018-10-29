@@ -1,0 +1,18 @@
+{
+  "compilerOptions": {
+    "jsx": "preserve",
+    "target": "es5",
+    "allowJs": true,
+    "skipLibCheck": true,
+    "esModuleInterop": true,
+    "allowSyntheticDefaultImports": true,
+    "strict": true,
+    "forceConsistentCasingInFileNames": true,
+    "module": "esnext",
+    "moduleResolution": "node",
+    "resolveJsonModule": true,
+    "lib": ["dom", "es7"],
+    "outDir": "./lib"
+  },
+  "include": ["src"]
+}
