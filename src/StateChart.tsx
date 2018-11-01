@@ -12,6 +12,8 @@ import * as XState from "xstate";
 import { getEdges } from "xstate/lib/graph";
 import { StateChartNode } from "./StateChartNode";
 import AceEditor from "react-ace";
+import "brace/theme/monokai";
+import "brace/mode/javascript";
 
 const StyledViewTabs = styled.ul`
   display: flex;
@@ -32,7 +34,7 @@ const StyledViewTabs = styled.ul`
 
 const StyledStateChart = styled.div`
   display: grid;
-  grid-template-columns: 50% 50%;
+  grid-template-columns: 1fr 30rem;
   grid-template-rows: auto;
   font-family: sans-serif;
   font-size: 10px;
@@ -81,6 +83,7 @@ function center(rect: ClientRect): Point {
 
 interface StateChartProps {
   machine: StateNode<any> | string;
+  height?: number | string;
 }
 
 interface StateChartState {
@@ -94,7 +97,7 @@ interface StateChartState {
 }
 
 function toMachine(machine: StateNode<any> | string): StateNode<any> {
-  if (machine instanceof StateNode) {
+  if (typeof machine !== "string") {
     return machine;
   }
 
@@ -134,6 +137,8 @@ export class StateChart extends React.Component<
 > {
   state: StateChartState = (() => {
     const machine = toMachine(this.props.machine);
+    // const machine = this.props.machine;
+
     return {
       current: machine.initialState,
       preview: undefined,
@@ -167,11 +172,11 @@ export class StateChart extends React.Component<
       case "definition":
         return (
           <AceEditor
-            mode="json"
+            mode="javascript"
             theme="monokai"
             editorProps={{ $blockScrolling: true }}
             value={code}
-            // onChange={value => this.setState({ json: value })}
+            onChange={value => this.setState({ code: value })}
             setOptions={{ tabSize: 2 }}
             width="100%"
             height="100%"
@@ -180,36 +185,27 @@ export class StateChart extends React.Component<
       case "state":
         return (
           <div>
-            <pre
-              className="language-json"
-              style={{
-                position: "absolute",
-                width: "100%",
-                background: "transparent"
-              }}
-            >
-              <Field label="Value">
-                <pre>{JSON.stringify(current.value, null, 2)}</pre>
-              </Field>
-              <Field label="Actions">
-                {current.actions.length ? (
-                  <ul>
-                    {current.actions.map(action => {
-                      return <li key={action.type}>{action.type}</li>;
-                    })}
-                  </ul>
-                ) : (
-                  "-"
-                )}
-              </Field>
-              <Field label="Context">
-                {current.context !== undefined ? (
-                  <pre>{JSON.stringify(current.context, null, 2)}</pre>
-                ) : (
-                  "-"
-                )}
-              </Field>
-            </pre>
+            <Field label="Value">
+              <pre>{JSON.stringify(current.value, null, 2)}</pre>
+            </Field>
+            <Field label="Actions">
+              {current.actions.length ? (
+                <ul>
+                  {current.actions.map(action => {
+                    return <li key={action.type}>{action.type}</li>;
+                  })}
+                </ul>
+              ) : (
+                "-"
+              )}
+            </Field>
+            <Field label="Context">
+              {current.context !== undefined ? (
+                <pre>{JSON.stringify(current.context, null, 2)}</pre>
+              ) : (
+                "-"
+              )}
+            </Field>
           </div>
         );
       default:
@@ -223,6 +219,31 @@ export class StateChart extends React.Component<
         [id]: !this.state.toggledStates[id]
       }
     });
+  }
+  updateMachine() {
+    const { code } = this.state;
+
+    const machine = toMachine(code);
+
+    this.setState(
+      {
+        machine
+      },
+      () => {
+        this.service.stop();
+        this.service = interpret(this.state.machine)
+          .onTransition(current => {
+            this.setState({ current }, () => {
+              if (this.state.previewEvent) {
+                this.setState({
+                  preview: this.service.nextState(this.state.previewEvent)
+                });
+              }
+            });
+          })
+          .start();
+      }
+    );
   }
   render() {
     const { current, preview, previewEvent, machine } = this.state;
@@ -249,12 +270,15 @@ export class StateChart extends React.Component<
     return (
       <StyledStateChart
         style={{
+          height: this.props.height || "100%",
           // @ts-ignore
           "--color-border": "#dedede",
           "--color-primary": "rgba(87, 176, 234, 1)",
           "--color-primary-faded": "rgba(87, 176, 234, 0.5)",
           "--color-primary-shadow": "rgba(87, 176, 234, 0.1)",
           "--color-link": "rgba(87, 176, 234, 1)",
+          "--color-disabled": "#888",
+          "--color-edge": "rgba(0, 0, 0, 0.2)",
           "--radius": "0.2rem"
         }}
       >
@@ -277,7 +301,7 @@ export class StateChart extends React.Component<
             toggledStates={this.state.toggledStates}
             toggled={true}
           />
-          {/* <svg
+          <svg
             width="100%"
             height="100%"
             style={{
@@ -301,7 +325,7 @@ export class StateChart extends React.Component<
                 markerUnits="strokeWidth"
                 orient="auto"
               >
-                <path d="M0,0 L0,4 L4,2 z" fill="var(--color-border)" />
+                <path d="M0,0 L0,4 L4,2 z" fill="var(--color-edge)" />
               </marker>
               <marker
                 id="marker-preview"
@@ -404,9 +428,7 @@ export class StateChart extends React.Component<
                     end.y
                   }`}
                   stroke={
-                    isHighlighted
-                      ? "var(--color-primary)"
-                      : "var(--color-border)"
+                    isHighlighted ? "var(--color-primary)" : "var(--color-edge)"
                   }
                   strokeWidth={2}
                   fill="none"
@@ -416,9 +438,15 @@ export class StateChart extends React.Component<
                 />
               );
             })}
-          </svg> */}
+          </svg>
         </StyledVisualization>
-        <div style={{ overflow: "scroll" }}>
+        <div
+          style={{
+            overflow: "scroll",
+            display: "flex",
+            flexDirection: "column"
+          }}
+        >
           <StyledViewTabs>
             {["definition", "state"].map(view => {
               return (
@@ -429,6 +457,9 @@ export class StateChart extends React.Component<
             })}
           </StyledViewTabs>
           {this.renderView()}
+          <footer>
+            <button onClick={() => this.updateMachine()}>Update</button>
+          </footer>
         </div>
       </StyledStateChart>
     );

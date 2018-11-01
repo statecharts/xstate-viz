@@ -147,7 +147,7 @@ const StyledEventButton = styled.button`
 
   &:disabled {
     cursor: not-allowed;
-    background: #888;
+    background: var(--color-disabled);
   }
 
   &:focus {
