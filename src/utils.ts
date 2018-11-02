@@ -1,4 +1,4 @@
-import { StateNode, TransitionDefinition } from "xstate";
+import { StateNode, TransitionDefinition, Edge } from "xstate";
 
 export function isChildOf(
   childState: StateNode,
@@ -38,4 +38,9 @@ export function condToString(cond: string | Function) {
   }
 
   return cond;
+}
+
+export function serializeEdge(edge: Edge<any, any>): string {
+  const cond = edge.cond ? `[${edge.cond.toString().replace(/\n/g, "")}]` : "";
+  return `${edge.source.id}:${edge.event}${cond}`;
 }

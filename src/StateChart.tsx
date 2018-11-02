@@ -14,6 +14,7 @@ import { StateChartNode } from "./StateChartNode";
 import AceEditor from "react-ace";
 import "brace/theme/monokai";
 import "brace/mode/javascript";
+import { serializeEdge } from "./utils";
 
 const StyledViewTabs = styled.ul`
   display: flex;
@@ -336,17 +337,16 @@ export class StateChart extends React.Component<
                 markerUnits="strokeWidth"
                 orient="auto"
               >
-                <path d="M0,0 L0,4 L4,2 z" fill="var(--color-primary)" />
+                <path d="M0,0 L0,4 L4,2 z" fill="gray" />
               </marker>
             </defs>
             {edges.map(edge => {
               if (!this.svgRef.current) {
                 return;
               }
+              const sEdge = serializeEdge(edge);
 
-              const elEvent = document.querySelector(
-                `[data-id="${edge.source.id}:${edge.event}"]`
-              );
+              const elEvent = document.querySelector(`[data-id="${sEdge}"]`);
               const elSource = document.querySelector(
                 `[data-id="${edge.source.id}"]`
               );
@@ -357,6 +357,8 @@ export class StateChart extends React.Component<
               if (!elEvent || !elTarget || !elSource) {
                 return;
               }
+
+              const strokeWidth = 2;
 
               const sourceRect = relative(
                 elSource.getBoundingClientRect(),
@@ -374,45 +376,119 @@ export class StateChart extends React.Component<
               const targetCenterPt = center(targetRect);
 
               const start = {
-                x: eventRect.right - 5,
-                y: eventCenterPt.y + 1
+                x: eventRect.right - 4,
+                y: eventCenterPt.y
               };
+
+              const end = {
+                x: 0,
+                y: 0
+              };
+
+              let m =
+                (targetCenterPt.y - eventCenterPt.y) /
+                (targetCenterPt.x - eventCenterPt.x);
+              let b = eventCenterPt.y - m * eventCenterPt.x;
+
+              if (eventCenterPt.x <= targetCenterPt.x) {
+                if (m * targetRect.left + b < targetRect.top) {
+                  end.y = targetRect.top;
+                  end.x = (end.y - b) / m;
+                } else if (m * targetRect.left + b > targetRect.bottom) {
+                  end.y = targetRect.bottom;
+                  end.x = (end.y - b) / m;
+                } else {
+                  end.x = targetRect.left;
+                  end.y = m * end.x + b;
+                }
+              } else {
+                if (m * targetRect.right + b < targetRect.top) {
+                  end.y = targetRect.top;
+                  end.x = (end.y - b) / m;
+                } else if (m * targetRect.right + b > targetRect.bottom) {
+                  end.y = targetRect.bottom;
+                  end.x = (end.y - b) / m;
+                } else {
+                  end.x = targetRect.right;
+                  end.y =
+                    eventCenterPt.y > targetCenterPt.y
+                      ? targetRect.bottom
+                      : targetRect.top;
+                }
+              }
+
+              const dx = end.x - start.x;
+              const dy = end.y - start.y;
+              const preEnd = { ...end };
+              const bezierPad = 30;
+
+              if (end.y <= targetRect.top) {
+                preEnd.y = preEnd.y - bezierPad;
+              } else if (end.y >= targetRect.bottom) {
+                preEnd.y = preEnd.y + bezierPad;
+              }
+
+              if (end.x <= targetRect.left) {
+                preEnd.x = preEnd.x - bezierPad;
+              } else if (end.x >= targetRect.right) {
+                preEnd.x = preEnd.x + bezierPad;
+              }
+
               const midpoints: Point[] = [];
-              const end = { x: targetRect.left - 4, y: targetRect.bottom };
+              midpoints.push({
+                x: start.x,
+                y: start.y + dy / 2
+              });
+              midpoints.push({
+                x: end.x,
+                y: end.y - dy / 2
+              });
+              const bezier1 = `C${end.x + bezierPad},${end.y}`;
+              const bezier2 =
+                end.y <= targetRect.top
+                  ? `${end.x},${end.y - bezierPad}`
+                  : end.y >= targetRect.bottom
+                    ? `${end.x},${end.y + bezierPad}`
+                    : end.x >= targetRect.right
+                      ? `${end.x + bezierPad},${end.y}`
+                      : `${end.x - bezierPad},${end.y}`;
+              // const bezier = [bezier1, bezier2].join(" ");
+              const bezier = "C";
+              // const end = { x: targetRect.left - 4, y: targetRect.bottom };
 
-              if (start.y > targetRect.top && start.y < targetRect.bottom) {
-                end.y = start.y;
-              }
-              if (start.x > end.x) {
-                start.x = eventRect.right - 8;
-                start.y = eventCenterPt.y + 4;
-                midpoints.push({
-                  x: start.x,
-                  y: sourceRect.bottom + 10
-                });
-                midpoints.push({
-                  x: sourceRect.left,
-                  y: sourceRect.bottom + 10
-                });
-                midpoints.push({
-                  x: targetRect.right - 10,
-                  y: targetRect.bottom + 10
-                });
-                end.x = targetRect.right - 10;
-                end.y = targetRect.bottom + 4;
-              }
+              // if (start.y > targetRect.top && start.y < targetRect.bottom) {
+              //   end.y = start.y;
+              // }
+              // if (start.x > end.x) {
+              //   start.x = eventRect.right - 8;
+              //   start.y = eventCenterPt.y + 4;
+              //   midpoints.push({
+              //     x: start.x,
+              //     y: sourceRect.bottom + 10
+              //   });
+              //   midpoints.push({
+              //     x: sourceRect.left,
+              //     y: sourceRect.bottom + 10
+              //   });
+              //   midpoints.push({
+              //     x: targetRect.right - 10,
+              //     y: targetRect.bottom + 10
+              //   });
+              //   end.x = targetRect.right - 10;
+              //   end.y = targetRect.bottom + 4;
+              // }
 
-              if (start.y < targetRect.top) {
-                end.y = targetRect.top;
-              }
+              // if (start.y < targetRect.top) {
+              //   end.y = targetRect.top;
+              // }
 
-              if (start.x <= targetRect.right && start.x >= targetRect.left) {
-                end.x = start.x;
-              }
+              // if (start.x <= targetRect.right && start.x >= targetRect.left) {
+              //   end.x = start.x;
+              // }
 
               const pathMidpoints = midpoints
                 .map(midpoint => {
-                  return `L ${midpoint.x},${midpoint.y}`;
+                  return `${midpoint.x},${midpoint.y}`;
                 })
                 .join(" ");
 
@@ -424,13 +500,11 @@ export class StateChart extends React.Component<
 
               return (
                 <path
-                  d={`M${start.x} ${start.y - 1} ${pathMidpoints} ${end.x} ${
+                  d={`M${start.x},${start.y} C ${pathMidpoints} ${end.x},${
                     end.y
                   }`}
-                  stroke={
-                    isHighlighted ? "var(--color-primary)" : "var(--color-edge)"
-                  }
-                  strokeWidth={2}
+                  stroke={isHighlighted ? "gray" : "var(--color-edge)"}
+                  strokeWidth={strokeWidth}
                   fill="none"
                   markerEnd={
                     isHighlighted ? `url(#marker-preview)` : `url(#marker)`

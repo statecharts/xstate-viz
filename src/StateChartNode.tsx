@@ -295,13 +295,15 @@ export class StateChartNode extends React.Component<StateChartNodeProps> {
         <StyledEvents>
           {transitions(stateNode).map(transition => {
             const ownEvent = transition.event;
-            console.log(friendlyEventName(ownEvent));
 
             const disabled: boolean =
               current.nextEvents.indexOf(ownEvent) === -1 ||
               (!!transition.cond &&
                 typeof transition.cond === "function" &&
                 !transition.cond(current.context, ownEvent, {}));
+            const cond = transition.cond
+              ? `[${transition.cond.toString().replace(/\n/g, "")}]`
+              : "";
             return (
               <StyledEvent>
                 <StyledEventButton
@@ -309,7 +311,7 @@ export class StateChartNode extends React.Component<StateChartNodeProps> {
                   onMouseOver={() => onPreEvent(ownEvent)}
                   onMouseOut={() => onExitPreEvent()}
                   disabled={disabled}
-                  data-id={`${stateNode.id}:${ownEvent}`}
+                  data-id={`${stateNode.id}:${ownEvent}${cond}`}
                 >
                   {friendlyEventName(ownEvent)}
                 </StyledEventButton>
