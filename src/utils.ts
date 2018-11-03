@@ -44,3 +44,16 @@ export function serializeEdge(edge: Edge<any, any>): string {
   const cond = edge.cond ? `[${edge.cond.toString().replace(/\n/g, "")}]` : "";
   return `${edge.source.id}:${edge.event}${cond}`;
 }
+
+export function isHidden(el?: Element | null): el is null {
+  if (!el) {
+    return true;
+  }
+  const rect = el.getBoundingClientRect();
+
+  if (rect.width === 0 && rect.height === 0) {
+    return true;
+  }
+
+  return false;
+}

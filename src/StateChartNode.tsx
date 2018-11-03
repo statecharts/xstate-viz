@@ -7,7 +7,7 @@ const StyledChildStatesToggle = styled.button`
   display: inline-block;
   appearance: none;
   background: transparent;
-  border: 2px solid #dedede;
+  border: var(--border-width) solid #dedede;
   border-bottom: none;
   border-right: none;
   border-radius: 0.25rem 0 0 0;
@@ -17,19 +17,60 @@ const StyledChildStatesToggle = styled.button`
   }
 `;
 
+const StyledStateNodeHeader = styled.header`
+  position: absolute;
+  z-index: 1;
+  padding: 0.25rem 0;
+  bottom: calc(100% + var(--border-width, 0));
+  left: 0;
+  background: rgba(255, 255, 255, 0.5);
+
+  &[data-type-symbol="final" i] {
+    --symbol-color: red;
+  }
+
+  &[data-type-symbol="history" i] {
+    --symbol-color: orange;
+  }
+
+  &[data-type-symbol] {
+    padding-right: 5em;
+
+    &:after {
+      content: attr(data-type-symbol);
+      position: absolute;
+      top: 0;
+      right: 0;
+      border-bottom-left-radius: 0.25rem;
+      background: var(--symbol-color, gray);
+      color: white;
+      padding: 0.25rem 0.5rem;
+      font-weight: bold;
+      font-size: 0.75em;
+    }
+  }
+`;
+
 const StyledState = styled.div`
   --color-shadow: rgba(0, 0, 0, 0.05);
   display: inline-block;
   border-radius: 0.25rem;
   text-align: left;
   border: 2px solid var(--color-border);
-  margin: 0.5rem 1rem;
+  margin: 1rem;
   flex-grow: 0;
   flex-shrink: 1;
   box-shadow: 0 0.5rem 1rem var(--color-shadow);
   background: white;
   color: #313131;
+  max-width: 50%;
 
+  &[data-type~="machine"] {
+    border: none;
+    box-shadow: none;
+    max-width: 100%;
+    width: 100%;
+  }
   &:not([data-type~="machine"]) {
     // opacity: 0.75;
   }
@@ -60,6 +101,10 @@ const StyledState = styled.div`
     border-color: var(--color-primary);
     --color-shadow: var(--color-primary-shadow);
     opacity: 1;
+
+    > ${StyledStateNodeHeader} {
+      color: var(--color-primary);
+    }
   }
 
   &[data-preview]:not([data-active]) {
@@ -68,35 +113,6 @@ const StyledState = styled.div`
 
   &[data-type~="parallel"] > .children > *:not(${StyledChildStatesToggle}) {
     border-style: dashed;
-  }
-
-  > header {
-    padding: 0.5rem;
-
-    &[data-type-symbol="final" i] {
-      --symbol-color: red;
-    }
-
-    &[data-type-symbol="history" i] {
-      --symbol-color: orange;
-    }
-
-    &[data-type-symbol] {
-      padding-right: 5em;
-
-      &:after {
-        content: attr(data-type-symbol);
-        position: absolute;
-        top: 0;
-        right: 0;
-        border-bottom-left-radius: 0.25rem;
-        background: var(--symbol-color, gray);
-        color: white;
-        padding: 0.25rem 0.5rem;
-        font-weight: bold;
-        font-size: 0.75em;
-      }
-    }
   }
 `;
 
@@ -221,10 +237,6 @@ interface StateChartNodeProps {
   toggledStates: Record<string, boolean>;
 }
 
-const StyledStateNodeHeader = styled.header`
-  z-index: 1;
-`;
-
 export class StateChartNode extends React.Component<StateChartNodeProps> {
   state = {
     toggled: this.props.toggled
@@ -255,8 +267,8 @@ export class StateChartNode extends React.Component<StateChartNodeProps> {
         data-type={dataType}
         data-active={isActive && stateNode.parent}
         data-preview={isPreview && stateNode.parent}
-        // data-open={this.props.toggled || undefined}
-        data-open={true}
+        data-open={this.props.toggled || undefined}
+        // data-open={true}
       >
         <StyledStateNodeHeader
           style={{
