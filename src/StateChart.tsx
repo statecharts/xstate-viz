@@ -273,6 +273,7 @@ export class StateChart extends React.Component<
       <StyledStateChart
         style={{
           height: this.props.height || "100%",
+          background: "#F3F5F9",
           // @ts-ignore
           "--color-border": "#dedede",
           "--color-primary": "rgba(87, 176, 234, 1)",
@@ -353,9 +354,17 @@ export class StateChart extends React.Component<
               const elSource = document.querySelector(
                 `[data-id="${edge.source.id}"]`
               );
-              const elTarget = document.querySelector(
-                `[data-id="${edge.target.id}"]`
-              );
+              let target = edge.target;
+              let elTarget = document.querySelector(`[data-id="${target.id}"]`);
+
+              while (isHidden(elTarget)) {
+                if (!target.parent) {
+                  break;
+                }
+                target = target.parent;
+                elTarget = document.querySelector(`[data-id="${target.id}"]`);
+                console.log(target.id, elTarget);
+              }
 
               if (
                 isHidden(elEvent) ||
@@ -379,6 +388,7 @@ export class StateChart extends React.Component<
                 elTarget.getBoundingClientRect(),
                 this.svgRef.current.getBoundingClientRect()
               );
+
               const eventCenterPt = center(eventRect);
               const targetCenterPt = center(targetRect);
 

@@ -22,12 +22,8 @@ const StyledStateNodeHeader = styled.header`
   z-index: 1;
   padding: 0.25rem 0;
   bottom: calc(100% + var(--border-width, 0));
-  left: 0;
+  left: calc(-1 * var(--border-width));
   background: rgba(255, 255, 255, 0.5);
-
-  &[data-type-symbol="final" i] {
-    --symbol-color: red;
-  }
 
   &[data-type-symbol="history" i] {
     --symbol-color: orange;
@@ -70,6 +66,7 @@ const StyledState = styled.div`
     box-shadow: none;
     max-width: 100%;
     width: 100%;
+    background: none;
   }
   &:not([data-type~="machine"]) {
     // opacity: 0.75;
@@ -82,8 +79,23 @@ const StyledState = styled.div`
     min-height: 1rem;
   }
 
-  &:not([data-open="true"]) > .children > *:not(${StyledChildStatesToggle}) {
-    display: none;
+  &:not([data-open="true"]) > .children {
+    display: grid;
+    grid-template-rows: 1rem;
+    grid-template-columns: 1fr 1rem;
+
+    > * {
+      width: 1rem;
+      height: 1rem;
+      grid-row: 1;
+      grid-column: 2;
+      margin: 0;
+      max-width: initial;
+
+      > * {
+        display: none;
+      }
+    }
   }
 
   > .children {
@@ -113,6 +125,27 @@ const StyledState = styled.div`
 
   &[data-type~="parallel"] > .children > *:not(${StyledChildStatesToggle}) {
     border-style: dashed;
+  }
+
+  &[data-type~="final"] {
+    &:after {
+      content: "";
+      position: absolute;
+      top: -5px;
+      left: -5px;
+      width: calc(100% + 10px);
+      height: calc(100% + 10px);
+      border: 2px solid var(--color-border);
+      pointer-events: none;
+      border-radius: 6px;
+      z-index: 1;
+    }
+  }
+
+  &:before {
+    content: attr(data-key);
+    color: transparent;
+    visibility: hidden;
   }
 `;
 
@@ -156,8 +189,10 @@ const StyledEventButton = styled.button`
   justify-content: space-between;
   align-items: center;
   margin-right: -1rem;
+  text-shadow: 0 1px 1px rgba(0, 0, 0, 0.2);
+  overflow: hidden;
 
-  &:not(:disabled):hover {
+  &:not(:disabled):not([data-builtin]):hover {
     background-color: var(--color-primary);
   }
 
@@ -170,6 +205,28 @@ const StyledEventButton = styled.button`
     outline: none;
   }
 
+  // duration
+  &[data-delay]:not([disabled]):before {
+    content: "";
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background-color: var(--color-primary);
+    animation: move-left calc(var(--delay) * 1ms) linear;
+    z-index: 0;
+  }
+
+  @keyframes move-left {
+    from {
+      transform: translateX(-100%);
+    }
+    to {
+      transform: none;
+    }
+  }
+
   &:after {
     content: "";
     display: inline-block;
@@ -178,6 +235,12 @@ const StyledEventButton = styled.button`
     border-radius: 50%;
     background-color: white;
     margin-left: 0.5rem;
+  }
+
+  &[data-builtin] {
+    background-color: var(--color-primary-faded);
+    text-shadow: 0 1px 2px rgba(0, 0, 0, 0.5);
+    pointer-events: none;
   }
 `;
 
@@ -263,6 +326,7 @@ export class StateChartNode extends React.Component<StateChartNodeProps> {
     return (
       <StyledState
         key={stateNode.id}
+        data-key={stateNode.key}
         data-id={stateNode.id}
         data-type={dataType}
         data-active={isActive && stateNode.parent}
@@ -276,7 +340,7 @@ export class StateChartNode extends React.Component<StateChartNodeProps> {
             "--depth": stateNode.path.length
           }}
           data-type-symbol={
-            ["history", "final", "parallel"].includes(stateNode.type)
+            ["history"].includes(stateNode.type)
               ? stateNode.type.toUpperCase()
               : undefined
           }
@@ -307,7 +371,9 @@ export class StateChartNode extends React.Component<StateChartNodeProps> {
         <StyledEvents>
           {transitions(stateNode).map(transition => {
             const ownEvent = transition.event;
-
+            const isBuiltInEvent =
+              ownEvent.indexOf("xstate.") === 0 ||
+              ownEvent.indexOf("done.") === 0;
             const disabled: boolean =
               current.nextEvents.indexOf(ownEvent) === -1 ||
               (!!transition.cond &&
@@ -317,15 +383,22 @@ export class StateChartNode extends React.Component<StateChartNodeProps> {
               ? `[${transition.cond.toString().replace(/\n/g, "")}]`
               : "";
             return (
-              <StyledEvent>
+              <StyledEvent
+                style={{
+                  //@ts-ignore
+                  "--delay": transition.delay
+                }}
+              >
                 <StyledEventButton
                   onClick={() => onEvent(ownEvent)}
                   onMouseOver={() => onPreEvent(ownEvent)}
                   onMouseOut={() => onExitPreEvent()}
                   disabled={disabled}
+                  data-delay={transition.delay}
+                  data-builtin={isBuiltInEvent || undefined}
                   data-id={`${stateNode.id}:${ownEvent}${cond}`}
                 >
-                  {friendlyEventName(ownEvent)}
+                  <span>{friendlyEventName(ownEvent)}</span>
                 </StyledEventButton>
                 {transition.cond && <div>{condToString(transition.cond)}</div>}
                 {transition.actions.map((action, i) => {
