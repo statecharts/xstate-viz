@@ -25,7 +25,17 @@ const StyledStateNodeHeader = styled.header`
   padding: 0.25rem 0;
   bottom: calc(100% + var(--border-width, 0));
   left: calc(-1 * var(--border-width));
-  background: rgba(255, 255, 255, 0.5);
+
+  &:before {
+    display: none;
+    content: "";
+    position: absolute;
+    top: 0;
+    left: 0;
+    height: 100%;
+    width: 100%;
+    background: var(--color-app-background);
+  }
 
   &[data-type-symbol="history" i] {
     --symbol-color: orange;

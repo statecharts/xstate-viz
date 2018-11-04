@@ -260,8 +260,9 @@ export class StateChart extends React.Component<
         key={code}
         style={{
           height: this.props.height || "100%",
-          background: "#F3F5F9",
+          background: "var(--color-app-background)",
           // @ts-ignore
+          "--color-app-background": "#F3F5F9",
           "--color-border": "#dedede",
           "--color-primary": "rgba(87, 176, 234, 1)",
           "--color-primary-faded": "rgba(87, 176, 234, 0.5)",
