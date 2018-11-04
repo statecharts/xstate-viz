@@ -11,12 +11,11 @@ import {
 import * as XState from "xstate";
 import { getEdges } from "xstate/lib/graph";
 import { StateChartNode } from "./StateChartNode";
-import AceEditor from "react-ace";
-import "brace/theme/monokai";
-import "brace/mode/javascript";
+
 import { serializeEdge, isHidden } from "./utils";
 import { Edge } from "./Edge";
 import { tracker } from "./tracker";
+import { Editor } from "./Editor";
 
 const StyledViewTabs = styled.ul`
   display: flex;
@@ -163,15 +162,9 @@ export class StateChart extends React.Component<
     switch (view) {
       case "definition":
         return (
-          <AceEditor
-            mode="javascript"
-            theme="monokai"
-            editorProps={{ $blockScrolling: true }}
-            value={code}
-            onChange={value => this.setState({ code: value })}
-            setOptions={{ tabSize: 2 }}
-            width="100%"
-            height="100%"
+          <Editor
+            code={this.state.code}
+            onChange={code => this.updateMachine(code)}
           />
         );
       case "state":
@@ -217,9 +210,7 @@ export class StateChart extends React.Component<
       }
     );
   }
-  updateMachine() {
-    const { code } = this.state;
-
+  updateMachine(code: string) {
     const machine = toMachine(code);
 
     this.setState(
@@ -243,7 +234,7 @@ export class StateChart extends React.Component<
     );
   }
   render() {
-    const { current, preview, previewEvent, machine } = this.state;
+    const { current, preview, previewEvent, machine, code } = this.state;
 
     const edges = getEdges(machine);
 
@@ -266,6 +257,7 @@ export class StateChart extends React.Component<
 
     return (
       <StyledStateChart
+        key={code}
         style={{
           height: this.props.height || "100%",
           background: "#F3F5F9",
@@ -379,9 +371,7 @@ export class StateChart extends React.Component<
             })}
           </StyledViewTabs>
           {this.renderView()}
-          <footer>
-            <button onClick={() => this.updateMachine()}>Update</button>
-          </footer>
+          <footer />
         </div>
       </StyledStateChart>
     );

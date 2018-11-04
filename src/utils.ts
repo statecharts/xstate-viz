@@ -41,7 +41,7 @@ export function condToString(cond: string | Function) {
 
 export function serializeEdge(edge: Edge<any, any>): string {
   const cond = edge.cond ? `[${edge.cond.toString().replace(/\n/g, "")}]` : "";
-  return `${edge.source.id}:${edge.event}${cond}`;
+  return `${edge.source.id}:${edge.event}${cond}->${edge.target.id}`;
 }
 
 export function isHidden(el?: Element | null): el is null {

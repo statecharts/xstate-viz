@@ -1,8 +1,9 @@
 import React from "react";
 import { Machine as _Machine, StateNode, State, EventObject } from "xstate";
 import styled from "styled-components";
-import { transitions, condToString } from "./utils";
+import { transitions, condToString, serializeEdge } from "./utils";
 import { tracker } from "./tracker";
+import { getEdges } from "xstate/lib/graph";
 
 const StyledChildStatesToggle = styled.button`
   display: inline-block;
@@ -175,8 +176,9 @@ const StyledEvent = styled.li`
 `;
 
 const StyledEventButton = styled.button`
+  --color-event: var(--color-primary);
   appearance: none;
-  background-color: var(--color-primary);
+  background-color: var(--color-event);
   border: none;
   color: white;
   font-size: 0.75em;
@@ -194,12 +196,12 @@ const StyledEventButton = styled.button`
   overflow: hidden;
 
   &:not(:disabled):not([data-builtin]):hover {
-    background-color: var(--color-primary);
+    --color-event: var(--color-primary);
   }
 
   &:disabled {
     cursor: not-allowed;
-    background: var(--color-disabled);
+    --color-event: var(--color-disabled);
   }
 
   &:focus {
@@ -214,7 +216,7 @@ const StyledEventButton = styled.button`
     left: 0;
     width: 100%;
     height: 100%;
-    background-color: var(--color-primary);
+    background-color: var(--color-event);
     animation: move-left calc(var(--delay) * 1ms) linear;
     z-index: 0;
   }
@@ -228,20 +230,9 @@ const StyledEventButton = styled.button`
     }
   }
 
-  &:after {
-    content: "";
-    display: inline-block;
-    height: 0.5rem;
-    width: 0.5rem;
-    border-radius: 50%;
-    background-color: white;
-    margin-left: 0.5rem;
-  }
-
   &[data-builtin] {
-    background-color: var(--color-primary-faded);
-    text-shadow: 0 1px 2px rgba(0, 0, 0, 0.5);
-    pointer-events: none;
+    background-color: transparent;
+    color: black;
   }
 `;
 
@@ -266,6 +257,36 @@ const StyledStateNodeAction = styled.li`
   &:before {
     content: attr(data-action-type) " / ";
     font-weight: bold;
+  }
+`;
+const StyledEventDot = styled.div`
+  display: inline-block;
+  height: 0.5rem;
+  width: 0.5rem;
+  border-radius: 50%;
+  background-color: white;
+  margin-left: 0.5rem;
+
+  &:before {
+    content: "";
+    position: absolute;
+    top: -0.25rem;
+    left: -0.25rem;
+    width: calc(100% + 0.5rem);
+    height: calc(100% + 0.5rem);
+    border-radius: 50%;
+    background-color: var(--color-event);
+  }
+
+  &:after {
+    content: "";
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    border-radius: 50%;
+    background-color: white;
   }
 `;
 
@@ -376,39 +397,48 @@ export class StateChartNode extends React.Component<StateChartNodeProps> {
           })}
         </StyledStateNodeActions>
         <StyledEvents>
-          {transitions(stateNode).map(transition => {
-            const ownEvent = transition.event;
+          {getEdges(stateNode, { depth: 0 }).map(edge => {
+            const { event: ownEvent } = edge;
             const isBuiltInEvent =
               ownEvent.indexOf("xstate.") === 0 ||
               ownEvent.indexOf("done.") === 0;
+
             const disabled: boolean =
               current.nextEvents.indexOf(ownEvent) === -1 ||
-              (!!transition.cond &&
-                typeof transition.cond === "function" &&
-                !transition.cond(current.context, ownEvent, {}));
-            const cond = transition.cond
-              ? `[${transition.cond.toString().replace(/\n/g, "")}]`
+              (!!edge.cond &&
+                typeof edge.cond === "function" &&
+                !edge.cond(current.context, { type: ownEvent }, {}));
+            const cond = edge.cond
+              ? `[${edge.cond.toString().replace(/\n/g, "")}]`
               : "";
+
             return (
               <StyledEvent
                 style={{
                   //@ts-ignore
-                  "--delay": transition.delay
+                  "--delay": edge.transition.delay
                 }}
+                key={`${stateNode.id}:${ownEvent}${cond}`}
               >
                 <StyledEventButton
-                  onClick={() => onEvent(ownEvent)}
+                  onClick={() =>
+                    !isBuiltInEvent ? onEvent(ownEvent) : undefined
+                  }
                   onMouseOver={() => onPreEvent(ownEvent)}
                   onMouseOut={() => onExitPreEvent()}
                   disabled={disabled}
-                  data-delay={transition.delay}
+                  data-delay={edge.transition.delay}
                   data-builtin={isBuiltInEvent || undefined}
-                  data-id={`${stateNode.id}:${ownEvent}${cond}`}
+                  data-id={serializeEdge(edge)}
+                  title={ownEvent}
                 >
                   <span>{friendlyEventName(ownEvent)}</span>
+                  <StyledEventDot />
                 </StyledEventButton>
-                {transition.cond && <div>{condToString(transition.cond)}</div>}
-                {transition.actions.map((action, i) => {
+                {edge.transition.cond && (
+                  <div>{condToString(edge.transition.cond)}</div>
+                )}
+                {edge.transition.actions.map((action, i) => {
                   const actionString = JSON.stringify(action);
                   return (
                     <StyledTransitionAction key={actionString + ":" + i}>

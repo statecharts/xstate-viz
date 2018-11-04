@@ -69,14 +69,6 @@ export class Edge extends Component<EdgeProps, EdgeState> {
     });
   }
   render() {
-    const { edge } = this.props;
-    const sEdge = serializeEdge(edge);
-
-    const elEvent = document.querySelector(`[data-id="${sEdge}"]`);
-    const elSource = document.querySelector(`[data-id="${edge.source.id}"]`);
-    let target = edge.target;
-    let elTarget = document.querySelector(`[data-id="${target.id}"]`);
-
     const { sourceData, eventData, targetData } = this.state;
 
     if (
@@ -258,17 +250,16 @@ export class Edge extends Component<EdgeProps, EdgeState> {
     const isHighlighted = this.props.preview;
 
     return (
-      <path
-        data-d={`M${start.x} ${start.y} C ${pathMidpoints}, ${preEnd.x} ${
-          preEnd.y
-        } L ${end.x} ${end.y}`}
-        d={path}
-        stroke={isHighlighted ? "gray" : "var(--color-edge)"}
-        strokeWidth={strokeWidth}
-        fill="none"
-        markerEnd={isHighlighted ? `url(#marker-preview)` : `url(#marker)`}
-        ref={this.ref}
-      />
+      <g>
+        <path
+          d={path}
+          stroke={isHighlighted ? "gray" : "var(--color-edge)"}
+          strokeWidth={strokeWidth}
+          fill="none"
+          markerEnd={isHighlighted ? `url(#marker-preview)` : `url(#marker)`}
+          ref={this.ref}
+        />
+      </g>
     );
   }
 }
