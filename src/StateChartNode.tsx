@@ -51,24 +51,32 @@ const StyledStateNodeHeader = styled.header`
 
 const StyledState = styled.div`
   --color-shadow: rgba(0, 0, 0, 0.05);
+  --color-node-border: var(--color-border);
   display: inline-block;
   border-radius: 0.25rem;
   text-align: left;
-  border: 2px solid var(--color-border);
+  border: 2px solid var(--color-node-border);
   margin: 1rem;
   flex-grow: 0;
   flex-shrink: 1;
   box-shadow: 0 0.5rem 1rem var(--color-shadow);
   background: white;
   color: #313131;
-  max-width: 50%;
 
   &[data-type~="machine"] {
     border: none;
     box-shadow: none;
-    max-width: 100%;
     width: 100%;
     background: none;
+    margin: 1rem 0;
+
+    > ${StyledStateNodeHeader} {
+      left: 1rem;
+    }
+
+    > ul {
+      padding-right: 1.5rem;
+    }
   }
   &:not([data-type~="machine"]) {
     // opacity: 0.75;
@@ -111,8 +119,11 @@ const StyledState = styled.div`
     right: 0;
   }
 
+  &:not[data-active] {
+  }
+
   &[data-active] {
-    border-color: var(--color-primary);
+    --color-node-border: var(--color-primary);
     --color-shadow: var(--color-primary-shadow);
     opacity: 1;
 
@@ -122,7 +133,7 @@ const StyledState = styled.div`
   }
 
   &[data-preview]:not([data-active]) {
-    border-color: var(--color-primary-faded);
+    --color-node-border: var(--color-primary-faded);
   }
 
   &[data-type~="parallel"] > .children > *:not(${StyledChildStatesToggle}) {
@@ -137,7 +148,7 @@ const StyledState = styled.div`
       left: -5px;
       width: calc(100% + 10px);
       height: calc(100% + 10px);
-      border: 2px solid var(--color-border);
+      border: 2px solid var(--color-node-border);
       pointer-events: none;
       border-radius: 6px;
       z-index: 1;
@@ -367,11 +378,6 @@ export class StateChartNode extends React.Component<StateChartNodeProps> {
             // @ts-ignore
             "--depth": stateNode.path.length
           }}
-          data-type-symbol={
-            ["history"].includes(stateNode.type)
-              ? stateNode.type.toUpperCase()
-              : undefined
-          }
         >
           <strong>{stateNode.key}</strong>
         </StyledStateNodeHeader>
@@ -418,7 +424,7 @@ export class StateChartNode extends React.Component<StateChartNodeProps> {
                   //@ts-ignore
                   "--delay": edge.transition.delay
                 }}
-                key={`${stateNode.id}:${ownEvent}${cond}`}
+                key={serializeEdge(edge)}
               >
                 <StyledEventButton
                   onClick={() =>
