@@ -29,7 +29,6 @@ export function transitions(
 
 export function condToString(cond: string | Function) {
   if (typeof cond === "function") {
-    console.log(cond.toString());
     return cond
       .toString()
       .replace(/\n/g, "")
@@ -56,4 +55,30 @@ export function isHidden(el?: Element | null): el is null {
   }
 
   return false;
+}
+
+export function relative(
+  childRect: ClientRect,
+  parentRect: ClientRect
+): ClientRect {
+  return {
+    top: childRect.top - parentRect.top,
+    right: childRect.right - parentRect.left,
+    bottom: childRect.bottom - parentRect.top,
+    left: childRect.left - parentRect.left,
+    width: childRect.width,
+    height: childRect.height
+  };
+}
+
+export interface Point {
+  x: number;
+  y: number;
+}
+
+export function center(rect: ClientRect): Point {
+  return {
+    x: rect.left + rect.width / 2,
+    y: rect.top + rect.height / 2
+  };
 }

@@ -2,6 +2,7 @@ import React from "react";
 import { Machine as _Machine, StateNode, State, EventObject } from "xstate";
 import styled from "styled-components";
 import { transitions, condToString } from "./utils";
+import { tracker } from "./tracker";
 
 const StyledChildStatesToggle = styled.button`
   display: inline-block;
@@ -305,6 +306,11 @@ export class StateChartNode extends React.Component<StateChartNodeProps> {
     toggled: this.props.toggled
   };
 
+  stateRef = React.createRef<any>();
+
+  public componentDidUpdate() {
+    tracker.update(this.props.stateNode.id, this.stateRef.current);
+  }
   public render(): JSX.Element {
     const {
       stateNode,
@@ -332,6 +338,7 @@ export class StateChartNode extends React.Component<StateChartNodeProps> {
         data-active={isActive && stateNode.parent}
         data-preview={isPreview && stateNode.parent}
         data-open={this.props.toggled || undefined}
+        ref={this.stateRef}
         // data-open={true}
       >
         <StyledStateNodeHeader
