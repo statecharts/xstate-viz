@@ -69,6 +69,7 @@ export class Edge extends Component<EdgeProps, EdgeState> {
     });
   }
   render() {
+    const { edge } = this.props;
     const { sourceData, eventData, targetData } = this.state;
 
     if (
@@ -109,40 +110,46 @@ export class Edge extends Component<EdgeProps, EdgeState> {
       (targetCenterPt.y - eventCenterPt.y) /
       (targetCenterPt.x - eventCenterPt.x);
     let b = eventCenterPt.y - m * eventCenterPt.x;
-    let endSide: "left" | "top" | "bottom";
+    let endSide: "left" | "top" | "bottom" | "right";
     const bezierPad = 10;
 
-    if (eventCenterPt.x <= targetCenterPt.x) {
-      if (m * targetRect.left + b < targetRect.top) {
-        end.y = targetRect.top;
-        end.x = (end.y - b) / m;
-        endSide = "top";
-      } else if (m * targetRect.left + b > targetRect.bottom) {
-        end.y = targetRect.bottom;
-        end.x = (end.y - b) / m;
-        endSide = "bottom";
-      } else {
-        end.x = targetRect.left;
-        end.y = m * end.x + b;
-        endSide = "left";
-      }
+    if (edge.source === edge.target) {
+      endSide = "right";
+      end.y = start.y + 10;
+      end.x = start.x;
     } else {
-      if (m * targetRect.right + b < targetRect.top) {
-        end.y = targetRect.top;
-        end.x = (end.y - b) / m;
-        endSide = "top";
-      } else if (m * targetRect.right + b > targetRect.bottom) {
-        end.y = targetRect.bottom;
-        end.x = (end.y - b) / m;
-        endSide = "bottom";
-      } else {
-        end.x = targetRect.right - bezierPad;
-        if (eventCenterPt.y > targetCenterPt.y) {
+      if (eventCenterPt.x <= targetCenterPt.x) {
+        if (m * targetRect.left + b < targetRect.top) {
+          end.y = targetRect.top;
+          end.x = (end.y - b) / m;
+          endSide = "top";
+        } else if (m * targetRect.left + b > targetRect.bottom) {
           end.y = targetRect.bottom;
+          end.x = (end.y - b) / m;
           endSide = "bottom";
         } else {
+          end.x = targetRect.left;
+          end.y = m * end.x + b;
+          endSide = "left";
+        }
+      } else {
+        if (m * targetRect.right + b < targetRect.top) {
           end.y = targetRect.top;
+          end.x = (end.y - b) / m;
           endSide = "top";
+        } else if (m * targetRect.right + b > targetRect.bottom) {
+          end.y = targetRect.bottom;
+          end.x = (end.y - b) / m;
+          endSide = "bottom";
+        } else {
+          end.x = targetRect.right - bezierPad;
+          if (eventCenterPt.y > targetCenterPt.y) {
+            end.y = targetRect.bottom;
+            endSide = "bottom";
+          } else {
+            end.y = targetRect.top;
+            endSide = "top";
+          }
         }
       }
     }
@@ -156,6 +163,9 @@ export class Edge extends Component<EdgeProps, EdgeState> {
         break;
       case "left":
         end.x -= 4;
+        break;
+      case "right":
+        end.x += 4;
         break;
     }
 
@@ -175,32 +185,16 @@ export class Edge extends Component<EdgeProps, EdgeState> {
     };
     const points: Point[] = [start, postStart];
 
-    const midpoints: Point[] = [];
-
-    midpoints.push({
-      x: start.x + bezierPad,
-      y: start.y + dy / 2
-    });
-
     if (endSide === "top") {
       preEnd.y = preEnd.y - bezierPad;
-      midpoints.push({
-        x: preEnd.x,
-        y: preEnd.y - dy / 2
-      });
     } else if (endSide === "bottom") {
       preEnd.y = preEnd.y + bezierPad;
-      midpoints.push({
-        x: preEnd.x,
-        y: preEnd.y + dy / 2
-      });
     } else if (endSide === "left") {
       preEnd.y = end.y;
       preEnd.x = end.x - bezierPad;
-      midpoints.push({
-        x: preEnd.x - dx / 2,
-        y: preEnd.y
-      });
+    } else if (endSide === "right") {
+      preEnd.y = end.y;
+      preEnd.x = end.x + bezierPad;
     }
 
     points.push(preEnd);
@@ -240,12 +234,6 @@ export class Edge extends Component<EdgeProps, EdgeState> {
 
       return acc + ` Q ${point.x},${point.y} ${midpoint2.x},${midpoint2.y}`;
     }, "");
-
-    const pathMidpoints = midpoints
-      .map(midpoint => {
-        return `${midpoint.x} ${midpoint.y}`;
-      })
-      .join(", ");
 
     const isHighlighted = this.props.preview;
 

@@ -72,6 +72,26 @@ export function relative(
   };
 }
 
+export function initialStateNodes(stateNode: StateNode): StateNode[] {
+  const stateKeys = Object.keys(stateNode.states);
+
+  return stateNode.initialStateNodes.concat(
+    flatten(
+      stateKeys.map(key => {
+        const childStateNode = stateNode.states[key];
+        if (
+          childStateNode.type === "compound" ||
+          childStateNode.type === "parallel"
+        ) {
+          return initialStateNodes(stateNode.states[key]);
+        }
+
+        return [];
+      })
+    )
+  );
+}
+
 export interface Point {
   x: number;
   y: number;

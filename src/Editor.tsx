@@ -5,7 +5,7 @@ import "brace/mode/javascript";
 
 interface EditorProps {
   code: string;
-  onChange: (code: string) => void;
+  onChange?: (code: string) => void;
 }
 
 export class Editor extends Component<EditorProps> {
@@ -34,8 +34,12 @@ export class Editor extends Component<EditorProps> {
           setOptions={{ tabSize: 2 }}
           width="100%"
           height="100%"
+          showGutter={false}
+          readOnly={!onChange}
         />
-        <button onClick={() => onChange(this.state.code)}>Update</button>
+        {onChange ? (
+          <button onClick={() => onChange(this.state.code)}>Update</button>
+        ) : null}
       </div>
     );
   }

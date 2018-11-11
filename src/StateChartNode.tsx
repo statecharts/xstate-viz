@@ -6,13 +6,29 @@ import { tracker } from "./tracker";
 import { getEdges } from "xstate/lib/graph";
 
 const StyledChildStatesToggle = styled.button`
-  display: inline-block;
   appearance: none;
+  display: inline-flex;
+  height: 1rem;
+  width: 2rem;
+  justify-content: center;
+  align-items: center;
   background: transparent;
-  border: var(--border-width) solid #dedede;
-  border-bottom: none;
-  border-right: none;
-  border-radius: 0.25rem 0 0 0;
+  border: none;
+
+  &:not(:hover) {
+    opacity: 0.5;
+  }
+
+  &:before {
+    content: "";
+    display: block;
+    height: 2px;
+    width: 2px;
+    border-radius: 50%;
+    background: gray;
+    flex-shrink: 0;
+    box-shadow: -3px 0 gray, 3px 0 gray;
+  }
 
   &:focus {
     outline: none;
@@ -103,18 +119,29 @@ const StyledState = styled.div`
     display: grid;
     grid-template-rows: 1rem;
     grid-template-columns: 1fr 1rem;
+    grid-column-gap: 0.5rem;
 
-    > * {
+    > :not(${StyledChildStatesToggle}) {
       width: 1rem;
       height: 1rem;
-      grid-row: 1;
-      grid-column: 2;
+      grid-row: 1 / 2;
+      grid-column: 1 / 2;
       margin: 0;
       max-width: initial;
+      justify-self: self-end;
+
+      &[data-type~="final"]:after {
+        display: none;
+      }
 
       > * {
         display: none;
       }
+    }
+
+    > ${StyledChildStatesToggle} {
+      grid-row: 1 / 2;
+      grid-column: 2 / 3;
     }
   }
 
@@ -169,6 +196,8 @@ const StyledState = styled.div`
     content: attr(data-key);
     color: transparent;
     visibility: hidden;
+    height: 1px;
+    display: block;
   }
 `;
 
@@ -254,6 +283,7 @@ const StyledEventButton = styled.button`
   &[data-builtin] {
     background-color: transparent;
     color: black;
+    font-style: italic;
   }
 `;
 
@@ -321,11 +351,11 @@ function friendlyEventName(event: string) {
   match = event.match(/^done\.state/);
 
   if (match) {
-    return `(done)`;
+    return `done`;
   }
 
   if (event === "") {
-    return "?";
+    return "transient";
   }
 
   return event;
@@ -393,7 +423,7 @@ export class StateChartNode extends React.Component<StateChartNodeProps> {
         </StyledStateNodeHeader>
         <StyledStateNodeActions>
           {stateNode.definition.onEntry.map(action => {
-            const actionString = JSON.stringify(action);
+            const actionString = action.type;
             return (
               <StyledStateNodeAction
                 key={actionString}
@@ -404,7 +434,7 @@ export class StateChartNode extends React.Component<StateChartNodeProps> {
             );
           })}
           {stateNode.definition.onExit.map(action => {
-            const actionString = JSON.stringify(action);
+            const actionString = action.type;
             return (
               <StyledStateNodeAction key={actionString} data-action-type="exit">
                 {actionString}
@@ -417,7 +447,8 @@ export class StateChartNode extends React.Component<StateChartNodeProps> {
             const { event: ownEvent } = edge;
             const isBuiltInEvent =
               ownEvent.indexOf("xstate.") === 0 ||
-              ownEvent.indexOf("done.") === 0;
+              ownEvent.indexOf("done.") === 0 ||
+              ownEvent === "";
 
             const disabled: boolean =
               current.nextEvents.indexOf(ownEvent) === -1 ||
@@ -455,7 +486,7 @@ export class StateChartNode extends React.Component<StateChartNodeProps> {
                   <div>{condToString(edge.transition.cond)}</div>
                 )}
                 {edge.transition.actions.map((action, i) => {
-                  const actionString = JSON.stringify(action);
+                  const actionString = action.type;
                   return (
                     <StyledTransitionAction key={actionString + ":" + i}>
                       {actionString}
@@ -492,9 +523,7 @@ export class StateChartNode extends React.Component<StateChartNodeProps> {
                   e.stopPropagation();
                   this.props.onToggle(stateNode.id);
                 }}
-              >
-                ...
-              </StyledChildStatesToggle>
+              />
             ) : null}
           </div>
         ) : null}
