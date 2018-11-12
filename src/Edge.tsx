@@ -18,8 +18,6 @@ interface EdgeState {
   eventData: TrackerData | undefined;
 }
 
-(window as any).tracker = tracker;
-
 function maybeGet<T, R>(
   value: T | undefined,
   getter: (value: T) => R
