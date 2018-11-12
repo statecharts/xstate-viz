@@ -1,7 +1,12 @@
 import React from "react";
 import { Machine as _Machine, StateNode, State, EventObject } from "xstate";
 import styled from "styled-components";
-import { transitions, condToString, serializeEdge } from "./utils";
+import {
+  transitions,
+  condToString,
+  serializeEdge,
+  stateActions
+} from "./utils";
 import { tracker } from "./tracker";
 import { getEdges } from "xstate/lib/graph";
 
@@ -9,25 +14,29 @@ const StyledChildStatesToggle = styled.button`
   appearance: none;
   display: inline-flex;
   height: 1rem;
-  width: 2rem;
+  width: 1rem;
   justify-content: center;
   align-items: center;
   background: transparent;
   border: none;
+  padding: 0;
+  cursor: pointer;
 
   &:not(:hover) {
     opacity: 0.5;
   }
 
   &:before {
+    --dot-size: 3px;
     content: "";
     display: block;
-    height: 2px;
-    width: 2px;
+    height: var(--dot-size);
+    width: var(--dot-size);
     border-radius: 50%;
-    background: gray;
+    background: var(--toggle-color, gray);
     flex-shrink: 0;
-    box-shadow: -3px 0 gray, 3px 0 gray;
+    box-shadow: calc(-1 * (var(--dot-size) + 1px)) 0 var(--toggle-color, gray),
+      calc(var(--dot-size) + 1px) 0 var(--toggle-color, gray);
   }
 
   &:focus {
@@ -75,7 +84,7 @@ const StyledStateNodeHeader = styled.header`
   }
 `;
 
-const StyledState = styled.div`
+const StyledStateNode = styled.div`
   --color-shadow: rgba(0, 0, 0, 0.05);
   --color-node-border: var(--color-border);
   display: inline-block;
@@ -88,16 +97,18 @@ const StyledState = styled.div`
   box-shadow: 0 0.5rem 1rem var(--color-shadow);
   background: white;
   color: #313131;
+  min-height: 1rem;
 
   &[data-type~="machine"] {
     border: none;
     box-shadow: none;
     width: 100%;
     background: none;
-    margin: 1rem 0;
+    margin: 2rem 0;
 
     > ${StyledStateNodeHeader} {
       left: 1rem;
+      font-size: 1rem;
     }
 
     > ul {
@@ -109,45 +120,16 @@ const StyledState = styled.div`
   }
 
   & > .children {
+    display: flex;
+    padding-bottom: 1rem;
     flex-direction: row;
     flex-wrap: wrap;
     align-items: flex-start;
     min-height: 1rem;
   }
 
-  &:not([data-open="true"]) > .children {
-    display: grid;
-    grid-template-rows: 1rem;
-    grid-template-columns: 1fr 1rem;
-    grid-column-gap: 0.5rem;
-
-    > :not(${StyledChildStatesToggle}) {
-      width: 1rem;
-      height: 1rem;
-      grid-row: 1 / 2;
-      grid-column: 1 / 2;
-      margin: 0;
-      max-width: initial;
-      justify-self: self-end;
-
-      &[data-type~="final"]:after {
-        display: none;
-      }
-
-      > * {
-        display: none;
-      }
-    }
-
-    > ${StyledChildStatesToggle} {
-      grid-row: 1 / 2;
-      grid-column: 2 / 3;
-    }
-  }
-
-  > .children {
-    display: flex;
-    padding-bottom: 1rem;
+  &:not([data-open="true"]) > .children > * {
+    display: none;
   }
 
   ${StyledChildStatesToggle} {
@@ -156,7 +138,8 @@ const StyledState = styled.div`
     right: 0;
   }
 
-  &:not[data-active] {
+  &[data-type~="machine"] > ${StyledChildStatesToggle} {
+    display: none;
   }
 
   &[data-active] {
@@ -166,6 +149,10 @@ const StyledState = styled.div`
 
     > ${StyledStateNodeHeader} {
       color: var(--color-primary);
+    }
+
+    > ${StyledChildStatesToggle} {
+      --toggle-color: var(--color-primary);
     }
   }
 
@@ -203,13 +190,19 @@ const StyledState = styled.div`
 
 const StyledEvents = styled.ul`
   padding: 0;
-  margin: 0;
+  margin: 0.5rem 0;
   list-style: none;
-  padding: 0 0.5rem 0.5rem 0.5rem;
 
   &:empty {
     display: none;
   }
+`;
+
+const StyledStateNodeActions = styled.ul`
+  list-style: none;
+  padding: 0;
+  margin: 0;
+  margin-bottom: 0.5rem;
 `;
 
 const StyledEvent = styled.li`
@@ -222,6 +215,10 @@ const StyledEvent = styled.li`
 
   &:not(:last-child) {
     margin-bottom: 0.25rem;
+  }
+
+  &[data-disabled] > ${StyledStateNodeActions} {
+    opacity: 0.7;
   }
 `;
 
@@ -241,7 +238,8 @@ const StyledEventButton = styled.button`
   flex-direction: row;
   justify-content: space-between;
   align-items: center;
-  margin-right: -1rem;
+  margin-right: -0.5rem;
+  margin-left: 0.5rem;
   text-shadow: 0 1px 1px rgba(0, 0, 0, 0.2);
   overflow: hidden;
 
@@ -259,16 +257,19 @@ const StyledEventButton = styled.button`
   }
 
   // duration
-  &[data-delay]:not([disabled]):before {
-    content: "";
-    position: absolute;
-    top: 0;
-    left: 0;
-    width: 100%;
-    height: 100%;
-    background-color: var(--color-event);
-    animation: move-left calc(var(--delay) * 1ms) linear;
-    z-index: 0;
+  &[data-delay]:not([disabled]) {
+    &:before {
+      content: "";
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background-color: var(--color-event);
+      animation: move-left calc(var(--delay) * 1ms) linear;
+      z-index: 0;
+      opacity: 0.5;
+    }
   }
 
   @keyframes move-left {
@@ -287,26 +288,18 @@ const StyledEventButton = styled.button`
   }
 `;
 
-const StyledTransitionAction = styled.div`
-  &:before {
-    content: "do / ";
-    font-weight: bold;
-  }
-`;
-
-const StyledStateNodeActions = styled.ul`
+const StyledStateNodeAction = styled.li`
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+  height: 1rem;
   list-style: none;
   padding: 0 0.5rem;
-  margin: 0;
-  margin-bottom: 0.5rem;
-`;
-const StyledStateNodeAction = styled.li`
-  list-style: none;
-  padding: 0;
   margin: 0;
 
   &:before {
     content: attr(data-action-type) " / ";
+    margin-right: 0.5ch;
     font-weight: bold;
   }
 `;
@@ -368,14 +361,12 @@ interface StateChartNodeProps {
   onEvent: (event: string) => void;
   onPreEvent: (event: string) => void;
   onExitPreEvent: () => void;
-  toggled: boolean;
-  onToggle: (id: string) => void;
   toggledStates: Record<string, boolean>;
 }
 
 export class StateChartNode extends React.Component<StateChartNodeProps> {
   state = {
-    toggled: this.props.toggled
+    toggled: true
   };
 
   stateRef = React.createRef<any>();
@@ -402,14 +393,14 @@ export class StateChartNode extends React.Component<StateChartNodeProps> {
       : `machine ${stateNode.type}`;
 
     return (
-      <StyledState
+      <StyledStateNode
         key={stateNode.id}
         data-key={stateNode.key}
         data-id={stateNode.id}
         data-type={dataType}
         data-active={isActive && stateNode.parent}
         data-preview={isPreview && stateNode.parent}
-        data-open={this.props.toggled || undefined}
+        data-open={this.state.toggled || undefined}
         ref={this.stateRef}
         // data-open={true}
       >
@@ -421,27 +412,32 @@ export class StateChartNode extends React.Component<StateChartNodeProps> {
         >
           <strong>{stateNode.key}</strong>
         </StyledStateNodeHeader>
-        <StyledStateNodeActions>
-          {stateNode.definition.onEntry.map(action => {
-            const actionString = action.type;
-            return (
-              <StyledStateNodeAction
-                key={actionString}
-                data-action-type="entry"
-              >
-                {actionString}
-              </StyledStateNodeAction>
-            );
-          })}
-          {stateNode.definition.onExit.map(action => {
-            const actionString = action.type;
-            return (
-              <StyledStateNodeAction key={actionString} data-action-type="exit">
-                {actionString}
-              </StyledStateNodeAction>
-            );
-          })}
-        </StyledStateNodeActions>
+        {!!stateActions(stateNode).length && (
+          <StyledStateNodeActions>
+            {stateNode.definition.onEntry.map(action => {
+              const actionString = action.type;
+              return (
+                <StyledStateNodeAction
+                  key={actionString}
+                  data-action-type="entry"
+                >
+                  {actionString}
+                </StyledStateNodeAction>
+              );
+            })}
+            {stateNode.definition.onExit.map(action => {
+              const actionString = action.type;
+              return (
+                <StyledStateNodeAction
+                  key={actionString}
+                  data-action-type="exit"
+                >
+                  {actionString}
+                </StyledStateNodeAction>
+              );
+            })}
+          </StyledStateNodeActions>
+        )}
         <StyledEvents>
           {getEdges(stateNode, { depth: 0 }).map(edge => {
             const { event: ownEvent } = edge;
@@ -451,6 +447,7 @@ export class StateChartNode extends React.Component<StateChartNodeProps> {
               ownEvent === "";
 
             const disabled: boolean =
+              !isActive ||
               current.nextEvents.indexOf(ownEvent) === -1 ||
               (!!edge.cond &&
                 typeof edge.cond === "function" &&
@@ -465,6 +462,7 @@ export class StateChartNode extends React.Component<StateChartNodeProps> {
                   //@ts-ignore
                   "--delay": edge.transition.delay
                 }}
+                data-disabled={disabled || undefined}
                 key={serializeEdge(edge)}
               >
                 <StyledEventButton
@@ -485,14 +483,21 @@ export class StateChartNode extends React.Component<StateChartNodeProps> {
                 {edge.transition.cond && (
                   <div>{condToString(edge.transition.cond)}</div>
                 )}
-                {edge.transition.actions.map((action, i) => {
-                  const actionString = action.type;
-                  return (
-                    <StyledTransitionAction key={actionString + ":" + i}>
-                      {actionString}
-                    </StyledTransitionAction>
-                  );
-                })}
+                {!!edge.transition.actions.length && (
+                  <StyledStateNodeActions>
+                    {edge.transition.actions.map((action, i) => {
+                      const actionString = action.type;
+                      return (
+                        <StyledStateNodeAction
+                          data-action-type="do"
+                          key={actionString + ":" + i}
+                        >
+                          {actionString}
+                        </StyledStateNodeAction>
+                      );
+                    })}
+                  </StyledStateNodeActions>
+                )}
               </StyledEvent>
             );
           })}
@@ -504,7 +509,6 @@ export class StateChartNode extends React.Component<StateChartNodeProps> {
 
               return (
                 <StateChartNode
-                  toggled={this.props.toggledStates[childStateNode.id]}
                   stateNode={childStateNode}
                   current={current}
                   preview={preview}
@@ -512,22 +516,22 @@ export class StateChartNode extends React.Component<StateChartNodeProps> {
                   onEvent={onEvent}
                   onPreEvent={onPreEvent}
                   onExitPreEvent={onExitPreEvent}
-                  onToggle={this.props.onToggle}
                   toggledStates={this.props.toggledStates}
                 />
               );
             })}
-            {Object.keys(stateNode.states).length > 0 ? (
-              <StyledChildStatesToggle
-                onClick={e => {
-                  e.stopPropagation();
-                  this.props.onToggle(stateNode.id);
-                }}
-              />
-            ) : null}
           </div>
         ) : null}
-      </StyledState>
+        {Object.keys(stateNode.states).length > 0 ? (
+          <StyledChildStatesToggle
+            title={this.state.toggled ? "Hide children" : "Show children"}
+            onClick={e => {
+              e.stopPropagation();
+              this.setState({ toggled: !this.state.toggled });
+            }}
+          />
+        ) : null}
+      </StyledStateNode>
     );
   }
 }

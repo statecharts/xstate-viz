@@ -1,4 +1,10 @@
-import { StateNode, TransitionDefinition, Edge } from "xstate";
+import {
+  StateNode,
+  TransitionDefinition,
+  Edge,
+  Action,
+  ActionObject
+} from "xstate";
 
 export function isChildOf(
   childState: StateNode,
@@ -90,6 +96,10 @@ export function initialStateNodes(stateNode: StateNode): StateNode[] {
       })
     )
   );
+}
+
+export function stateActions(stateNode: StateNode): ActionObject<any>[] {
+  return stateNode.onEntry.concat(stateNode.onExit);
 }
 
 export interface Point {

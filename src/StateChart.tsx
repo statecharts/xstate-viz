@@ -30,11 +30,11 @@ const StyledViewTab = styled.li`
   align-items: center;
 
   &:not([data-active]):hover {
-    border-color: rgba(255, 152, 0, 0.5);
+    border-color: var(--color-secondary-light);
   }
 
   &[data-active] {
-    border-color: rgba(255, 152, 0, 1);
+    border-color: var(--color-secondary);
   }
 `;
 
@@ -58,13 +58,21 @@ const StyledSidebar = styled.div`
   display: grid;
   grid-template-columns: 1fr;
   grid-template-rows: 2rem 1fr;
+  border-radius: 0.5rem
+  box-shadow: 0 0.5rem 1rem rgba(0,0,0,0.2);
 `;
 
-const StyledView = styled.div``;
+const StyledView = styled.div`
+  display: flex;
+  flex-direction: column;
+  justify-content: flex-start;
+  align-items: stretch;
+  overflow: hidden;
+`;
 
 const StyledStateChart = styled.div`
   display: grid;
-  grid-template-columns: 1fr 30rem;
+  grid-template-columns: 1fr 20rem;
   grid-template-rows: auto;
   font-family: sans-serif;
   font-size: 10px;
@@ -80,6 +88,8 @@ const StyledStateChart = styled.div`
 
 const StyledField = styled.div`
   padding: 0.5rem 1rem;
+  width: 100%;
+  overflow: hidden;
 
   > label {
     text-transform: uppercase;
@@ -120,6 +130,7 @@ interface StateChartState {
   code: string;
   toggledStates: Record<string, boolean>;
   service: Interpreter<any>;
+  error?: any;
 }
 
 function toMachine(machine: StateNode<any> | string): StateNode<any> {
@@ -127,7 +138,13 @@ function toMachine(machine: StateNode<any> | string): StateNode<any> {
     return machine;
   }
 
-  const createMachine = new Function("Machine", "interpret", "XState", machine);
+  let createMachine: Function;
+
+  try {
+    createMachine = new Function("Machine", "interpret", "XState", machine);
+  } catch (e) {
+    throw e;
+  }
 
   let resultMachine: StateNode<any>;
 
@@ -148,6 +165,18 @@ const StyledVisualization = styled.div`
   max-height: inherit;
   overflow-y: scroll;
 `;
+
+const StyledStateViewActions = styled.ul`
+  margin: 0;
+  padding: 0;
+  list-style: none;
+`;
+
+const StyledStateViewAction = styled.li`
+  white-space: nowrap;
+  overflow-x: auto;
+`;
+
 export class StateChart extends React.Component<
   StateChartProps,
   StateChartState
@@ -198,35 +227,43 @@ export class StateChart extends React.Component<
       case "state":
         return (
           <>
-            <Field label="Value">
-              <pre>{JSON.stringify(current.value, null, 2)}</pre>
-            </Field>
-            <Field label="Actions">
-              {current.actions.length ? (
-                <ul>
-                  {current.actions.map(action => {
-                    return <li key={action.type}>{action.type}</li>;
-                  })}
-                </ul>
-              ) : (
-                "-"
-              )}
-            </Field>
-            <Field label="Context" disabled={!current.context}>
-              {current.context !== undefined ? (
-                <pre>{JSON.stringify(current.context, null, 2)}</pre>
-              ) : null}
-            </Field>
-            <Field label="Event" style={{ height: "5rem" }}>
+            <div style={{ overflowY: "auto" }}>
+              <Field label="Value">
+                <pre>{JSON.stringify(current.value, null, 2)}</pre>
+              </Field>
+              <Field label="Context" disabled={!current.context}>
+                {current.context !== undefined ? (
+                  <pre>{JSON.stringify(current.context, null, 2)}</pre>
+                ) : null}
+              </Field>
+              <Field label="Actions" disabled={!current.actions.length}>
+                {!!current.actions.length && (
+                  <pre>{JSON.stringify(current.actions, null, 2)}</pre>
+                )}
+              </Field>
+            </div>
+            <Field
+              label="Event"
+              style={{
+                marginTop: "auto",
+                borderTop: "1px solid #777",
+                flexShrink: 0
+              }}
+            >
               <Editor
+                height="5rem"
                 code={'{type: ""}'}
+                changeText="Send event"
                 onChange={code => {
                   try {
                     const eventData = eval(`(${code})`);
 
                     this.state.service.send(eventData);
                   } catch (e) {
-                    alert(e);
+                    console.error(e);
+                    alert(
+                      "Unable to send event.\nCheck the console for more info."
+                    );
                   }
                 }}
               />
@@ -237,21 +274,18 @@ export class StateChart extends React.Component<
         return null;
     }
   }
-  toggleState(id: string) {
-    this.setState(
-      {
-        toggledStates: {
-          ...this.state.toggledStates,
-          [id]: !this.state.toggledStates[id]
-        }
-      },
-      () => {
-        tracker.updateAll();
-      }
-    );
-  }
   updateMachine(code: string) {
-    const machine = toMachine(code);
+    let machine: StateNode;
+
+    try {
+      machine = toMachine(code);
+    } catch (e) {
+      console.error(e);
+      alert(
+        "Error: unable to update the machine.\nCheck the console for more info."
+      );
+      return;
+    }
 
     this.state.service.stop();
     this.setState(
@@ -321,6 +355,8 @@ export class StateChart extends React.Component<
           "--color-link": "rgba(87, 176, 234, 1)",
           "--color-disabled": "#888",
           "--color-edge": "rgba(0, 0, 0, 0.2)",
+          "--color-secondary": "rgba(255,152,0,1)",
+          "--color-secondary-light": "rgba(255,152,0,.5)",
           "--radius": "0.2rem",
           "--border-width": "2px"
         }}
@@ -337,12 +373,10 @@ export class StateChart extends React.Component<
                 previewEvent: event
               })
             }
-            onToggle={id => this.toggleState(id)}
             onExitPreEvent={() =>
               this.setState({ preview: undefined, previewEvent: undefined })
             }
             toggledStates={this.state.toggledStates}
-            toggled={true}
           />
           <svg
             width="100%"
@@ -441,7 +475,6 @@ export class StateChart extends React.Component<
             })}
           </StyledViewTabs>
           <StyledView>{this.renderView()}</StyledView>
-          <footer />
         </StyledSidebar>
       </StyledStateChart>
     );
