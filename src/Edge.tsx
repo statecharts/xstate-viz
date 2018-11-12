@@ -6,7 +6,7 @@ import { tracker, TrackerData } from "./tracker";
 interface EdgeProps {
   edge: XState.Edge<any, any>;
   preview: boolean;
-  svg: ClientRect;
+  svg: SVGSVGElement;
 }
 
 interface EdgeState {
@@ -84,14 +84,14 @@ export class Edge extends Component<EdgeProps, EdgeState> {
     }
 
     const strokeWidth = 2;
-    const svgRect = this.props.svg;
+    const svgRef = this.props.svg;
 
     // const sourceRect = relative(
     //   elSource.getBoundingClientRect(),
     //   svgRef.getBoundingClientRect()
     // );
-    const eventRect = relative(this.state.eventData!.rect!, svgRect);
-    const targetRect = relative(this.state.targetData!.rect!, svgRect);
+    const eventRect = relative(this.state.eventData!.rect!, svgRef);
+    const targetRect = relative(this.state.targetData!.rect!, svgRef);
 
     const eventCenterPt = center(eventRect);
     const targetCenterPt = center(targetRect);

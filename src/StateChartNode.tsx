@@ -10,6 +10,17 @@ import {
 import { tracker } from "./tracker";
 import { getEdges } from "xstate/lib/graph";
 
+const StyledChildStates = styled.div`
+  padding-top: 0.5rem;
+  border-top: 1px solid var(--color-border);
+  display: flex;
+  padding-bottom: 1rem;
+  flex-direction: row;
+  flex-wrap: wrap;
+  align-items: flex-start;
+  min-height: 1rem;
+`;
+
 const StyledChildStatesToggle = styled.button`
   appearance: none;
   display: inline-flex;
@@ -119,16 +130,7 @@ const StyledStateNode = styled.div`
     // opacity: 0.75;
   }
 
-  & > .children {
-    display: flex;
-    padding-bottom: 1rem;
-    flex-direction: row;
-    flex-wrap: wrap;
-    align-items: flex-start;
-    min-height: 1rem;
-  }
-
-  &:not([data-open="true"]) > .children > * {
+  &:not([data-open="true"]) > ${StyledChildStates} > * {
     display: none;
   }
 
@@ -160,7 +162,9 @@ const StyledStateNode = styled.div`
     --color-node-border: var(--color-primary-faded);
   }
 
-  &[data-type~="parallel"] > .children > *:not(${StyledChildStatesToggle}) {
+  &[data-type~="parallel"]
+    > ${StyledChildStates}
+    > *:not(${StyledChildStatesToggle}) {
     border-style: dashed;
   }
 
@@ -503,7 +507,7 @@ export class StateChartNode extends React.Component<StateChartNodeProps> {
           })}
         </StyledEvents>
         {Object.keys(stateNode.states).length ? (
-          <div className="children">
+          <StyledChildStates>
             {Object.keys(stateNode.states || []).map(key => {
               const childStateNode = stateNode.states[key];
 
@@ -520,14 +524,16 @@ export class StateChartNode extends React.Component<StateChartNodeProps> {
                 />
               );
             })}
-          </div>
+          </StyledChildStates>
         ) : null}
         {Object.keys(stateNode.states).length > 0 ? (
           <StyledChildStatesToggle
             title={this.state.toggled ? "Hide children" : "Show children"}
             onClick={e => {
               e.stopPropagation();
-              this.setState({ toggled: !this.state.toggled });
+              this.setState({ toggled: !this.state.toggled }, () => {
+                tracker.updateAll();
+              });
             }}
           />
         ) : null}

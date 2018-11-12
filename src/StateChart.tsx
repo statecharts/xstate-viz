@@ -52,7 +52,7 @@ const StyledViewTabs = styled.ul`
 `;
 
 const StyledSidebar = styled.div`
-  background-color: #272722;
+  background-color: var(--color-sidebar);
   color: white;
   overflow: hidden;
   display: grid;
@@ -99,6 +99,9 @@ const StyledField = styled.div`
   }
 `;
 
+const StyledPre = styled.pre`
+  overflow: auto;
+`;
 interface FieldProps {
   label: string;
   children: any;
@@ -196,9 +199,7 @@ export class StateChart extends React.Component<
           ? this.props.machine
           : `Machine(${JSON.stringify(machine.config, null, 2)})`,
       toggledStates: {},
-      service: interpret(machine, {
-        clock: new SimulatedClock()
-      }).onTransition(current => {
+      service: interpret(machine, {}).onTransition(current => {
         this.setState({ current }, () => {
           if (this.state.previewEvent) {
             this.setState({
@@ -229,16 +230,20 @@ export class StateChart extends React.Component<
           <>
             <div style={{ overflowY: "auto" }}>
               <Field label="Value">
-                <pre>{JSON.stringify(current.value, null, 2)}</pre>
+                <StyledPre>{JSON.stringify(current.value, null, 2)}</StyledPre>
               </Field>
               <Field label="Context" disabled={!current.context}>
                 {current.context !== undefined ? (
-                  <pre>{JSON.stringify(current.context, null, 2)}</pre>
+                  <StyledPre>
+                    {JSON.stringify(current.context, null, 2)}
+                  </StyledPre>
                 ) : null}
               </Field>
               <Field label="Actions" disabled={!current.actions.length}>
                 {!!current.actions.length && (
-                  <pre>{JSON.stringify(current.actions, null, 2)}</pre>
+                  <StyledPre>
+                    {JSON.stringify(current.actions, null, 2)}
+                  </StyledPre>
                 )}
               </Field>
             </div>
@@ -247,7 +252,8 @@ export class StateChart extends React.Component<
               style={{
                 marginTop: "auto",
                 borderTop: "1px solid #777",
-                flexShrink: 0
+                flexShrink: 0,
+                background: "var(--color-sidebar)"
               }}
             >
               <Editor
@@ -347,16 +353,17 @@ export class StateChart extends React.Component<
           height: this.props.height || "100%",
           background: "var(--color-app-background)",
           // @ts-ignore
-          "--color-app-background": "#F3F5F9",
+          "--color-app-background": "#FFF",
           "--color-border": "#dedede",
           "--color-primary": "rgba(87, 176, 234, 1)",
           "--color-primary-faded": "rgba(87, 176, 234, 0.5)",
           "--color-primary-shadow": "rgba(87, 176, 234, 0.1)",
           "--color-link": "rgba(87, 176, 234, 1)",
-          "--color-disabled": "#888",
+          "--color-disabled": "#c7c5c5",
           "--color-edge": "rgba(0, 0, 0, 0.2)",
           "--color-secondary": "rgba(255,152,0,1)",
           "--color-secondary-light": "rgba(255,152,0,.5)",
+          "--color-sidebar": "#272722",
           "--radius": "0.2rem",
           "--border-width": "2px"
         }}
@@ -422,12 +429,12 @@ export class StateChart extends React.Component<
                 return;
               }
 
-              const svgRect = this.svgRef.current.getBoundingClientRect();
+              // const svgRect = this.svgRef.current.getBoundingClientRect();
 
               return (
                 <Edge
                   key={serializeEdge(edge)}
-                  svg={svgRect}
+                  svg={this.svgRef.current}
                   edge={edge}
                   preview={
                     edge.event === previewEvent &&
@@ -443,13 +450,13 @@ export class StateChart extends React.Component<
                 return;
               }
 
-              const svgRect = this.svgRef.current.getBoundingClientRect();
+              // const svgRect = this.svgRef.current.getBoundingClientRect();
 
               return (
                 <InitialEdge
                   key={initialStateNode.id}
                   source={initialStateNode}
-                  svgRect={svgRect}
+                  svgRef={this.svgRef.current}
                   preview={
                     current.matches(initialStateNode.path.join(".")) ||
                     (!!preview &&

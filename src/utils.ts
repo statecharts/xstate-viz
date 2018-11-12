@@ -66,8 +66,10 @@ export function isHidden(el?: Element | null): el is null {
 
 export function relative(
   childRect: ClientRect,
-  parentRect: ClientRect
+  parentElement: Element
 ): ClientRect {
+  const parentRect = parentElement.getBoundingClientRect();
+
   return {
     top: childRect.top - parentRect.top,
     right: childRect.right - parentRect.left,

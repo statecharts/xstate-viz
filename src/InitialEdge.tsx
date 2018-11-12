@@ -5,7 +5,7 @@ import { relative } from "./utils";
 
 interface InitialEdgeProps {
   source: StateNode;
-  svgRect: ClientRect;
+  svgRef: SVGSVGElement;
   preview: boolean;
 }
 
@@ -27,14 +27,14 @@ export class InitialEdge extends React.Component<
     });
   }
   render() {
-    const { svgRect, preview } = this.props;
+    const { svgRef, preview } = this.props;
 
     if (!this.state.sourceElement) {
       return null;
     }
     const rect = relative(
       this.state.sourceElement.getBoundingClientRect(),
-      svgRect
+      svgRef
     );
     const { top, left } = rect;
 

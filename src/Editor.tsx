@@ -26,15 +26,10 @@ export class Editor extends Component<EditorProps> {
   };
   render() {
     const { code } = this.state;
-    const {
-      onChange,
-      height = "100%",
-      changeText = "Update",
-      pad = false
-    } = this.props;
+    const { onChange, height = "100%", changeText = "Update" } = this.props;
 
     return (
-      <StyledEditor data-pad={pad || undefined}>
+      <StyledEditor>
         <AceEditor
           mode="javascript"
           theme="monokai"
