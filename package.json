@@ -1,6 +1,6 @@
 {
   "name": "@statecharts/xstate-viz",
-  "version": "0.0.2",
+  "version": "0.1.0",
   "description": "Visualizer for XState",
   "main": "lib/index.js",
   "scripts": {
