@@ -12,9 +12,11 @@ export interface TrackerData {
 class Tracker {
   public elements: Map<string, TrackerData> = new Map();
   constructor() {
-    window.addEventListener("resize", () => {
-      this.updateAll();
-    });
+    if (typeof window !== "undefined") {
+      window.addEventListener("resize", () => {
+        this.updateAll();
+      });
+    }
   }
 
   updateAll(): void {
