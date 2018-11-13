@@ -1,7 +1,8 @@
 {
-  "name": "examples",
+  "name": "xstate-viz-site",
   "version": "0.1.0",
   "private": true,
+  "homepage": "https://statecharts.github.io/xstate-viz",
   "dependencies": {
     "@types/jest": "23.3.9",
     "@types/node": "10.12.1",
