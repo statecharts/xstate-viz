@@ -1,12 +1,7 @@
 import React from "react";
-import { Machine as _Machine, StateNode, State, EventObject } from "xstate";
+import { Machine as _Machine, StateNode, State } from "xstate";
 import styled from "styled-components";
-import {
-  transitions,
-  condToString,
-  serializeEdge,
-  stateActions
-} from "./utils";
+import { condToString, serializeEdge, stateActions } from "./utils";
 import { tracker } from "./tracker";
 import { getEdges } from "xstate/lib/graph";
 
@@ -244,7 +239,7 @@ const StyledEventButton = styled.button`
   align-items: center;
   margin-right: -0.5rem;
   margin-left: 0.5rem;
-  text-shadow: 0 1px 1px rgba(0, 0, 0, 0.2);
+  text-shadow: 0 1px 1px rgba(0, 0, 0, 0.4);
   overflow: hidden;
 
   &:not(:disabled):not([data-builtin]):hover {
