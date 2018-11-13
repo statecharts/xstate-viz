@@ -5,6 +5,11 @@ import { StateChart } from "@statecharts/xstate-viz";
 import { Machine, StateNode, MachineOptions } from "xstate";
 import { assign } from "xstate/lib/actions";
 
+const lightMachineSrc = `
+// Available variables:
+// Machine (machine factory function)
+// XState (all XState exports)
+
 const lightMachine = Machine({
   id: "light",
   initial: "green",
@@ -20,12 +25,13 @@ const lightMachine = Machine({
     }
   }
 });
+`;
 
 class App extends Component {
   render() {
     return (
       <div className="App">
-        <StateChart machine={lightMachine} />
+        <StateChart machine={lightMachineSrc} />
       </div>
     );
   }
