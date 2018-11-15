@@ -296,7 +296,22 @@ const StyledStateNodeAction = styled.li`
   padding: 0 0.5rem;
   margin: 0;
 
-  &:before {
+  &[data-guard] {
+    &:before,
+    &:after {
+      font-weight: bold;
+    }
+    &:before {
+      content: "[";
+      margin-right: 0.5ch;
+    }
+    &:after {
+      content: "]";
+      margin-left: 0.5ch;
+    }
+  }
+
+  &[data-action-type]:before {
     content: attr(data-action-type) " / ";
     margin-right: 0.5ch;
     font-weight: bold;
@@ -382,7 +397,10 @@ export class StateChartNode extends React.Component<StateChartNodeProps> {
       onPreEvent,
       onExitPreEvent
     } = this.props;
-    const isActive = current.matches(stateNode.path.join(".")) || undefined;
+    const isActive =
+      !stateNode.parent ||
+      current.matches(stateNode.path.join(".")) ||
+      undefined;
     const isPreview = preview
       ? preview.matches(stateNode.path.join(".")) || undefined
       : undefined;
@@ -479,11 +497,15 @@ export class StateChartNode extends React.Component<StateChartNodeProps> {
                   <span>{friendlyEventName(ownEvent)}</span>
                   <StyledEventDot />
                 </StyledEventButton>
-                {edge.transition.cond && (
-                  <div>{condToString(edge.transition.cond)}</div>
-                )}
+
                 {!!edge.transition.actions.length && (
                   <StyledStateNodeActions>
+                    {edge.transition.cond && (
+                      <StyledStateNodeAction data-guard>
+                        {condToString(edge.transition.cond)}
+                      </StyledStateNodeAction>
+                    )}
+
                     {edge.transition.actions.map((action, i) => {
                       const actionString = action.type;
                       return (
