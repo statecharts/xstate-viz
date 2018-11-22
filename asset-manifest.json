@@ -1,7 +1,7 @@
 {
   "main.css": "/xstate-viz/static/css/main.c272ca7f.chunk.css",
-  "main.js": "/xstate-viz/static/js/main.7f9bb533.chunk.js",
-  "main.js.map": "/xstate-viz/static/js/main.7f9bb533.chunk.js.map",
+  "main.js": "/xstate-viz/static/js/main.696d9a67.chunk.js",
+  "main.js.map": "/xstate-viz/static/js/main.696d9a67.chunk.js.map",
   "static/js/1.439c960b.chunk.js": "/xstate-viz/static/js/1.439c960b.chunk.js",
   "static/js/1.439c960b.chunk.js.map": "/xstate-viz/static/js/1.439c960b.chunk.js.map",
   "runtime~main.js": "/xstate-viz/static/js/runtime~main.a29826b7.js",
@@ -9,6 +9,6 @@
   "static/media/logo.svg": "/xstate-viz/static/media/logo.40c1269b.svg",
   "static/css/main.c272ca7f.chunk.css.map": "/xstate-viz/static/css/main.c272ca7f.chunk.css.map",
   "index.html": "/xstate-viz/index.html",
-  "precache-manifest.fca6aeb39d189ed5a8be5742372747f9.js": "/xstate-viz/precache-manifest.fca6aeb39d189ed5a8be5742372747f9.js",
+  "precache-manifest.06dd888737963b7646529eaf2c24094b.js": "/xstate-viz/precache-manifest.06dd888737963b7646529eaf2c24094b.js",
   "service-worker.js": "/xstate-viz/service-worker.js"
 }

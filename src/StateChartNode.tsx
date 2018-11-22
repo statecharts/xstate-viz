@@ -498,7 +498,7 @@ export class StateChartNode extends React.Component<StateChartNodeProps> {
                   <StyledEventDot />
                 </StyledEventButton>
 
-                {!!edge.transition.actions.length && (
+                {!!(edge.transition.actions.length || edge.transition.cond) && (
                   <StyledStateNodeActions>
                     {edge.transition.cond && (
                       <StyledStateNodeAction data-guard>
