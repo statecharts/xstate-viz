@@ -29,6 +29,6 @@
     "react-ace": "^6.2.0",
     "react-dom": "^16.6.0",
     "styled-components": "^4.0.2",
-    "xstate": "^4.0.1"
+    "xstate": "^4.2.4"
   }
 }
