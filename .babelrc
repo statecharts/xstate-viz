@@ -1,0 +1,24 @@
+{
+  "presets": ["env", "react"],
+  "plugins": ["transform-object-rest-spread", "babel-plugin-root-import", "transform-class-properties"],
+  "env": {
+    "test": {
+      "plugins": [
+        "css-modules-transform",
+        ["istanbul", {
+          "extension": [
+            ".jsx"
+          ],
+          "exclude": [
+            "**/server.js",
+            "**/*.spec.js",
+            "**/build/**",
+            "**/*.spec.js",
+            "**/test_helpers/**",
+            "**/test/**"
+          ]
+        }]
+      ]
+    }
+  }
+}
