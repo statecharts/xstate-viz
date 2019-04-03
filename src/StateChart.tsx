@@ -121,6 +121,7 @@ function Field({ label, children, disabled, style }: FieldProps) {
 }
 
 interface StateChartProps {
+  className: string;
   machine: StateNode<any> | string;
   height?: number | string;
 }
@@ -358,6 +359,7 @@ export class StateChart extends React.Component<
 
     return (
       <StyledStateChart
+        className={this.props.className}
         key={code}
         style={{
           height: this.props.height || '100%',
