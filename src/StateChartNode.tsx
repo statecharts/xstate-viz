@@ -332,6 +332,7 @@ const StyledStateNodeAction = styled.li`
   }
 `;
 const StyledEventDot = styled.div`
+  position: relative;
   display: inline-block;
   height: 0.5rem;
   width: 0.5rem;
