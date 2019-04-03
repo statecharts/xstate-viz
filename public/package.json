@@ -11,7 +11,7 @@
     "react": "^16.6.0",
     "react-dom": "^16.6.0",
     "react-scripts": "2.1.0",
-    "xstate": "^4.0.1"
+    "xstate": "^4.4.0"
   },
   "scripts": {
     "start": "react-scripts start",

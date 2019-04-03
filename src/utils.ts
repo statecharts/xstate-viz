@@ -3,8 +3,9 @@ import {
   TransitionDefinition,
   Edge,
   Action,
-  ActionObject
-} from "xstate";
+  ActionObject,
+  Guard
+} from 'xstate';
 
 export function isChildOf(
   childState: StateNode,
@@ -33,21 +34,53 @@ export function transitions(
   );
 }
 
-export function condToString(cond: string | Function) {
-  if (typeof cond === "function") {
-    return cond.toString();
-    // return cond
-    //   .toString()
-    //   .replace(/\n/g, "")
-    //   .match(/\{(.*)\}/)![1]
-    //   .trim();
+export function condToString(cond: Guard<any, any>) {
+  return cond.type;
+  // if (typeof cond === "function") {
+  //   return cond.toString();
+  //   // return cond
+  //   //   .toString()
+  //   //   .replace(/\n/g, "")
+  //   //   .match(/\{(.*)\}/)![1]
+  //   //   .trim();
+  // }
+
+  // return cond;
+}
+
+export function friendlyEventName(event: string) {
+  let match = event.match(/^xstate\.after\((.+)\)/);
+
+  if (match) {
+    const isMs = Number.isFinite(+match[1]);
+    return `after ${match[1]}${isMs ? 'ms' : ''}`;
   }
 
-  return cond;
+  match = event.match(/^done\.state/);
+
+  if (match) {
+    return `done`;
+  }
+
+  if (event === '') {
+    return 'transient';
+  }
+
+  return event;
+}
+
+export function getEventDelay(event: string): string | number | false {
+  let match = event.match(/^xstate\.after\((.+)\)/);
+
+  if (match) {
+    return Number.isFinite(+match[1]) ? +match[1] : match[1];
+  }
+
+  return false;
 }
 
 export function serializeEdge(edge: Edge<any, any>): string {
-  const cond = edge.cond ? `[${edge.cond.toString().replace(/\n/g, "")}]` : "";
+  const cond = edge.cond ? `[${edge.cond.toString().replace(/\n/g, '')}]` : '';
   return `${edge.source.id}:${edge.event}${cond}->${edge.target.id}`;
 }
 
@@ -88,8 +121,8 @@ export function initialStateNodes(stateNode: StateNode): StateNode[] {
       stateKeys.map(key => {
         const childStateNode = stateNode.states[key];
         if (
-          childStateNode.type === "compound" ||
-          childStateNode.type === "parallel"
+          childStateNode.type === 'compound' ||
+          childStateNode.type === 'parallel'
         ) {
           return initialStateNodes(stateNode.states[key]);
         }
@@ -100,7 +133,7 @@ export function initialStateNodes(stateNode: StateNode): StateNode[] {
   );
 }
 
-export function stateActions(stateNode: StateNode): ActionObject<any>[] {
+export function stateActions(stateNode: StateNode): ActionObject<any, any>[] {
   return stateNode.onEntry.concat(stateNode.onExit);
 }
 

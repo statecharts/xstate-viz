@@ -1,9 +1,21 @@
-import React from "react";
-import { Machine as _Machine, StateNode, State } from "xstate";
-import styled from "styled-components";
-import { condToString, serializeEdge, stateActions } from "./utils";
-import { tracker } from "./tracker";
-import { getEdges } from "xstate/lib/graph";
+import React from 'react';
+import {
+  Machine as _Machine,
+  StateNode,
+  State,
+  DelayedTransitionDefinition
+} from 'xstate';
+import styled from 'styled-components';
+import {
+  condToString,
+  serializeEdge,
+  stateActions,
+  friendlyEventName,
+  getEventDelay
+} from './utils';
+import { tracker } from './tracker';
+import { getEdges } from 'xstate/lib/graph';
+import { StyledButton } from './Button';
 
 const StyledChildStates = styled.div`
   padding-top: 0.5rem;
@@ -34,7 +46,7 @@ const StyledChildStatesToggle = styled.button`
 
   &:before {
     --dot-size: 3px;
-    content: "";
+    content: '';
     display: block;
     height: var(--dot-size);
     width: var(--dot-size);
@@ -56,10 +68,12 @@ const StyledStateNodeHeader = styled.header`
   padding: 0.25rem 0;
   bottom: calc(100% + var(--border-width, 0));
   left: calc(-1 * var(--border-width));
+  display: flex;
+  flex-direction: row;
 
   &:before {
     display: none;
-    content: "";
+    content: '';
     position: absolute;
     top: 0;
     left: 0;
@@ -68,7 +82,7 @@ const StyledStateNodeHeader = styled.header`
     background: var(--color-app-background);
   }
 
-  &[data-type-symbol="history" i] {
+  &[data-type-symbol='history' i] {
     --symbol-color: orange;
   }
 
@@ -105,7 +119,7 @@ const StyledStateNode = styled.div`
   color: #313131;
   min-height: 1rem;
 
-  &[data-type~="machine"] {
+  &[data-type~='machine'] {
     border: none;
     box-shadow: none;
     width: 100%;
@@ -121,11 +135,11 @@ const StyledStateNode = styled.div`
       padding-right: 1.5rem;
     }
   }
-  &:not([data-type~="machine"]) {
+  &:not([data-type~='machine']) {
     // opacity: 0.75;
   }
 
-  &:not([data-open="true"]) > ${StyledChildStates} > * {
+  &:not([data-open='true']) > ${StyledChildStates} > * {
     display: none;
   }
 
@@ -135,7 +149,7 @@ const StyledStateNode = styled.div`
     right: 0;
   }
 
-  &[data-type~="machine"] > ${StyledChildStatesToggle} {
+  &[data-type~='machine'] > ${StyledChildStatesToggle} {
     display: none;
   }
 
@@ -157,15 +171,15 @@ const StyledStateNode = styled.div`
     --color-node-border: var(--color-primary-faded);
   }
 
-  &[data-type~="parallel"]
+  &[data-type~='parallel']
     > ${StyledChildStates}
     > *:not(${StyledChildStatesToggle}) {
     border-style: dashed;
   }
 
-  &[data-type~="final"] {
+  &[data-type~='final'] {
     &:after {
-      content: "";
+      content: '';
       position: absolute;
       top: -5px;
       left: -5px;
@@ -258,7 +272,7 @@ const StyledEventButton = styled.button`
   // duration
   &[data-delay]:not([disabled]) {
     &:before {
-      content: "";
+      content: '';
       position: absolute;
       top: 0;
       left: 0;
@@ -302,17 +316,17 @@ const StyledStateNodeAction = styled.li`
       font-weight: bold;
     }
     &:before {
-      content: "[";
+      content: '[';
       margin-right: 0.5ch;
     }
     &:after {
-      content: "]";
+      content: ']';
       margin-left: 0.5ch;
     }
   }
 
   &[data-action-type]:before {
-    content: attr(data-action-type) " / ";
+    content: attr(data-action-type) ' / ';
     margin-right: 0.5ch;
     font-weight: bold;
   }
@@ -326,7 +340,7 @@ const StyledEventDot = styled.div`
   margin-left: 0.5rem;
 
   &:before {
-    content: "";
+    content: '';
     position: absolute;
     top: -0.25rem;
     left: -0.25rem;
@@ -337,7 +351,7 @@ const StyledEventDot = styled.div`
   }
 
   &:after {
-    content: "";
+    content: '';
     position: absolute;
     top: 0;
     left: 0;
@@ -348,26 +362,6 @@ const StyledEventDot = styled.div`
   }
 `;
 
-function friendlyEventName(event: string) {
-  let match = event.match(/^xstate\.after\((\d+)\)/);
-
-  if (match) {
-    return `after ${match[1]}ms`;
-  }
-
-  match = event.match(/^done\.state/);
-
-  if (match) {
-    return `done`;
-  }
-
-  if (event === "") {
-    return "transient";
-  }
-
-  return event;
-}
-
 interface StateChartNodeProps {
   stateNode: StateNode;
   current: State<any, any>;
@@ -375,6 +369,7 @@ interface StateChartNodeProps {
   onEvent: (event: string) => void;
   onPreEvent: (event: string) => void;
   onExitPreEvent: () => void;
+  onReset: () => void;
   toggledStates: Record<string, boolean>;
 }
 
@@ -395,14 +390,15 @@ export class StateChartNode extends React.Component<StateChartNodeProps> {
       preview,
       onEvent,
       onPreEvent,
-      onExitPreEvent
+      onExitPreEvent,
+      onReset
     } = this.props;
     const isActive =
       !stateNode.parent ||
-      current.matches(stateNode.path.join(".")) ||
+      current.matches(stateNode.path.join('.')) ||
       undefined;
     const isPreview = preview
-      ? preview.matches(stateNode.path.join(".")) || undefined
+      ? preview.matches(stateNode.path.join('.')) || undefined
       : undefined;
 
     const dataType = stateNode.parent
@@ -424,10 +420,15 @@ export class StateChartNode extends React.Component<StateChartNodeProps> {
         <StyledStateNodeHeader
           style={{
             // @ts-ignore
-            "--depth": stateNode.path.length
+            '--depth': stateNode.path.length
           }}
         >
           <strong>{stateNode.key}</strong>
+          {stateNode.path.length === 0 ? (
+            <StyledButton data-variant="reset" onClick={() => onReset()}>
+              Reset
+            </StyledButton>
+          ) : null}
         </StyledStateNodeHeader>
         {!!stateActions(stateNode).length && (
           <StyledStateNodeActions>
@@ -459,25 +460,34 @@ export class StateChartNode extends React.Component<StateChartNodeProps> {
           {getEdges(stateNode, { depth: 0 }).map(edge => {
             const { event: ownEvent } = edge;
             const isBuiltInEvent =
-              ownEvent.indexOf("xstate.") === 0 ||
-              ownEvent.indexOf("done.") === 0 ||
-              ownEvent === "";
+              ownEvent.indexOf('xstate.') === 0 ||
+              ownEvent.indexOf('done.') === 0 ||
+              ownEvent === '';
 
             const disabled: boolean =
-              !isActive ||
-              current.nextEvents.indexOf(ownEvent) === -1 ||
-              (!!edge.cond &&
-                typeof edge.cond === "function" &&
-                !edge.cond(current.context, { type: ownEvent }, {}));
+              !isActive || current.nextEvents.indexOf(ownEvent) === -1;
+            // || (!!edge.cond &&
+            //   typeof edge.cond === 'function' &&
+            //   !edge.cond(current.context, { type: ownEvent }, { cond: undefined, }));
             const cond = edge.cond
-              ? `[${edge.cond.toString().replace(/\n/g, "")}]`
-              : "";
+              ? `[${edge.cond.toString().replace(/\n/g, '')}]`
+              : '';
+
+            let delay = isBuiltInEvent ? getEventDelay(ownEvent) : false;
+
+            if (typeof delay === 'string') {
+              const delayExpr = stateNode.machine.options.delays[delay];
+              delay =
+                typeof delayExpr === 'number'
+                  ? delayExpr
+                  : delayExpr(current.context, current.event);
+            }
 
             return (
               <StyledEvent
                 style={{
                   //@ts-ignore
-                  "--delay": edge.transition.delay
+                  '--delay': delay || 0
                 }}
                 data-disabled={disabled || undefined}
                 key={serializeEdge(edge)}
@@ -489,7 +499,10 @@ export class StateChartNode extends React.Component<StateChartNodeProps> {
                   onMouseOver={() => onPreEvent(ownEvent)}
                   onMouseOut={() => onExitPreEvent()}
                   disabled={disabled}
-                  data-delay={edge.transition.delay}
+                  data-delay={
+                    (edge.transition as DelayedTransitionDefinition<any, any>)
+                      .delay
+                  }
                   data-builtin={isBuiltInEvent || undefined}
                   data-id={serializeEdge(edge)}
                   title={ownEvent}
@@ -511,7 +524,7 @@ export class StateChartNode extends React.Component<StateChartNodeProps> {
                       return (
                         <StyledStateNodeAction
                           data-action-type="do"
-                          key={actionString + ":" + i}
+                          key={actionString + ':' + i}
                         >
                           {actionString}
                         </StyledStateNodeAction>
@@ -545,7 +558,7 @@ export class StateChartNode extends React.Component<StateChartNodeProps> {
         ) : null}
         {Object.keys(stateNode.states).length > 0 ? (
           <StyledChildStatesToggle
-            title={this.state.toggled ? "Hide children" : "Show children"}
+            title={this.state.toggled ? 'Hide children' : 'Show children'}
             onClick={e => {
               e.stopPropagation();
               this.setState({ toggled: !this.state.toggled }, () => {

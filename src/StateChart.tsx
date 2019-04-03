@@ -1,22 +1,22 @@
-import React from "react";
-import styled from "styled-components";
-import { interpret, SimulatedClock, Interpreter } from "xstate/lib/interpreter";
+import React from 'react';
+import styled from 'styled-components';
+import { interpret, SimulatedClock, Interpreter } from 'xstate/lib/interpreter';
 import {
   Machine as _Machine,
   StateNode,
   State,
   EventObject,
   Machine
-} from "xstate";
-import * as XState from "xstate";
-import { getEdges } from "xstate/lib/graph";
-import { StateChartNode } from "./StateChartNode";
+} from 'xstate';
+import * as XState from 'xstate';
+import { getEdges } from 'xstate/lib/graph';
+import { StateChartNode } from './StateChartNode';
 
-import { serializeEdge, isHidden, initialStateNodes } from "./utils";
-import { Edge } from "./Edge";
-import { tracker } from "./tracker";
-import { Editor } from "./Editor";
-import { InitialEdge } from "./InitialEdge";
+import { serializeEdge, isHidden, initialStateNodes } from './utils';
+import { Edge } from './Edge';
+import { tracker } from './tracker';
+import { Editor } from './Editor';
+import { InitialEdge } from './InitialEdge';
 
 const StyledViewTab = styled.li`
   padding: 0 1rem;
@@ -137,14 +137,14 @@ interface StateChartState {
 }
 
 function toMachine(machine: StateNode<any> | string): StateNode<any> {
-  if (typeof machine !== "string") {
+  if (typeof machine !== 'string') {
     return machine;
   }
 
   let createMachine: Function;
 
   try {
-    createMachine = new Function("Machine", "interpret", "XState", machine);
+    createMachine = new Function('Machine', 'interpret', 'XState', machine);
   } catch (e) {
     throw e;
   }
@@ -192,10 +192,10 @@ export class StateChart extends React.Component<
       current: machine.initialState,
       preview: undefined,
       previewEvent: undefined,
-      view: "definition", // or 'state'
+      view: 'definition', // or 'state'
       machine: machine,
       code:
-        typeof this.props.machine === "string"
+        typeof this.props.machine === 'string'
           ? this.props.machine
           : `Machine(${JSON.stringify(machine.config, null, 2)})`,
       toggledStates: {},
@@ -218,17 +218,17 @@ export class StateChart extends React.Component<
     const { view, current, machine, code } = this.state;
 
     switch (view) {
-      case "definition":
+      case 'definition':
         return (
           <Editor
             code={this.state.code}
             onChange={code => this.updateMachine(code)}
           />
         );
-      case "state":
+      case 'state':
         return (
           <>
-            <div style={{ overflowY: "auto" }}>
+            <div style={{ overflowY: 'auto' }}>
               <Field label="Value">
                 <StyledPre>{JSON.stringify(current.value, null, 2)}</StyledPre>
               </Field>
@@ -250,10 +250,10 @@ export class StateChart extends React.Component<
             <Field
               label="Event"
               style={{
-                marginTop: "auto",
-                borderTop: "1px solid #777",
+                marginTop: 'auto',
+                borderTop: '1px solid #777',
                 flexShrink: 0,
-                background: "var(--color-sidebar)"
+                background: 'var(--color-sidebar)'
               }}
             >
               <Editor
@@ -268,7 +268,7 @@ export class StateChart extends React.Component<
                   } catch (e) {
                     console.error(e);
                     alert(
-                      "Unable to send event.\nCheck the console for more info."
+                      'Unable to send event.\nCheck the console for more info.'
                     );
                   }
                 }}
@@ -288,11 +288,14 @@ export class StateChart extends React.Component<
     } catch (e) {
       console.error(e);
       alert(
-        "Error: unable to update the machine.\nCheck the console for more info."
+        'Error: unable to update the machine.\nCheck the console for more info.'
       );
       return;
     }
 
+    this.reset(code, machine);
+  }
+  reset(code = this.state.code, machine = this.state.machine) {
     this.state.service.stop();
     this.setState(
       {
@@ -350,22 +353,22 @@ export class StateChart extends React.Component<
       <StyledStateChart
         key={code}
         style={{
-          height: this.props.height || "100%",
-          background: "var(--color-app-background)",
+          height: this.props.height || '100%',
+          background: 'var(--color-app-background)',
           // @ts-ignore
-          "--color-app-background": "#FFF",
-          "--color-border": "#dedede",
-          "--color-primary": "rgba(87, 176, 234, 1)",
-          "--color-primary-faded": "rgba(87, 176, 234, 0.5)",
-          "--color-primary-shadow": "rgba(87, 176, 234, 0.1)",
-          "--color-link": "rgba(87, 176, 234, 1)",
-          "--color-disabled": "#c7c5c5",
-          "--color-edge": "rgba(0, 0, 0, 0.2)",
-          "--color-secondary": "rgba(255,152,0,1)",
-          "--color-secondary-light": "rgba(255,152,0,.5)",
-          "--color-sidebar": "#272722",
-          "--radius": "0.2rem",
-          "--border-width": "2px"
+          '--color-app-background': '#FFF',
+          '--color-border': '#dedede',
+          '--color-primary': 'rgba(87, 176, 234, 1)',
+          '--color-primary-faded': 'rgba(87, 176, 234, 0.5)',
+          '--color-primary-shadow': 'rgba(87, 176, 234, 0.1)',
+          '--color-link': 'rgba(87, 176, 234, 1)',
+          '--color-disabled': '#c7c5c5',
+          '--color-edge': 'rgba(0, 0, 0, 0.2)',
+          '--color-secondary': 'rgba(255,152,0,1)',
+          '--color-secondary-light': 'rgba(255,152,0,.5)',
+          '--color-sidebar': '#272722',
+          '--radius': '0.2rem',
+          '--border-width': '2px'
         }}
       >
         <StyledVisualization>
@@ -373,6 +376,7 @@ export class StateChart extends React.Component<
             stateNode={this.state.machine}
             current={current}
             preview={preview}
+            onReset={this.reset.bind(this)}
             onEvent={this.state.service.send.bind(this)}
             onPreEvent={event =>
               this.setState({
@@ -389,13 +393,13 @@ export class StateChart extends React.Component<
             width="100%"
             height="100%"
             style={{
-              position: "absolute",
+              position: 'absolute',
               top: 0,
               left: 0,
               // @ts-ignore
-              "--color": "gray",
-              overflow: "visible",
-              pointerEvents: "none"
+              '--color': 'gray',
+              overflow: 'visible',
+              pointerEvents: 'none'
             }}
             ref={this.svgRef}
             key={JSON.stringify(this.state.toggledStates)}
@@ -438,9 +442,9 @@ export class StateChart extends React.Component<
                   edge={edge}
                   preview={
                     edge.event === previewEvent &&
-                    current.matches(edge.source.path.join(".")) &&
+                    current.matches(edge.source.path.join('.')) &&
                     !!preview &&
-                    preview.matches(edge.target.path.join("."))
+                    preview.matches(edge.target.path.join('.'))
                   }
                 />
               );
@@ -458,9 +462,9 @@ export class StateChart extends React.Component<
                   source={initialStateNode}
                   svgRef={this.svgRef.current}
                   preview={
-                    current.matches(initialStateNode.path.join(".")) ||
+                    current.matches(initialStateNode.path.join('.')) ||
                     (!!preview &&
-                      preview.matches(initialStateNode.path.join(".")))
+                      preview.matches(initialStateNode.path.join('.')))
                   }
                 />
               );
@@ -469,7 +473,7 @@ export class StateChart extends React.Component<
         </StyledVisualization>
         <StyledSidebar>
           <StyledViewTabs>
-            {["definition", "state"].map(view => {
+            {['definition', 'state'].map(view => {
               return (
                 <StyledViewTab
                   onClick={() => this.setState({ view })}

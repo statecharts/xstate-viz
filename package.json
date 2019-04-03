@@ -1,9 +1,10 @@
 {
   "name": "@statecharts/xstate-viz",
   "version": "0.1.2",
-  "description": "Visualizer for XState",
+  "description": "Visualizer for XState.",
   "main": "lib/index.js",
   "scripts": {
+    "start": "cd public/src && npm start",
     "test": "echo \"Error: no test specified\" && exit 1",
     "examples": "tsc && ncp lib examples/src/lib && cd examples && npm start",
     "prepublish": "tsc",
@@ -32,6 +33,6 @@
     "react-ace": "^6.2.0",
     "react-dom": "^16.6.0",
     "styled-components": "^4.0.2",
-    "xstate": "^4.1.0"
+    "xstate": "^4.3.3"
   }
 }
