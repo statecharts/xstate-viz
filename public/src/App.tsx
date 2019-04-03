@@ -8,16 +8,21 @@ import styled from 'styled-components';
 const lightMachineSrc = `
 // Available variables:
 // Machine (machine factory function)
+// assign (action)
 // XState (all XState exports)
 
 const fetchMachine = Machine({
   id: 'fetch',
+  context: { attempts: 0 },
   initial: 'idle',
   states: {
     idle: {
       on: { FETCH: 'pending'}
     },
     pending: {
+      onEntry: assign({
+        attempts: ctx => ctx.attempts + 1
+      }),
       after: {
         2000: 'rejected'
       },
@@ -27,7 +32,22 @@ const fetchMachine = Machine({
       }
     },
     fulfilled: {
-      type: 'final'
+      initial: 'first',
+      states: {
+        first: {
+          on: {
+            NEXT: 'second'
+          }
+        },
+        second: {
+          on: {
+            NEXT: 'third'
+          }
+        },
+        third: {
+          type: 'final'
+        }
+      }
     },
     rejected: {
       on: {

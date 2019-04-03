@@ -6,7 +6,8 @@ import {
   StateNode,
   State,
   EventObject,
-  Machine
+  Machine,
+  assign
 } from 'xstate';
 import * as XState from 'xstate';
 import { getEdges } from 'xstate/lib/graph';
@@ -144,7 +145,13 @@ function toMachine(machine: StateNode<any> | string): StateNode<any> {
   let createMachine: Function;
 
   try {
-    createMachine = new Function('Machine', 'interpret', 'XState', machine);
+    createMachine = new Function(
+      'Machine',
+      'interpret',
+      'assign',
+      'XState',
+      machine
+    );
   } catch (e) {
     throw e;
   }
@@ -159,7 +166,7 @@ function toMachine(machine: StateNode<any> | string): StateNode<any> {
     return resultMachine;
   };
 
-  createMachine(machineProxy, interpret, XState);
+  createMachine(machineProxy, interpret, assign, XState);
 
   return resultMachine! as StateNode<any>;
 }
