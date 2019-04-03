@@ -8,19 +8,19 @@ self.__precacheManifest = [
     "url": "/xstate-viz/static/js/runtime~main.a29826b7.js"
   },
   {
-    "revision": "963765345ca05ac42394",
-    "url": "/xstate-viz/static/js/main.96376534.chunk.js"
+    "revision": "b93ed2048e7aafb6a303",
+    "url": "/xstate-viz/static/js/main.b93ed204.chunk.js"
   },
   {
-    "revision": "8469c1bd61026c3a9d4b",
-    "url": "/xstate-viz/static/js/1.8469c1bd.chunk.js"
+    "revision": "c954fef531fe9dce779a",
+    "url": "/xstate-viz/static/js/1.c954fef5.chunk.js"
   },
   {
-    "revision": "963765345ca05ac42394",
+    "revision": "b93ed2048e7aafb6a303",
     "url": "/xstate-viz/static/css/main.a93bb449.chunk.css"
   },
   {
-    "revision": "c8a85f94b3c659c7a31729c078486841",
+    "revision": "94f37440be731e2010975ab5d4b219d2",
     "url": "/xstate-viz/index.html"
   }
 ];
