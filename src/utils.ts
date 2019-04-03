@@ -48,8 +48,10 @@ export function condToString(cond: Guard<any, any>) {
   // return cond;
 }
 
+const DELAY_EVENT_REGEX = /^xstate\.after\((.+)\)#/;
+
 export function friendlyEventName(event: string) {
-  let match = event.match(/^xstate\.after\((.+)\)/);
+  let match = event.match(DELAY_EVENT_REGEX);
 
   if (match) {
     const isMs = Number.isFinite(+match[1]);
@@ -70,7 +72,7 @@ export function friendlyEventName(event: string) {
 }
 
 export function getEventDelay(event: string): string | number | false {
-  let match = event.match(/^xstate\.after\((.+)\)/);
+  let match = event.match(DELAY_EVENT_REGEX);
 
   if (match) {
     return Number.isFinite(+match[1]) ? +match[1] : match[1];
