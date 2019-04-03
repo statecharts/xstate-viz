@@ -24,7 +24,7 @@ const fetchMachine = Machine({
         attempts: ctx => ctx.attempts + 1
       }),
       after: {
-        2000: 'rejected'
+        TIMEOUT: 'rejected'
       },
       on: {
         RESOLVE: 'fulfilled',
@@ -50,10 +50,34 @@ const fetchMachine = Machine({
       }
     },
     rejected: {
+      initial: 'can retry',
+      states: {
+        'can retry': {
+          on: {
+            '': {
+              target: 'failure',
+              cond: 'maxAttempts'
+            }
+          }
+        },
+        failure: {
+          on: {
+            RETRY: undefined,
+          },
+          type: 'final'
+        }
+      },
       on: {
         RETRY: 'pending'
       }
     }
+  }
+}, {
+  guards: {
+    maxAttempts: ctx =>  ctx.attempts >= 5
+  },
+  delays: {
+    TIMEOUT: 2000
   }
 });
 `;
