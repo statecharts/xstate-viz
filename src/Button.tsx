@@ -1,5 +1,5 @@
-import React from "react";
-import styled from "styled-components";
+import React from 'react';
+import styled from 'styled-components';
 
 export const StyledButton = styled.button`
   appearance: none;
@@ -23,5 +23,22 @@ export const StyledButton = styled.button`
 
   &:focus {
     outline: none;
+  }
+
+  &[data-variant='reset'] {
+    background: var(--color-secondary);
+    border: none;
+    margin: 0;
+    margin-left: 0.5rem;
+    padding: 0.25rem 0.5rem;
+    height: auto;
+    letter-spacing: 0;
+    font-size: 50%;
+    opacity: 0.8;
+    transition: opacity 0.3s ease;
+
+    &:hover {
+      opacity: 1;
+    }
   }
 `;

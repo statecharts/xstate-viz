@@ -1,28 +1,39 @@
-import React, { Component } from "react";
-import logo from "./logo.svg";
-import "./App.css";
-import { StateChart } from "@statecharts/xstate-viz";
-import { Machine, StateNode, MachineOptions } from "xstate";
-import { assign } from "xstate/lib/actions";
-import styled from "styled-components";
+import React, { Component } from 'react';
+import logo from './logo.svg';
+import './App.css';
+import { StateChart } from '@statecharts/xstate-viz';
+import { Machine, StateNode, MachineOptions } from 'xstate';
+import { assign } from 'xstate/lib/actions';
+import styled from 'styled-components';
 
 const lightMachineSrc = `
 // Available variables:
 // Machine (machine factory function)
 // XState (all XState exports)
 
-const lightMachine = Machine({
-  id: "light",
-  initial: "green",
+const fetchMachine = Machine({
+  id: 'fetch',
+  initial: 'idle',
   states: {
-    green: {
-      on: { TIMER: "yellow" }
+    idle: {
+      on: { FETCH: 'pending'}
     },
-    yellow: {
-      on: { TIMER: "red" }
+    pending: {
+      after: {
+        2000: 'rejected'
+      },
+      on: {
+        RESOLVE: 'fulfilled',
+        REJECT: 'rejected'
+      }
     },
-    red: {
-      on: { TIMER: "green" }
+    fulfilled: {
+      type: 'final'
+    },
+    rejected: {
+      on: {
+        RETRY: 'pending'
+      }
     }
   }
 });
@@ -32,8 +43,8 @@ const StyledApp = styled.main`
   height: 100%;
   display: grid;
   grid-template-areas:
-    "header"
-    "content";
+    'header'
+    'content';
   grid-template-rows: 3rem auto;
   grid-template-columns: 100%;
 `;
@@ -51,7 +62,7 @@ const StyledLogo = styled.img`
   height: 100%;
 `;
 
-const StyledLinks = styled.a`
+const StyledLinks = styled.nav`
   display: flex;
   flex-direction: row;
   margin-left: auto;
