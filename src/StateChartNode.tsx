@@ -369,7 +369,7 @@ interface StateChartNodeProps {
   onEvent: (event: string) => void;
   onPreEvent: (event: string) => void;
   onExitPreEvent: () => void;
-  onReset: () => void;
+  onReset?: () => void;
   toggledStates: Record<string, boolean>;
 }
 
@@ -425,7 +425,10 @@ export class StateChartNode extends React.Component<StateChartNodeProps> {
         >
           <strong>{stateNode.key}</strong>
           {stateNode.path.length === 0 ? (
-            <StyledButton data-variant="reset" onClick={() => onReset()}>
+            <StyledButton
+              data-variant="reset"
+              onClick={onReset ? () => onReset() : undefined}
+            >
               Reset
             </StyledButton>
           ) : null}

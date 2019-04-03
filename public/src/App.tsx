@@ -2,8 +2,7 @@ import React, { Component } from 'react';
 import logo from './logo.svg';
 import './App.css';
 import { StateChart } from '@statecharts/xstate-viz';
-import { Machine, StateNode, MachineOptions } from 'xstate';
-import { assign } from 'xstate/lib/actions';
+import { Machine, StateNode, MachineOptions, assign } from 'xstate';
 import styled from 'styled-components';
 
 const lightMachineSrc = `
