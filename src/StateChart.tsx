@@ -458,7 +458,7 @@ export class StateChart extends React.Component<
                 />
               );
             })}
-            {initialStateNodes(machine).map(initialStateNode => {
+            {initialStateNodes(machine).map((initialStateNode, i) => {
               if (!this.svgRef.current) {
                 return;
               }
@@ -467,7 +467,7 @@ export class StateChart extends React.Component<
 
               return (
                 <InitialEdge
-                  key={initialStateNode.id}
+                  key={`${initialStateNode.id}_${i}`}
                   source={initialStateNode}
                   svgRef={this.svgRef.current}
                   preview={
