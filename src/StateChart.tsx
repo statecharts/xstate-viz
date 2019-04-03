@@ -73,10 +73,10 @@ const StyledView = styled.div`
 
 const StyledStateChart = styled.div`
   display: grid;
-  grid-template-columns: 1fr 20rem;
+  grid-template-columns: 1fr 25rem;
   grid-template-rows: auto;
   font-family: sans-serif;
-  font-size: 10px;
+  font-size: 12px;
   overflow: hidden;
   max-height: inherit;
   padding: 1rem;

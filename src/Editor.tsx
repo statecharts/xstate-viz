@@ -1,9 +1,9 @@
-import React, { Component } from "react";
-import AceEditor from "react-ace";
-import "brace/theme/monokai";
-import "brace/mode/javascript";
-import { StyledButton } from "./Button";
-import styled from "styled-components";
+import React, { Component } from 'react';
+import AceEditor from 'react-ace';
+import 'brace/theme/monokai';
+import 'brace/mode/javascript';
+import { StyledButton } from './Button';
+import styled from 'styled-components';
 
 interface EditorProps {
   code: string;
@@ -26,7 +26,7 @@ export class Editor extends Component<EditorProps> {
   };
   render() {
     const { code } = this.state;
-    const { onChange, height = "100%", changeText = "Update" } = this.props;
+    const { onChange, height = '100%', changeText = 'Update' } = this.props;
 
     return (
       <StyledEditor>
@@ -36,7 +36,7 @@ export class Editor extends Component<EditorProps> {
           editorProps={{ $blockScrolling: true }}
           value={code}
           onChange={value => this.setState({ code: value })}
-          setOptions={{ tabSize: 2, fontSize: "10px" }}
+          setOptions={{ tabSize: 2, fontSize: '12px' }}
           width="100%"
           height={height as string}
           showGutter={false}
