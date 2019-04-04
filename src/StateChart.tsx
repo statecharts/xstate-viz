@@ -59,7 +59,7 @@ const StyledSidebar = styled.div`
   display: grid;
   grid-template-columns: 1fr;
   grid-template-rows: 2rem 1fr;
-  border-radius: 0.5rem
+  border-radius: 0.5rem;
   box-shadow: 0 0.5rem 1rem rgba(0,0,0,0.2);
 `;
 
@@ -83,7 +83,7 @@ const StyledStateChart = styled.div`
 
   > * {
     max-height: inherit;
-    overflow-y: scroll;
+    overflow-y: auto;
   }
 `;
 
@@ -174,7 +174,7 @@ function toMachine(machine: StateNode<any> | string): StateNode<any> {
 
 const StyledVisualization = styled.div`
   max-height: inherit;
-  overflow-y: scroll;
+  overflow-y: auto;
 `;
 
 const StyledStateViewActions = styled.ul`
