@@ -173,6 +173,7 @@ function toMachine(machine: StateNode<any> | string): StateNode<any> {
 }
 
 const StyledVisualization = styled.div`
+  position: relative;
   max-height: inherit;
   overflow-y: auto;
 `;
