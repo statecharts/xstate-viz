@@ -107,6 +107,7 @@ const StyledStateNodeHeader = styled.header`
 const StyledStateNode = styled.div`
   --color-shadow: rgba(0, 0, 0, 0.05);
   --color-node-border: var(--color-border);
+  position: relative;
   display: inline-block;
   border-radius: 0.25rem;
   text-align: left;
