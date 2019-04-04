@@ -238,6 +238,7 @@ const StyledEvent = styled.li`
 
 const StyledEventButton = styled.button`
   --color-event: var(--color-primary);
+  position: relative;
   appearance: none;
   background-color: var(--color-event);
   border: none;
