@@ -59,7 +59,7 @@ const StyledSidebar = styled.div`
   display: grid;
   grid-template-columns: 1fr;
   grid-template-rows: 2rem 1fr;
-  border-radius: 0.5rem
+  border-radius: 0.5rem;
   box-shadow: 0 0.5rem 1rem rgba(0,0,0,0.2);
 `;
 
@@ -83,7 +83,7 @@ const StyledStateChart = styled.div`
 
   > * {
     max-height: inherit;
-    overflow-y: scroll;
+    overflow-y: auto;
   }
 `;
 
@@ -121,6 +121,7 @@ function Field({ label, children, disabled, style }: FieldProps) {
 }
 
 interface StateChartProps {
+  className: string;
   machine: StateNode<any> | string;
   height?: number | string;
 }
@@ -172,8 +173,9 @@ function toMachine(machine: StateNode<any> | string): StateNode<any> {
 }
 
 const StyledVisualization = styled.div`
+  position: relative;
   max-height: inherit;
-  overflow-y: scroll;
+  overflow-y: auto;
 `;
 
 const StyledStateViewActions = styled.ul`
@@ -358,6 +360,7 @@ export class StateChart extends React.Component<
 
     return (
       <StyledStateChart
+        className={this.props.className}
         key={code}
         style={{
           height: this.props.height || '100%',
@@ -456,7 +459,7 @@ export class StateChart extends React.Component<
                 />
               );
             })}
-            {initialStateNodes(machine).map(initialStateNode => {
+            {initialStateNodes(machine).map((initialStateNode, i) => {
               if (!this.svgRef.current) {
                 return;
               }
@@ -465,7 +468,7 @@ export class StateChart extends React.Component<
 
               return (
                 <InitialEdge
-                  key={initialStateNode.id}
+                  key={`${initialStateNode.id}_${i}`}
                   source={initialStateNode}
                   svgRef={this.svgRef.current}
                   preview={

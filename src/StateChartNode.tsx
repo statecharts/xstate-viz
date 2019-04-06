@@ -107,6 +107,7 @@ const StyledStateNodeHeader = styled.header`
 const StyledStateNode = styled.div`
   --color-shadow: rgba(0, 0, 0, 0.05);
   --color-node-border: var(--color-border);
+  position: relative;
   display: inline-block;
   border-radius: 0.25rem;
   text-align: left;
@@ -237,6 +238,7 @@ const StyledEvent = styled.li`
 
 const StyledEventButton = styled.button`
   --color-event: var(--color-primary);
+  position: relative;
   appearance: none;
   background-color: var(--color-event);
   border: none;
@@ -332,6 +334,7 @@ const StyledStateNodeAction = styled.li`
   }
 `;
 const StyledEventDot = styled.div`
+  position: relative;
   display: inline-block;
   height: 0.5rem;
   width: 0.5rem;
