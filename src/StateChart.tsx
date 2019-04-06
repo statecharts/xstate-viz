@@ -60,7 +60,7 @@ const StyledSidebar = styled.div`
   grid-template-columns: 1fr;
   grid-template-rows: 2rem 1fr;
   border-radius: 0.5rem;
-  box-shadow: 0 0.5rem 1rem rgba(0,0,0,0.2);
+  box-shadow: 0 0.5rem 1rem rgba(0, 0, 0, 0.2);
 `;
 
 const StyledView = styled.div`
@@ -121,7 +121,7 @@ function Field({ label, children, disabled, style }: FieldProps) {
 }
 
 interface StateChartProps {
-  className: string;
+  className?: string;
   machine: StateNode<any> | string;
   height?: number | string;
 }
