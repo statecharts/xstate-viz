@@ -11,6 +11,9 @@
     "develop": "concurrently \"tsc -w\" \"cd public && npm start\"",
     "deploy": "cd public && npm run deploy"
   },
+  "files": [
+    "lib"
+  ],
   "author": "David Khourshid",
   "license": "MIT",
   "devDependencies": {
