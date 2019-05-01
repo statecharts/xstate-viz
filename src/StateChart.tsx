@@ -121,7 +121,7 @@ function Field({ label, children, disabled, style }: FieldProps) {
 }
 
 interface StateChartProps {
-  className: string;
+  className?: string;
   machine: StateNode<any> | string;
   height?: number | string;
 }
