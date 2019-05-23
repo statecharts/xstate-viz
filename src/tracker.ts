@@ -1,4 +1,4 @@
-import { isHidden } from "./utils";
+import { isHidden } from './utils';
 
 type Listener = (data: TrackerData) => void;
 
@@ -12,8 +12,8 @@ export interface TrackerData {
 class Tracker {
   public elements: Map<string, TrackerData> = new Map();
   constructor() {
-    if (typeof window !== "undefined") {
-      window.addEventListener("resize", () => {
+    if (typeof window !== 'undefined') {
+      window.addEventListener('resize', () => {
         this.updateAll();
       });
     }

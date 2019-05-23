@@ -1,6 +1,6 @@
 import React from 'react';
 import styled from 'styled-components';
-import { interpret, SimulatedClock, Interpreter } from 'xstate/lib/interpreter';
+import { interpret, Interpreter } from 'xstate/lib/interpreter';
 import {
   Machine as _Machine,
   StateNode,
@@ -15,7 +15,6 @@ import { StateChartNode } from './StateChartNode';
 
 import { serializeEdge, isHidden, initialStateNodes } from './utils';
 import { Edge } from './Edge';
-import { tracker } from './tracker';
 import { Editor } from './Editor';
 import { InitialEdge } from './InitialEdge';
 
@@ -382,23 +381,6 @@ export class StateChart extends React.Component<
         }}
       >
         <StyledVisualization>
-          <StateChartNode
-            stateNode={this.state.machine}
-            current={current}
-            preview={preview}
-            onReset={this.reset.bind(this)}
-            onEvent={this.state.service.send.bind(this)}
-            onPreEvent={event =>
-              this.setState({
-                preview: this.state.service.nextState(event),
-                previewEvent: event
-              })
-            }
-            onExitPreEvent={() =>
-              this.setState({ preview: undefined, previewEvent: undefined })
-            }
-            toggledStates={this.state.toggledStates}
-          />
           <svg
             width="100%"
             height="100%"
@@ -480,6 +462,23 @@ export class StateChart extends React.Component<
               );
             })}
           </svg>
+          <StateChartNode
+            stateNode={this.state.machine}
+            current={current}
+            preview={preview}
+            onReset={this.reset.bind(this)}
+            onEvent={this.state.service.send.bind(this)}
+            onPreEvent={event =>
+              this.setState({
+                preview: this.state.service.nextState(event),
+                previewEvent: event
+              })
+            }
+            onExitPreEvent={() =>
+              this.setState({ preview: undefined, previewEvent: undefined })
+            }
+            toggledStates={this.state.toggledStates}
+          />
         </StyledVisualization>
         <StyledSidebar>
           <StyledViewTabs>

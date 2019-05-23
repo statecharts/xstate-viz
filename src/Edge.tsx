@@ -1,7 +1,7 @@
-import React, { Component } from "react";
-import * as XState from "xstate";
-import { serializeEdge, isHidden, relative, center, Point } from "./utils";
-import { tracker, TrackerData } from "./tracker";
+import React, { Component } from 'react';
+import * as XState from 'xstate';
+import { serializeEdge, isHidden, relative, center, Point } from './utils';
+import { tracker, TrackerData } from './tracker';
 
 interface EdgeProps {
   edge: XState.Edge<any, any>;
@@ -84,15 +84,17 @@ export class Edge extends Component<EdgeProps, EdgeState> {
     const strokeWidth = 2;
     const svgRef = this.props.svg;
 
-    // const sourceRect = relative(
-    //   elSource.getBoundingClientRect(),
-    //   svgRef.getBoundingClientRect()
-    // );
+    const sourceRect = relative(this.state.sourceData!.rect!, svgRef);
     const eventRect = relative(this.state.eventData!.rect!, svgRef);
     const targetRect = relative(this.state.targetData!.rect!, svgRef);
 
     const eventCenterPt = center(eventRect);
     const targetCenterPt = center(targetRect);
+
+    const preStart = {
+      x: sourceRect.right,
+      y: eventCenterPt.y
+    };
 
     const start = {
       x: eventRect.right - 4,
@@ -108,11 +110,11 @@ export class Edge extends Component<EdgeProps, EdgeState> {
       (targetCenterPt.y - eventCenterPt.y) /
       (targetCenterPt.x - eventCenterPt.x);
     let b = eventCenterPt.y - m * eventCenterPt.x;
-    let endSide: "left" | "top" | "bottom" | "right";
+    let endSide: 'left' | 'top' | 'bottom' | 'right';
     const bezierPad = 10;
 
     if (edge.source === edge.target) {
-      endSide = "right";
+      endSide = 'right';
       end.y = start.y + 10;
       end.x = start.x;
     } else {
@@ -120,49 +122,49 @@ export class Edge extends Component<EdgeProps, EdgeState> {
         if (m * targetRect.left + b < targetRect.top) {
           end.y = targetRect.top;
           end.x = (end.y - b) / m;
-          endSide = "top";
+          endSide = 'top';
         } else if (m * targetRect.left + b > targetRect.bottom) {
           end.y = targetRect.bottom;
           end.x = (end.y - b) / m;
-          endSide = "bottom";
+          endSide = 'bottom';
         } else {
           end.x = targetRect.left;
           end.y = m * end.x + b;
-          endSide = "left";
+          endSide = 'left';
         }
       } else {
         if (m * targetRect.right + b < targetRect.top) {
           end.y = targetRect.top;
           end.x = (end.y - b) / m;
-          endSide = "top";
+          endSide = 'top';
         } else if (m * targetRect.right + b > targetRect.bottom) {
           end.y = targetRect.bottom;
           end.x = (end.y - b) / m;
-          endSide = "bottom";
+          endSide = 'bottom';
         } else {
           end.x = targetRect.right - bezierPad;
           if (eventCenterPt.y > targetCenterPt.y) {
             end.y = targetRect.bottom;
-            endSide = "bottom";
+            endSide = 'bottom';
           } else {
             end.y = targetRect.top;
-            endSide = "top";
+            endSide = 'top';
           }
         }
       }
     }
 
     switch (endSide) {
-      case "bottom":
+      case 'bottom':
         end.y += 4;
         break;
-      case "top":
+      case 'top':
         end.y -= 4;
         break;
-      case "left":
+      case 'left':
         end.x -= 4;
         break;
-      case "right":
+      case 'right':
         end.x += 4;
         break;
     }
@@ -181,16 +183,16 @@ export class Edge extends Component<EdgeProps, EdgeState> {
             : start.y + bezierPad
           : start.y
     };
-    const points: Point[] = [start, postStart];
+    const points: Point[] = [preStart, start, postStart];
 
-    if (endSide === "top") {
+    if (endSide === 'top') {
       preEnd.y = preEnd.y - bezierPad;
-    } else if (endSide === "bottom") {
+    } else if (endSide === 'bottom') {
       preEnd.y = preEnd.y + bezierPad;
-    } else if (endSide === "left") {
+    } else if (endSide === 'left') {
       preEnd.y = end.y;
       preEnd.x = end.x - bezierPad;
-    } else if (endSide === "right") {
+    } else if (endSide === 'right') {
       preEnd.y = end.y;
       preEnd.x = end.x + bezierPad;
     }
@@ -231,7 +233,7 @@ export class Edge extends Component<EdgeProps, EdgeState> {
       };
 
       return acc + ` Q ${point.x},${point.y} ${midpoint2.x},${midpoint2.y}`;
-    }, "");
+    }, '');
 
     const isHighlighted = this.props.preview;
 
@@ -239,7 +241,7 @@ export class Edge extends Component<EdgeProps, EdgeState> {
       <g>
         <path
           d={path}
-          stroke={isHighlighted ? "gray" : "var(--color-edge)"}
+          stroke={isHighlighted ? 'gray' : 'var(--color-edge)'}
           strokeWidth={strokeWidth}
           fill="none"
           markerEnd={isHighlighted ? `url(#marker-preview)` : `url(#marker)`}

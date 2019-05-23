@@ -28,7 +28,7 @@ export function transitions(
   stateNode: StateNode
 ): TransitionDefinition<any, any>[] {
   return flatten(
-    stateNode.ownEvents.map(event => {
+    stateNode.ownEvents.map((event: string) => {
       return stateNode.definition.on[event];
     })
   );
