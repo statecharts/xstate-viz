@@ -1,4 +1,5 @@
 import React from 'react';
+import { ReactPortal } from 'react';
 import { ActionObject, Guard, State, SendActionObject } from 'xstate';
 import { actionTypes } from 'xstate/lib/actions';
 import styled from 'styled-components';
@@ -6,20 +7,6 @@ import styled from 'styled-components';
 interface StateChartActionProps {
   action: ActionObject<any, any>;
 }
-
-// {typeof action.assignment === 'function' ? (
-//   <div>
-//     <strong>*</strong>: <code>{action.assignment.toString()}</code>
-//   </div>
-// ) : (
-//   Object.keys(action.assignment).map(key => {
-//     return (
-//       <div key={key}>
-//         <strong>{key}</strong>: {action.assignment[key].toString()}
-//       </div>
-//     );
-//   })
-// )}
 
 const StyledStateChartAction = styled.li`
   white-space: nowrap;

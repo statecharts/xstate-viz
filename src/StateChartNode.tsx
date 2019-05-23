@@ -138,7 +138,7 @@ const StyledStateNode = styled.div`
     // opacity: 0.75;
   }
 
-  &:not([data-open='true']) > ${StyledChildStates} > * {
+  &:not([data-open='true']) ${StyledChildStates} > * {
     display: none;
   }
 
