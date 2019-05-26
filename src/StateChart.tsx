@@ -16,8 +16,8 @@ import { StateChartNode } from './StateChartNode';
 import { serializeEdge, isHidden, initialStateNodes } from './utils';
 import { Edge } from './Edge';
 import { tracker } from './tracker';
-import { Editor } from './Editor';
 import { InitialEdge } from './InitialEdge';
+import { EditorRender } from './EditorRender';
 
 const StyledViewTab = styled.li`
   padding: 0 1rem;
@@ -60,7 +60,7 @@ const StyledSidebar = styled.div`
   grid-template-columns: 1fr;
   grid-template-rows: 2rem 1fr;
   border-radius: 0.5rem;
-  box-shadow: 0 0.5rem 1rem rgba(0,0,0,0.2);
+  box-shadow: 0 0.5rem 1rem rgba(0, 0, 0, 0.2);
 `;
 
 const StyledView = styled.div`
@@ -86,39 +86,6 @@ const StyledStateChart = styled.div`
     overflow-y: auto;
   }
 `;
-
-const StyledField = styled.div`
-  padding: 0.5rem 1rem;
-  width: 100%;
-  overflow: hidden;
-
-  > label {
-    text-transform: uppercase;
-    display: block;
-    margin-bottom: 0.5em;
-    font-weight: bold;
-  }
-`;
-
-const StyledPre = styled.pre`
-  overflow: auto;
-`;
-interface FieldProps {
-  label: string;
-  children: any;
-  disabled?: boolean;
-  style?: any;
-}
-function Field({ label, children, disabled, style }: FieldProps) {
-  return (
-    <StyledField
-      style={{ ...style, ...(disabled ? { opacity: 0.5 } : undefined) }}
-    >
-      <label>{label}</label>
-      {children}
-    </StyledField>
-  );
-}
 
 interface StateChartProps {
   className?: string;
@@ -222,72 +189,6 @@ export class StateChart extends React.Component<
   svgRef = React.createRef<SVGSVGElement>();
   componentDidMount() {
     this.state.service.start();
-  }
-  renderView() {
-    const { view, current, machine, code } = this.state;
-
-    switch (view) {
-      case 'definition':
-        return (
-          <Editor
-            code={this.state.code}
-            onChange={code => this.updateMachine(code)}
-          />
-        );
-      case 'state':
-        return (
-          <>
-            <div style={{ overflowY: 'auto' }}>
-              <Field label="Value">
-                <StyledPre>{JSON.stringify(current.value, null, 2)}</StyledPre>
-              </Field>
-              <Field label="Context" disabled={!current.context}>
-                {current.context !== undefined ? (
-                  <StyledPre>
-                    {JSON.stringify(current.context, null, 2)}
-                  </StyledPre>
-                ) : null}
-              </Field>
-              <Field label="Actions" disabled={!current.actions.length}>
-                {!!current.actions.length && (
-                  <StyledPre>
-                    {JSON.stringify(current.actions, null, 2)}
-                  </StyledPre>
-                )}
-              </Field>
-            </div>
-            <Field
-              label="Event"
-              style={{
-                marginTop: 'auto',
-                borderTop: '1px solid #777',
-                flexShrink: 0,
-                background: 'var(--color-sidebar)'
-              }}
-            >
-              <Editor
-                height="5rem"
-                code={'{type: ""}'}
-                changeText="Send event"
-                onChange={code => {
-                  try {
-                    const eventData = eval(`(${code})`);
-
-                    this.state.service.send(eventData);
-                  } catch (e) {
-                    console.error(e);
-                    alert(
-                      'Unable to send event.\nCheck the console for more info.'
-                    );
-                  }
-                }}
-              />
-            </Field>
-          </>
-        );
-      default:
-        return null;
-    }
   }
   updateMachine(code: string) {
     let machine: StateNode;
@@ -495,7 +396,21 @@ export class StateChart extends React.Component<
               );
             })}
           </StyledViewTabs>
-          <StyledView>{this.renderView()}</StyledView>
+          <StyledView>
+            <EditorRender
+              view={this.state.view}
+              current={this.state.current}
+              code={this.state.code}
+              onEditorChange={{
+                definition: code => {
+                  this.updateMachine(code);
+                },
+                state: eventData => {
+                  this.state.service.send(eventData);
+                }
+              }}
+            />
+          </StyledView>
         </StyledSidebar>
       </StyledStateChart>
     );
