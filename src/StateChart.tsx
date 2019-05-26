@@ -11,13 +11,10 @@ import {
 } from 'xstate';
 import * as XState from 'xstate';
 import { getEdges } from 'xstate/lib/graph';
-import { StateChartNode } from './StateChartNode';
 
-import { serializeEdge, isHidden, initialStateNodes } from './utils';
-import { Edge } from './Edge';
 import { tracker } from './tracker';
-import { InitialEdge } from './InitialEdge';
 import { EditorRender } from './EditorRender';
+import { Visualizer } from './Visualizer';
 
 const StyledViewTab = styled.li`
   padding: 0 1rem;
@@ -186,7 +183,7 @@ export class StateChart extends React.Component<
       })
     };
   })();
-  svgRef = React.createRef<SVGSVGElement>();
+
   componentDidMount() {
     this.state.service.start();
   }
@@ -283,104 +280,25 @@ export class StateChart extends React.Component<
         }}
       >
         <StyledVisualization>
-          <StateChartNode
-            stateNode={this.state.machine}
-            current={current}
-            preview={preview}
-            onReset={this.reset.bind(this)}
-            onEvent={this.state.service.send.bind(this)}
-            onPreEvent={event =>
+          <Visualizer
+            machine={this.state.machine}
+            current={this.state.current}
+            preview={this.state.preview}
+            previewEvent={this.state.previewEvent}
+            onStateChartNodeReset={this.reset.bind(this)}
+            onStateChartNodeEvent={this.state.service.send.bind(this)}
+            onStateChartNodePreEvent={event =>
               this.setState({
                 preview: this.state.service.nextState(event),
                 previewEvent: event
               })
             }
-            onExitPreEvent={() =>
+            onStateChartNodeExitPreEvent={() =>
               this.setState({ preview: undefined, previewEvent: undefined })
             }
             toggledStates={this.state.toggledStates}
+            edges={edges}
           />
-          <svg
-            width="100%"
-            height="100%"
-            style={{
-              position: 'absolute',
-              top: 0,
-              left: 0,
-              // @ts-ignore
-              '--color': 'gray',
-              overflow: 'visible',
-              pointerEvents: 'none'
-            }}
-            ref={this.svgRef}
-            key={JSON.stringify(this.state.toggledStates)}
-          >
-            <defs>
-              <marker
-                id="marker"
-                markerWidth="4"
-                markerHeight="4"
-                refX="2"
-                refY="2"
-                markerUnits="strokeWidth"
-                orient="auto"
-              >
-                <path d="M0,0 L0,4 L4,2 z" fill="var(--color-edge)" />
-              </marker>
-              <marker
-                id="marker-preview"
-                markerWidth="4"
-                markerHeight="4"
-                refX="2"
-                refY="2"
-                markerUnits="strokeWidth"
-                orient="auto"
-              >
-                <path d="M0,0 L0,4 L4,2 z" fill="gray" />
-              </marker>
-            </defs>
-            {edges.map(edge => {
-              if (!this.svgRef.current) {
-                return;
-              }
-
-              // const svgRect = this.svgRef.current.getBoundingClientRect();
-
-              return (
-                <Edge
-                  key={serializeEdge(edge)}
-                  svg={this.svgRef.current}
-                  edge={edge}
-                  preview={
-                    edge.event === previewEvent &&
-                    current.matches(edge.source.path.join('.')) &&
-                    !!preview &&
-                    preview.matches(edge.target.path.join('.'))
-                  }
-                />
-              );
-            })}
-            {initialStateNodes(machine).map((initialStateNode, i) => {
-              if (!this.svgRef.current) {
-                return;
-              }
-
-              // const svgRect = this.svgRef.current.getBoundingClientRect();
-
-              return (
-                <InitialEdge
-                  key={`${initialStateNode.id}_${i}`}
-                  source={initialStateNode}
-                  svgRef={this.svgRef.current}
-                  preview={
-                    current.matches(initialStateNode.path.join('.')) ||
-                    (!!preview &&
-                      preview.matches(initialStateNode.path.join('.')))
-                  }
-                />
-              );
-            })}
-          </svg>
         </StyledVisualization>
         <StyledSidebar>
           <StyledViewTabs>
