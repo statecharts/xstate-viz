@@ -215,7 +215,16 @@ export class StateChart extends React.Component<
     );
   }
   render() {
-    const { current, preview, previewEvent, machine, code } = this.state;
+    const {
+      current,
+      preview,
+      previewEvent,
+      machine,
+      code,
+      view,
+      service,
+      toggledStates
+    } = this.state;
 
     const edges = getEdges(machine);
 
@@ -261,50 +270,50 @@ export class StateChart extends React.Component<
       >
         <StyledVisualization>
           <Visualizer
-            machine={this.state.machine}
-            current={this.state.current}
-            preview={this.state.preview}
-            previewEvent={this.state.previewEvent}
+            machine={machine}
+            current={current}
+            preview={preview}
+            previewEvent={previewEvent}
             onStateChartNodeReset={this.reset.bind(this)}
-            onStateChartNodeEvent={this.state.service.send.bind(this)}
+            onStateChartNodeEvent={service.send.bind(this)}
             onStateChartNodePreEvent={event =>
               this.setState({
-                preview: this.state.service.nextState(event),
+                preview: service.nextState(event),
                 previewEvent: event
               })
             }
             onStateChartNodeExitPreEvent={() =>
               this.setState({ preview: undefined, previewEvent: undefined })
             }
-            toggledStates={this.state.toggledStates}
+            toggledStates={toggledStates}
             edges={edges}
           />
         </StyledVisualization>
         <StyledSidebar>
           <StyledViewTabs>
-            {['definition', 'state'].map(view => {
+            {['definition', 'state'].map(mappedView => {
               return (
                 <StyledViewTab
-                  onClick={() => this.setState({ view })}
-                  key={view}
-                  data-active={this.state.view === view || undefined}
+                  onClick={() => this.setState({ view: mappedView })}
+                  key={mappedView}
+                  data-active={view === mappedView || undefined}
                 >
-                  {view}
+                  {mappedView}
                 </StyledViewTab>
               );
             })}
           </StyledViewTabs>
           <StyledView>
             <EditorRender
-              view={this.state.view}
-              current={this.state.current}
-              code={this.state.code}
+              view={view}
+              current={current}
+              code={code}
               onEditorChange={{
                 definition: code => {
                   this.updateMachine(code);
                 },
                 state: eventData => {
-                  this.state.service.send(eventData);
+                  service.send(eventData);
                 }
               }}
             />
