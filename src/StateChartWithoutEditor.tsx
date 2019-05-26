@@ -1,0 +1,242 @@
+import React from 'react';
+import styled from 'styled-components';
+import { interpret, Interpreter } from 'xstate/lib/interpreter';
+import { Machine as _Machine, StateNode, State, Machine, assign } from 'xstate';
+import * as XState from 'xstate';
+import { getEdges } from 'xstate/lib/graph';
+import { Visualizer } from './Visualizer';
+
+const StyledStateChart = styled.div`
+  display: grid;
+  grid-template-columns: 1fr;
+  grid-template-rows: auto;
+  font-family: sans-serif;
+  font-size: 12px;
+  overflow: hidden;
+  max-height: inherit;
+  padding: 1rem;
+
+  > * {
+    max-height: inherit;
+    overflow-y: auto;
+  }
+`;
+
+interface StateChartProps {
+  className?: string;
+  machine: StateNode<any> | string;
+  height?: number | string;
+}
+
+interface StateChartState {
+  machine: StateNode<any>;
+  current: State<any, any>;
+  preview?: State<any, any>;
+  previewEvent?: string;
+  view: string; //"definition" | "state";
+  code: string;
+  toggledStates: Record<string, boolean>;
+  service: Interpreter<any>;
+  error?: any;
+}
+
+function toMachine(machine: StateNode<any> | string): StateNode<any> {
+  if (typeof machine !== 'string') {
+    return machine;
+  }
+
+  let createMachine: Function;
+
+  try {
+    createMachine = new Function(
+      'Machine',
+      'interpret',
+      'assign',
+      'XState',
+      machine
+    );
+  } catch (e) {
+    throw e;
+  }
+
+  let resultMachine: StateNode<any>;
+
+  const machineProxy = (config: any, options: any, ctx: any) => {
+    resultMachine = Machine(config, options, ctx);
+
+    console.log(resultMachine);
+
+    return resultMachine;
+  };
+
+  createMachine(machineProxy, interpret, assign, XState);
+
+  return resultMachine! as StateNode<any>;
+}
+
+const StyledVisualization = styled.div`
+  position: relative;
+  max-height: inherit;
+  overflow-y: auto;
+`;
+
+export class StateChart extends React.Component<
+  StateChartProps,
+  StateChartState
+> {
+  state: StateChartState = (() => {
+    const machine = toMachine(this.props.machine);
+    // const machine = this.props.machine;
+
+    return {
+      current: machine.initialState,
+      preview: undefined,
+      previewEvent: undefined,
+      view: 'definition', // or 'state'
+      machine: machine,
+      code:
+        typeof this.props.machine === 'string'
+          ? this.props.machine
+          : `Machine(${JSON.stringify(machine.config, null, 2)})`,
+      toggledStates: {},
+      service: interpret(machine, {}).onTransition(current => {
+        this.setState({ current }, () => {
+          if (this.state.previewEvent) {
+            this.setState({
+              preview: this.state.service.nextState(this.state.previewEvent)
+            });
+          }
+        });
+      })
+    };
+  })();
+
+  componentDidMount() {
+    this.state.service.start();
+  }
+  updateMachine(code: string) {
+    let machine: StateNode;
+
+    try {
+      machine = toMachine(code);
+    } catch (e) {
+      console.error(e);
+      alert(
+        'Error: unable to update the machine.\nCheck the console for more info.'
+      );
+      return;
+    }
+
+    this.reset(code, machine);
+  }
+  reset(code = this.state.code, machine = this.state.machine) {
+    this.state.service.stop();
+    this.setState(
+      {
+        code,
+        machine,
+        current: machine.initialState
+      },
+      () => {
+        this.setState(
+          {
+            service: interpret(this.state.machine)
+              .onTransition(current => {
+                this.setState({ current }, () => {
+                  if (this.state.previewEvent) {
+                    this.setState({
+                      preview: this.state.service.nextState(
+                        this.state.previewEvent
+                      )
+                    });
+                  }
+                });
+              })
+              .start()
+          },
+          () => {
+            console.log(this.state.service);
+          }
+        );
+      }
+    );
+  }
+  render() {
+    const {
+      current,
+      preview,
+      previewEvent,
+      machine,
+      code,
+      view,
+      service,
+      toggledStates
+    } = this.state;
+
+    const edges = getEdges(machine);
+
+    const stateNodes = machine.getStateNodes(current);
+    const events = new Set();
+
+    stateNodes.forEach(stateNode => {
+      const potentialEvents = Object.keys(stateNode.on);
+
+      potentialEvents.forEach(event => {
+        const transitions = stateNode.on[event];
+
+        transitions.forEach(transition => {
+          if (transition.target !== undefined) {
+            events.add(event);
+          }
+        });
+      });
+    });
+
+    return (
+      <StyledStateChart
+        className={this.props.className}
+        key={code}
+        style={{
+          height: this.props.height || '100%',
+          background: 'var(--color-app-background)',
+          // @ts-ignore
+          '--color-app-background': '#FFF',
+          '--color-border': '#dedede',
+          '--color-primary': 'rgba(87, 176, 234, 1)',
+          '--color-primary-faded': 'rgba(87, 176, 234, 0.5)',
+          '--color-primary-shadow': 'rgba(87, 176, 234, 0.1)',
+          '--color-link': 'rgba(87, 176, 234, 1)',
+          '--color-disabled': '#c7c5c5',
+          '--color-edge': 'rgba(0, 0, 0, 0.2)',
+          '--color-secondary': 'rgba(255,152,0,1)',
+          '--color-secondary-light': 'rgba(255,152,0,.5)',
+          '--color-sidebar': '#272722',
+          '--radius': '0.2rem',
+          '--border-width': '2px'
+        }}
+      >
+        <StyledVisualization>
+          <Visualizer
+            machine={machine}
+            current={current}
+            preview={preview}
+            previewEvent={previewEvent}
+            onStateChartNodeReset={this.reset.bind(this)}
+            onStateChartNodeEvent={service.send.bind(this)}
+            onStateChartNodePreEvent={event =>
+              this.setState({
+                preview: service.nextState(event),
+                previewEvent: event
+              })
+            }
+            onStateChartNodeExitPreEvent={() =>
+              this.setState({ preview: undefined, previewEvent: undefined })
+            }
+            toggledStates={toggledStates}
+            edges={edges}
+          />
+        </StyledVisualization>
+      </StyledStateChart>
+    );
+  }
+}

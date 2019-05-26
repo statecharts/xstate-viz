@@ -1,7 +1,10 @@
 import React, { Component } from 'react';
 import logo from './logo.svg';
 import './App.css';
-import { StateChart } from '@statecharts/xstate-viz';
+import {
+  StateChartWithEditor,
+  SatteChartWithoutEditor
+} from '@statecharts/xstate-viz';
 import { Machine, StateNode, MachineOptions, assign } from 'xstate';
 import styled from 'styled-components';
 
@@ -157,7 +160,7 @@ class App extends Component {
     return (
       <StyledApp>
         <Header />
-        <StateChart machine={lightMachineSrc} />
+        <SatteChartWithoutEditor machine={lightMachineSrc} />
       </StyledApp>
     );
   }

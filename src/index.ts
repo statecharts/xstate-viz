@@ -1,3 +1,4 @@
-import { StateChart } from "./StateChart";
+import { StateChart as StateChartWithEditor } from './StateChartWithEditor';
+import { StateChart as SatteChartWithoutEditor } from './StateChartWithoutEditor';
 
-export { StateChart };
+export { StateChartWithEditor, SatteChartWithoutEditor };

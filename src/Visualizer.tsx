@@ -6,11 +6,7 @@ import { Edge } from './Edge';
 import { serializeEdge, isHidden, initialStateNodes } from './utils';
 
 type VisualizerProps = {
-  machine: XState.StateNode<
-    any,
-    any,
-    XState.OmniEventObject<XState.EventObject>
-  >;
+  machine: XState.StateNode<any>;
   current: XState.State<any, any>;
   preview?: XState.State<any, any>;
   previewEvent?: string;

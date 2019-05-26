@@ -1,15 +1,13 @@
-import React from "react";
-import { Editor } from "./Editor";
-import { Field } from "./Field";
-import styled from "styled-components";
-import { State, StateNode, EventObject, OmniEventObject } from "xstate";
-import { toMachine } from "./machineUtils";
+import React from 'react';
+import { Editor } from './Editor';
+import { Field } from './Field';
+import styled from 'styled-components';
+import { State, StateNode, EventObject, OmniEventObject } from 'xstate';
+import { toMachine } from './machineUtils';
 
 const StyledPre = styled.pre`
   overflow: auto;
 `;
-
-type StateMachine = StateNode<any, any, OmniEventObject<EventObject>>;
 
 type EditorRenderProps = {
   view: string;
@@ -28,7 +26,7 @@ export function EditorRender({
   onEditorChange
 }: EditorRenderProps) {
   switch (view) {
-    case "definition":
+    case 'definition':
       return (
         <Editor
           code={code}
@@ -37,10 +35,10 @@ export function EditorRender({
           }}
         />
       );
-    case "state":
+    case 'state':
       return (
         <>
-          <div style={{ overflowY: "auto" }}>
+          <div style={{ overflowY: 'auto' }}>
             <Field label="Value">
               <StyledPre>{JSON.stringify(current.value, null, 2)}</StyledPre>
             </Field>
@@ -62,10 +60,10 @@ export function EditorRender({
           <Field
             label="Event"
             style={{
-              marginTop: "auto",
-              borderTop: "1px solid #777",
+              marginTop: 'auto',
+              borderTop: '1px solid #777',
               flexShrink: 0,
-              background: "var(--color-sidebar)"
+              background: 'var(--color-sidebar)'
             }}
           >
             <Editor
@@ -80,7 +78,7 @@ export function EditorRender({
                 } catch (e) {
                   console.error(e);
                   alert(
-                    "Unable to send event.\nCheck the console for more info."
+                    'Unable to send event.\nCheck the console for more info.'
                   );
                 }
               }}
