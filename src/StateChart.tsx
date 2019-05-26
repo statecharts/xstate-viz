@@ -1,18 +1,9 @@
 import React from 'react';
 import styled from 'styled-components';
-import { interpret, SimulatedClock, Interpreter } from 'xstate/lib/interpreter';
-import {
-  Machine as _Machine,
-  StateNode,
-  State,
-  EventObject,
-  Machine,
-  assign
-} from 'xstate';
+import { interpret, Interpreter } from 'xstate/lib/interpreter';
+import { Machine as _Machine, StateNode, State, Machine, assign } from 'xstate';
 import * as XState from 'xstate';
 import { getEdges } from 'xstate/lib/graph';
-
-import { tracker } from './tracker';
 import { EditorRender } from './EditorRender';
 import { Visualizer } from './Visualizer';
 
@@ -140,17 +131,6 @@ const StyledVisualization = styled.div`
   position: relative;
   max-height: inherit;
   overflow-y: auto;
-`;
-
-const StyledStateViewActions = styled.ul`
-  margin: 0;
-  padding: 0;
-  list-style: none;
-`;
-
-const StyledStateViewAction = styled.li`
-  white-space: nowrap;
-  overflow-x: auto;
 `;
 
 export class StateChart extends React.Component<
