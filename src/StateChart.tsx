@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState } from 'react';
 import styled from 'styled-components';
 import { interpret, Interpreter } from 'xstate/lib/interpreter';
 import { Machine as _Machine, StateNode, State, Machine, assign } from 'xstate';
@@ -61,7 +61,8 @@ const StyledView = styled.div`
 
 const StyledStateChart = styled.div`
   display: grid;
-  grid-template-columns: 1fr 25rem;
+  grid-template-columns: ${(props: { isEditorShown: boolean }) =>
+    props.isEditorShown ? `1fr 25rem` : `1fr`};
   grid-template-rows: auto;
   font-family: sans-serif;
   font-size: 12px;
@@ -91,6 +92,7 @@ interface StateChartState {
   toggledStates: Record<string, boolean>;
   service: Interpreter<any>;
   error?: any;
+  isEditorShown: boolean;
 }
 
 function toMachine(machine: StateNode<any> | string): StateNode<any> {
@@ -160,12 +162,19 @@ export class StateChart extends React.Component<
             });
           }
         });
-      })
+      }),
+      isEditorShown: false
     };
   })();
 
   componentDidMount() {
     this.state.service.start();
+  }
+  toggleEditor() {
+    this.setState(prevState => ({
+      ...prevState,
+      isEditorShown: !prevState.isEditorShown
+    }));
   }
   updateMachine(code: string) {
     let machine: StateNode;
@@ -223,7 +232,8 @@ export class StateChart extends React.Component<
       code,
       view,
       service,
-      toggledStates
+      toggledStates,
+      isEditorShown
     } = this.state;
 
     const edges = getEdges(machine);
@@ -249,6 +259,7 @@ export class StateChart extends React.Component<
       <StyledStateChart
         className={this.props.className}
         key={code}
+        isEditorShown={isEditorShown}
         style={{
           height: this.props.height || '100%',
           background: 'var(--color-app-background)',
@@ -286,39 +297,42 @@ export class StateChart extends React.Component<
               this.setState({ preview: undefined, previewEvent: undefined })
             }
             toggledStates={toggledStates}
+            toggleEditorPanel={this.toggleEditor.bind(this)}
             edges={edges}
           />
         </StyledVisualization>
-        <StyledSidebar>
-          <StyledViewTabs>
-            {['definition', 'state'].map(mappedView => {
-              return (
-                <StyledViewTab
-                  onClick={() => this.setState({ view: mappedView })}
-                  key={mappedView}
-                  data-active={view === mappedView || undefined}
-                >
-                  {mappedView}
-                </StyledViewTab>
-              );
-            })}
-          </StyledViewTabs>
-          <StyledView>
-            <EditorRender
-              view={view}
-              current={current}
-              code={code}
-              onEditorChange={{
-                definition: code => {
-                  this.updateMachine(code);
-                },
-                state: eventData => {
-                  service.send(eventData);
-                }
-              }}
-            />
-          </StyledView>
-        </StyledSidebar>
+        {isEditorShown ? (
+          <StyledSidebar>
+            <StyledViewTabs>
+              {['definition', 'state'].map(mappedView => {
+                return (
+                  <StyledViewTab
+                    onClick={() => this.setState({ view: mappedView })}
+                    key={mappedView}
+                    data-active={view === mappedView || undefined}
+                  >
+                    {mappedView}
+                  </StyledViewTab>
+                );
+              })}
+            </StyledViewTabs>
+            <StyledView>
+              <EditorRender
+                view={view}
+                current={current}
+                code={code}
+                onEditorChange={{
+                  definition: code => {
+                    this.updateMachine(code);
+                  },
+                  state: eventData => {
+                    service.send(eventData);
+                  }
+                }}
+              />
+            </StyledView>
+          </StyledSidebar>
+        ) : null}
       </StyledStateChart>
     );
   }

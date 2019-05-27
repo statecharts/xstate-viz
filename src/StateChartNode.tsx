@@ -137,7 +137,7 @@ const StyledStateNode = styled.div`
     }
   }
   &:not([data-type~='machine']) {
-    // opacity: 0.75;
+    /* opacity: 0.75; */
   }
 
   &:not([data-open='true']) > ${StyledChildStates} > * {
@@ -374,6 +374,7 @@ interface StateChartNodeProps {
   onExitPreEvent: () => void;
   onReset?: () => void;
   toggledStates: Record<string, boolean>;
+  toggleEditorPanel: () => void;
 }
 
 export class StateChartNode extends React.Component<StateChartNodeProps> {
@@ -394,7 +395,8 @@ export class StateChartNode extends React.Component<StateChartNodeProps> {
       onEvent,
       onPreEvent,
       onExitPreEvent,
-      onReset
+      onReset,
+      toggleEditorPanel
     } = this.props;
     const isActive =
       !stateNode.parent ||
@@ -428,12 +430,22 @@ export class StateChartNode extends React.Component<StateChartNodeProps> {
         >
           <strong>{stateNode.key}</strong>
           {stateNode.path.length === 0 ? (
-            <StyledButton
-              data-variant="reset"
-              onClick={onReset ? () => onReset() : undefined}
-            >
-              Reset
-            </StyledButton>
+            <>
+              <StyledButton
+                data-variant="reset"
+                onClick={onReset ? () => onReset() : undefined}
+              >
+                Reset
+              </StyledButton>
+              <StyledButton
+                data-variant="reset"
+                onClick={
+                  toggleEditorPanel ? () => toggleEditorPanel() : undefined
+                }
+              >
+                Toggle Editor
+              </StyledButton>
+            </>
           ) : null}
         </StyledStateNodeHeader>
         {!!stateActions(stateNode).length && (

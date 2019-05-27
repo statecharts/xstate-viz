@@ -16,6 +16,7 @@ type VisualizerProps = {
   onStateChartNodeExitPreEvent: () => void;
   toggledStates: Record<string, boolean>;
   edges: XState.Edge<any, XState.OmniEventObject<XState.EventObject>, string>[];
+  toggleEditorPanel: () => void;
 };
 
 const svgRef = React.createRef<SVGSVGElement>();
@@ -30,7 +31,8 @@ export function Visualizer({
   onStateChartNodePreEvent,
   onStateChartNodeExitPreEvent,
   toggledStates,
-  edges
+  edges,
+  toggleEditorPanel
 }: VisualizerProps) {
   return (
     <>
@@ -43,6 +45,7 @@ export function Visualizer({
         onPreEvent={onStateChartNodePreEvent}
         onExitPreEvent={onStateChartNodeExitPreEvent}
         toggledStates={toggledStates}
+        toggleEditorPanel={toggleEditorPanel}
       />
       <svg
         width="100%"
