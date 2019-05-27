@@ -16,9 +16,9 @@ const StyledVisualization = styled.div`
 
 export const StateChartVisualization: React.SFC<{
   service: Interpreter<any, any>;
-}> = ({ service }) => {
+  visible: boolean;
+}> = ({ service, visible }) => {
   const [current, send] = useService(service);
-  console.log(service);
   const [state, setState] = React.useState<{
     [key: string]: any;
     preview?: State<any, any>;
@@ -29,6 +29,10 @@ export const StateChartVisualization: React.SFC<{
   });
   const svgRef = React.useRef<SVGSVGElement>(null);
   const edges = getEdges(service.machine);
+
+  if (!visible) {
+    return null;
+  }
 
   return (
     <StyledVisualization>
@@ -115,7 +119,7 @@ export const StateChartVisualization: React.SFC<{
       </svg>
       <StateChartNode
         stateNode={service.machine}
-        current={current}
+        current={service.state}
         preview={state.preview}
         onReset={() => {}}
         onEvent={event => {

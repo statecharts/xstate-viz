@@ -18,8 +18,14 @@ const fetchMachine = Machine({
     id: 'child',
     src: () => Machine({
       initial: 'foo',
+      context: { value: 3 },
       states: {
         foo: {
+          invoke: Machine({ initial: 'yah', states: { yah: {
+            on: {
+              FOO: { target: 'yah' }
+            }
+          }}}),
           on: { EVENT: 'bar' }
         },
         bar: {}
@@ -109,7 +115,6 @@ const m = Machine({
     yeah: {
       entry: assign({
         foo: () => {
-          console.log('maaaaaaa');
           return spawn(Promise.resolve(42));
         }
       })

@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState } from 'react';
 import styled from 'styled-components';
 import {
   Machine as _Machine,
@@ -10,38 +10,12 @@ import {
   send,
   spawn,
   interpret,
-  Interpreter
+  Interpreter,
+  StateMachine
 } from 'xstate';
 import * as XState from 'xstate';
-import { getEdges } from 'xstate/lib/graph';
-import { StateChartNode } from './StateChartNode';
-
-import { serializeEdge, isHidden, initialStateNodes } from './utils';
-import { Edge } from './Edge';
 import { Editor } from './Editor';
-import { InitialEdge } from './InitialEdge';
-import { StateChartVisualization } from './StateChartVisualization';
 import { VizTabs } from './VizTabs';
-
-// const m = Machine({
-//   initial: 'yeah',
-//   context: {
-//     foo: undefined
-//   },
-//   states: {
-//     yeah: {
-//       entry: assign<any>({
-//         foo: () => {
-//           return spawn(Promise.resolve(42));
-//         }
-//       })
-//     }
-//   }
-// });
-
-// interpret(m)
-//   .onTransition(s => console.log(s))
-//   .start();
 
 const StyledViewTab = styled.li`
   padding: 0 1rem;
@@ -95,7 +69,7 @@ const StyledView = styled.div`
   overflow: hidden;
 `;
 
-const StyledStateChart = styled.div`
+export const StyledStateChart = styled.div`
   display: grid;
   grid-template-columns: 1fr 25rem;
   grid-template-rows: auto;
@@ -160,14 +134,17 @@ export interface StateChartState {
   toggledStates: Record<string, boolean>;
   service: Interpreter<any>;
   error?: any;
+  selectedService?: Interpreter<any>;
 }
 
-function toMachine(machine: StateNode<any> | string): StateNode<any> {
+export function toMachine(machine: StateNode<any> | string): StateNode<any> {
   if (typeof machine !== 'string') {
     return machine;
   }
 
   let createMachine: Function;
+
+  console.log('creating machine', machine);
 
   try {
     createMachine = new Function(
@@ -187,9 +164,11 @@ function toMachine(machine: StateNode<any> | string): StateNode<any> {
   let resultMachine: StateNode<any>;
 
   const machineProxy = (config: any, options: any, ctx: any) => {
-    resultMachine = Machine(config, options, ctx);
-
-    console.log(resultMachine);
+    if (resultMachine) {
+      console.log('already', config);
+      return Machine(config, options);
+    }
+    resultMachine = Machine(config, options);
 
     return resultMachine;
   };
@@ -245,7 +224,8 @@ export class StateChart extends React.Component<
             // });
           }
         });
-      })
+      }),
+      selectedService: undefined
     };
   })();
   svgRef = React.createRef<SVGSVGElement>();
@@ -253,7 +233,7 @@ export class StateChart extends React.Component<
     this.state.service.start();
   }
   renderView() {
-    const { view, current, machine, code } = this.state;
+    const { view, current, machine, code, service } = this.state;
 
     switch (view) {
       case 'definition':
@@ -314,6 +294,30 @@ export class StateChart extends React.Component<
             </Field>
           </>
         );
+      case 'children':
+        const foo = (parentService: Interpreter<any, any>) => {
+          return (
+            <div
+              key={parentService.id}
+              style={{ paddingLeft: '1rem' }}
+              onClick={e => {
+                e.stopPropagation();
+                this.setState({
+                  selectedService: parentService
+                });
+              }}
+            >
+              <strong>{parentService.id}</strong>
+              {Array.from<Interpreter<any, any>>(
+                (parentService as any).children.values()
+              ).map(childService => {
+                return foo(childService);
+              })}
+            </div>
+          );
+        };
+
+        return foo(service);
       default:
         return null;
     }
@@ -391,10 +395,13 @@ export class StateChart extends React.Component<
           '--border-width': '2px'
         }}
       >
-        <VizTabs service={service} />
+        <VizTabs
+          service={service}
+          selectedService={this.state.selectedService}
+        />
         <StyledSidebar>
           <StyledViewTabs>
-            {['definition', 'state'].map(view => {
+            {['definition', 'state', 'children'].map(view => {
               return (
                 <StyledViewTab
                   onClick={() => this.setState({ view })}
