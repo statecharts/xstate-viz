@@ -72,12 +72,22 @@ const StyledView = styled.div`
 export const StyledStateChart = styled.div`
   display: grid;
   grid-template-columns: 1fr 25rem;
-  grid-template-rows: auto;
+  grid-template-rows: 1fr 5rem;
   font-family: sans-serif;
   font-size: 12px;
   overflow: hidden;
   max-height: inherit;
   padding: 1rem;
+
+  > ${StyledSidebar} {
+    grid-column: 2 / 3;
+    grid-row: 1 / -1;
+  }
+
+  > footer {
+    grid-column: 1 / 2;
+    grid-row: -2 / -1;
+  }
 
   > * {
     max-height: inherit;
@@ -143,8 +153,6 @@ export function toMachine(machine: StateNode<any> | string): StateNode<any> {
   }
 
   let createMachine: Function;
-
-  console.log('creating machine', machine);
 
   try {
     createMachine = new Function(
@@ -399,6 +407,27 @@ export class StateChart extends React.Component<
           service={service}
           selectedService={this.state.selectedService}
         />
+        <footer>
+          <div>
+            <button>Send Event...</button>
+            <form
+              onSubmit={e => {
+                e.preventDefault();
+                e.persist();
+                console.log(e);
+              }}
+            >
+              <fieldset>
+                <label>Event type</label>
+                {service.state.nextEvents.map(eventType => {
+                  return <button key={eventType}>{eventType}</button>;
+                })}
+                <label htmlFor="">Properties</label>
+                <textarea />
+              </fieldset>
+            </form>
+          </div>
+        </footer>
         <StyledSidebar>
           <StyledViewTabs>
             {['definition', 'state', 'children'].map(view => {

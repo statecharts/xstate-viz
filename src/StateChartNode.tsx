@@ -227,7 +227,7 @@ const StyledStateNodeEvents = styled.div`
   }
 `;
 
-const StyledStateNodeActions = styled.ul`
+export const StyledStateNodeActions = styled.ul`
   list-style: none;
   padding: 0;
   margin: 0;

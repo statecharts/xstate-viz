@@ -101,8 +101,6 @@ export const StateChartVisualization: React.SFC<{
             return;
           }
 
-          // const svgRect = this.svgRef.current.getBoundingClientRect();
-
           return (
             <InitialEdge
               key={`${initialStateNode.id}_${i}`}
@@ -126,11 +124,13 @@ export const StateChartVisualization: React.SFC<{
           send(event);
         }}
         onPreEvent={event => {
-          setState({
-            ...state,
-            // preview: service.nextState(event),
-            previewEvent: event
-          });
+          if (!state.preview) {
+            setState({
+              ...state,
+              preview: service.nextState(event),
+              previewEvent: event
+            });
+          }
         }}
         onExitPreEvent={() => {
           setState({
