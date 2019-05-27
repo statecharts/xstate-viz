@@ -17,7 +17,8 @@ import { tracker } from './tracker';
 import { getEdges } from 'xstate/lib/graph';
 import { StyledButton } from './Button';
 import { actionTypes } from 'xstate/lib/actions';
-import { StateChartAction, StateChartGuard } from './StateChartAction';
+import { StateChartAction } from './StateChartAction';
+import { StateChartGuard } from './StateChartGuard';
 
 const StyledChildStates = styled.div`
   padding: 1rem;
@@ -198,6 +199,10 @@ const StyledStateNode = styled.div`
     height: 1px;
     display: block;
   }
+
+  &:hover {
+    z-index: 2;
+  }
 `;
 
 const StyledStateNodeState = styled.div`
@@ -207,9 +212,9 @@ const StyledStateNodeState = styled.div`
   border: 2px solid var(--color-node-border);
   text-align: left;
   box-shadow: 0 0.5rem 1rem var(--color-shadow);
-  // background: white;
   color: #313131;
   min-height: 1rem;
+  z-index: 1;
 `;
 
 const StyledStateNodeEvents = styled.div`
@@ -227,6 +232,22 @@ const StyledStateNodeActions = styled.ul`
   padding: 0;
   margin: 0;
   margin-bottom: 0.5rem;
+  z-index: 1;
+
+  &:empty {
+    display: none;
+  }
+
+  &:before {
+    display: block;
+    content: attr(data-title);
+    padding: 0.25rem;
+    font-size: 75%;
+    letter-spacing: 0.5px;
+    text-transform: uppercase;
+    background: var(--color-border);
+    font-weight: bold;
+  }
 `;
 
 const StyledEvent = styled.div`
@@ -440,29 +461,33 @@ export class StateChartNode extends React.Component<StateChartNodeProps> {
             ) : null}
           </StyledStateNodeHeader>
           {!!stateActions(stateNode).length && (
-            <StyledStateNodeActions>
-              {stateNode.definition.onEntry.map(action => {
-                const actionString = action.type;
+            <>
+              <StyledStateNodeActions data-title="entry">
+                {stateNode.definition.onEntry.map(action => {
+                  const actionString = action.type;
 
-                return (
-                  <StateChartAction
-                    key={actionString}
-                    data-action-type="entry"
-                    action={action}
-                  />
-                );
-              })}
-              {stateNode.definition.onExit.map(action => {
-                const actionString = action.type;
-                return (
-                  <StateChartAction
-                    key={actionString}
-                    data-action-type="exit"
-                    action={action}
-                  />
-                );
-              })}
-            </StyledStateNodeActions>
+                  return (
+                    <StateChartAction
+                      key={actionString}
+                      data-action-type="entry"
+                      action={action}
+                    />
+                  );
+                })}
+              </StyledStateNodeActions>
+              <StyledStateNodeActions data-title="exit">
+                {stateNode.definition.onExit.map(action => {
+                  const actionString = action.type;
+                  return (
+                    <StateChartAction
+                      key={actionString}
+                      data-action-type="exit"
+                      action={action}
+                    />
+                  );
+                })}
+              </StyledStateNodeActions>
+            </>
           )}
           {Object.keys(stateNode.states).length ? (
             <StyledChildStates>
@@ -552,7 +577,7 @@ export class StateChartNode extends React.Component<StateChartNodeProps> {
                 </StyledEventButton>
 
                 {!!(edge.transition.actions.length || edge.transition.cond) && (
-                  <StyledStateNodeActions>
+                  <>
                     {edge.transition.cond && (
                       <StyledStateNodeAction data-guard>
                         <StateChartGuard
@@ -562,22 +587,24 @@ export class StateChartNode extends React.Component<StateChartNodeProps> {
                       </StyledStateNodeAction>
                     )}
 
-                    {edge.transition.actions.map((action, i) => {
-                      const actionString =
-                        action.type === actionTypes.assign
-                          ? JSON.stringify(action.assignments!)
-                          : action.type;
+                    <StyledStateNodeActions>
+                      {edge.transition.actions.map((action, i) => {
+                        const actionString =
+                          action.type === actionTypes.assign
+                            ? JSON.stringify(action.assignments!)
+                            : action.type;
 
-                      return (
-                        <StyledStateNodeAction
-                          data-action-type="do"
-                          key={actionString + ':' + i}
-                        >
-                          {actionString}
-                        </StyledStateNodeAction>
-                      );
-                    })}
-                  </StyledStateNodeActions>
+                        return (
+                          <StyledStateNodeAction
+                            data-action-type="do"
+                            key={actionString + ':' + i}
+                          >
+                            {actionString}
+                          </StyledStateNodeAction>
+                        );
+                      })}
+                    </StyledStateNodeActions>
+                  </>
                 )}
               </StyledEvent>
             );

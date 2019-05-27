@@ -2,7 +2,6 @@ import React, { Component } from 'react';
 import logo from './logo.svg';
 import './App.css';
 import { StateChart } from '@statecharts/xstate-viz';
-import { Machine, StateNode, MachineOptions, assign } from 'xstate';
 import styled from 'styled-components';
 
 const lightMachineSrc = `
@@ -15,12 +14,26 @@ const fetchMachine = Machine({
   id: 'fetch',
   context: { attempts: 0 },
   initial: 'idle',
+  invoke: {
+    id: 'child',
+    src: () => Machine({
+      initial: 'foo',
+      states: {
+        foo: {
+          on: { EVENT: 'bar' }
+        },
+        bar: {}
+      }
+    })
+  },
   states: {
     idle: {
-      on: { FETCH: 'pending'}
+      
+      on: { FETCH: 'pending' },
+      exit: send('EVENT', { to: 'child' })
     },
     pending: {
-      onEntry: assign({
+      entry: assign({
         attempts: ctx => ctx.attempts + 1
       }),
       after: {
@@ -50,6 +63,9 @@ const fetchMachine = Machine({
       }
     },
     rejected: {
+      entry: assign({
+        ref: () => spawn(Machine({ initial: 'foo', states: {foo: {}}}))
+      }),
       initial: 'can retry',
       states: {
         'can retry': {
@@ -78,6 +94,26 @@ const fetchMachine = Machine({
   },
   delays: {
     TIMEOUT: 2000
+  }
+});
+`;
+
+const anotherMachine = `
+const m = Machine({
+  initial: 'b',
+  context: {
+    foo: undefined
+  },
+  states: {
+    b: { on: {T:'yeah'}},
+    yeah: {
+      entry: assign({
+        foo: () => {
+          console.log('maaaaaaa');
+          return spawn(Promise.resolve(42));
+        }
+      })
+    }
   }
 });
 `;

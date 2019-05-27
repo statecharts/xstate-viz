@@ -1,13 +1,16 @@
 import React from 'react';
 import styled from 'styled-components';
-import { interpret, Interpreter } from 'xstate/lib/interpreter';
 import {
   Machine as _Machine,
   StateNode,
   State,
   EventObject,
   Machine,
-  assign
+  assign,
+  send,
+  spawn,
+  interpret,
+  Interpreter
 } from 'xstate';
 import * as XState from 'xstate';
 import { getEdges } from 'xstate/lib/graph';
@@ -17,6 +20,28 @@ import { serializeEdge, isHidden, initialStateNodes } from './utils';
 import { Edge } from './Edge';
 import { Editor } from './Editor';
 import { InitialEdge } from './InitialEdge';
+import { StateChartVisualization } from './StateChartVisualization';
+import { VizTabs } from './VizTabs';
+
+// const m = Machine({
+//   initial: 'yeah',
+//   context: {
+//     foo: undefined
+//   },
+//   states: {
+//     yeah: {
+//       entry: assign<any>({
+//         foo: () => {
+//           return spawn(Promise.resolve(42));
+//         }
+//       })
+//     }
+//   }
+// });
+
+// interpret(m)
+//   .onTransition(s => console.log(s))
+//   .start();
 
 const StyledViewTab = styled.li`
   padding: 0 1rem;
@@ -125,7 +150,7 @@ interface StateChartProps {
   height?: number | string;
 }
 
-interface StateChartState {
+export interface StateChartState {
   machine: StateNode<any>;
   current: State<any, any>;
   preview?: State<any, any>;
@@ -149,6 +174,9 @@ function toMachine(machine: StateNode<any> | string): StateNode<any> {
       'Machine',
       'interpret',
       'assign',
+      'send',
+      'sendParent',
+      'spawn',
       'XState',
       machine
     );
@@ -166,16 +194,18 @@ function toMachine(machine: StateNode<any> | string): StateNode<any> {
     return resultMachine;
   };
 
-  createMachine(machineProxy, interpret, assign, XState);
+  createMachine(
+    machineProxy,
+    interpret,
+    assign,
+    send,
+    XState.sendParent,
+    spawn,
+    XState
+  );
 
   return resultMachine! as StateNode<any>;
 }
-
-const StyledVisualization = styled.div`
-  position: relative;
-  max-height: inherit;
-  overflow-y: auto;
-`;
 
 const StyledStateViewActions = styled.ul`
   margin: 0;
@@ -210,9 +240,9 @@ export class StateChart extends React.Component<
       service: interpret(machine, {}).onTransition(current => {
         this.setState({ current }, () => {
           if (this.state.previewEvent) {
-            this.setState({
-              preview: this.state.service.nextState(this.state.previewEvent)
-            });
+            // this.setState({
+            //   preview: this.state.service.nextState(this.state.previewEvent)
+            // });
           }
         });
       })
@@ -336,26 +366,7 @@ export class StateChart extends React.Component<
     );
   }
   render() {
-    const { current, preview, previewEvent, machine, code } = this.state;
-
-    const edges = getEdges(machine);
-
-    const stateNodes = machine.getStateNodes(current);
-    const events = new Set();
-
-    stateNodes.forEach(stateNode => {
-      const potentialEvents = Object.keys(stateNode.on);
-
-      potentialEvents.forEach(event => {
-        const transitions = stateNode.on[event];
-
-        transitions.forEach(transition => {
-          if (transition.target !== undefined) {
-            events.add(event);
-          }
-        });
-      });
-    });
+    const { code, service } = this.state;
 
     return (
       <StyledStateChart
@@ -380,106 +391,7 @@ export class StateChart extends React.Component<
           '--border-width': '2px'
         }}
       >
-        <StyledVisualization>
-          <svg
-            width="100%"
-            height="100%"
-            style={{
-              position: 'absolute',
-              top: 0,
-              left: 0,
-              // @ts-ignore
-              '--color': 'gray',
-              overflow: 'visible',
-              pointerEvents: 'none'
-            }}
-            ref={this.svgRef}
-            key={JSON.stringify(this.state.toggledStates)}
-          >
-            <defs>
-              <marker
-                id="marker"
-                markerWidth="4"
-                markerHeight="4"
-                refX="2"
-                refY="2"
-                markerUnits="strokeWidth"
-                orient="auto"
-              >
-                <path d="M0,0 L0,4 L4,2 z" fill="var(--color-edge)" />
-              </marker>
-              <marker
-                id="marker-preview"
-                markerWidth="4"
-                markerHeight="4"
-                refX="2"
-                refY="2"
-                markerUnits="strokeWidth"
-                orient="auto"
-              >
-                <path d="M0,0 L0,4 L4,2 z" fill="gray" />
-              </marker>
-            </defs>
-            {edges.map(edge => {
-              if (!this.svgRef.current) {
-                return;
-              }
-
-              // const svgRect = this.svgRef.current.getBoundingClientRect();
-
-              return (
-                <Edge
-                  key={serializeEdge(edge)}
-                  svg={this.svgRef.current}
-                  edge={edge}
-                  preview={
-                    edge.event === previewEvent &&
-                    current.matches(edge.source.path.join('.')) &&
-                    !!preview &&
-                    preview.matches(edge.target.path.join('.'))
-                  }
-                />
-              );
-            })}
-            {initialStateNodes(machine).map((initialStateNode, i) => {
-              if (!this.svgRef.current) {
-                return;
-              }
-
-              // const svgRect = this.svgRef.current.getBoundingClientRect();
-
-              return (
-                <InitialEdge
-                  key={`${initialStateNode.id}_${i}`}
-                  source={initialStateNode}
-                  svgRef={this.svgRef.current}
-                  preview={
-                    current.matches(initialStateNode.path.join('.')) ||
-                    (!!preview &&
-                      preview.matches(initialStateNode.path.join('.')))
-                  }
-                />
-              );
-            })}
-          </svg>
-          <StateChartNode
-            stateNode={this.state.machine}
-            current={current}
-            preview={preview}
-            onReset={this.reset.bind(this)}
-            onEvent={this.state.service.send.bind(this)}
-            onPreEvent={event =>
-              this.setState({
-                preview: this.state.service.nextState(event),
-                previewEvent: event
-              })
-            }
-            onExitPreEvent={() =>
-              this.setState({ preview: undefined, previewEvent: undefined })
-            }
-            toggledStates={this.state.toggledStates}
-          />
-        </StyledVisualization>
+        <VizTabs service={service} />
         <StyledSidebar>
           <StyledViewTabs>
             {['definition', 'state'].map(view => {
