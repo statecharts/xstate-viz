@@ -374,7 +374,7 @@ interface StateChartNodeProps {
   onExitPreEvent: () => void;
   onReset?: () => void;
   toggledStates: Record<string, boolean>;
-  toggleEditorPanel: () => void;
+  toggleEditorPanel?: () => void;
 }
 
 export class StateChartNode extends React.Component<StateChartNodeProps> {
@@ -437,14 +437,16 @@ export class StateChartNode extends React.Component<StateChartNodeProps> {
               >
                 Reset
               </StyledButton>
-              <StyledButton
-                data-variant="reset"
-                onClick={
-                  toggleEditorPanel ? () => toggleEditorPanel() : undefined
-                }
-              >
-                Toggle Editor
-              </StyledButton>
+              {toggleEditorPanel ? (
+                <StyledButton
+                  data-variant="reset"
+                  onClick={
+                    toggleEditorPanel ? () => toggleEditorPanel() : undefined
+                  }
+                >
+                  Toggle Editor
+                </StyledButton>
+              ) : null}
             </>
           ) : null}
         </StyledStateNodeHeader>
