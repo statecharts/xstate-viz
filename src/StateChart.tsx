@@ -1,23 +1,11 @@
-import React from 'react';
+import React, { useState } from 'react';
 import styled from 'styled-components';
-import { interpret, SimulatedClock, Interpreter } from 'xstate/lib/interpreter';
-import {
-  Machine as _Machine,
-  StateNode,
-  State,
-  EventObject,
-  Machine,
-  assign
-} from 'xstate';
+import { interpret, Interpreter } from 'xstate/lib/interpreter';
+import { Machine as _Machine, StateNode, State, Machine, assign } from 'xstate';
 import * as XState from 'xstate';
 import { getEdges } from 'xstate/lib/graph';
-import { StateChartNode } from './StateChartNode';
-
-import { serializeEdge, isHidden, initialStateNodes } from './utils';
-import { Edge } from './Edge';
-import { tracker } from './tracker';
-import { Editor } from './Editor';
-import { InitialEdge } from './InitialEdge';
+import { EditorRender } from './EditorRender';
+import { Visualizer } from './Visualizer';
 
 const StyledViewTab = styled.li`
   padding: 0 1rem;
@@ -60,7 +48,7 @@ const StyledSidebar = styled.div`
   grid-template-columns: 1fr;
   grid-template-rows: 2rem 1fr;
   border-radius: 0.5rem;
-  box-shadow: 0 0.5rem 1rem rgba(0,0,0,0.2);
+  box-shadow: 0 0.5rem 1rem rgba(0, 0, 0, 0.2);
 `;
 
 const StyledView = styled.div`
@@ -73,7 +61,8 @@ const StyledView = styled.div`
 
 const StyledStateChart = styled.div`
   display: grid;
-  grid-template-columns: 1fr 25rem;
+  grid-template-columns: ${(props: { isEditorShown: boolean }) =>
+    props.isEditorShown ? `1fr 25rem` : `1fr`};
   grid-template-rows: auto;
   font-family: sans-serif;
   font-size: 12px;
@@ -87,43 +76,11 @@ const StyledStateChart = styled.div`
   }
 `;
 
-const StyledField = styled.div`
-  padding: 0.5rem 1rem;
-  width: 100%;
-  overflow: hidden;
-
-  > label {
-    text-transform: uppercase;
-    display: block;
-    margin-bottom: 0.5em;
-    font-weight: bold;
-  }
-`;
-
-const StyledPre = styled.pre`
-  overflow: auto;
-`;
-interface FieldProps {
-  label: string;
-  children: any;
-  disabled?: boolean;
-  style?: any;
-}
-function Field({ label, children, disabled, style }: FieldProps) {
-  return (
-    <StyledField
-      style={{ ...style, ...(disabled ? { opacity: 0.5 } : undefined) }}
-    >
-      <label>{label}</label>
-      {children}
-    </StyledField>
-  );
-}
-
 interface StateChartProps {
   className?: string;
   machine: StateNode<any> | string;
   height?: number | string;
+  withEditor?: boolean;
 }
 
 interface StateChartState {
@@ -136,6 +93,7 @@ interface StateChartState {
   toggledStates: Record<string, boolean>;
   service: Interpreter<any>;
   error?: any;
+  isEditorShown: boolean;
 }
 
 function toMachine(machine: StateNode<any> | string): StateNode<any> {
@@ -178,17 +136,6 @@ const StyledVisualization = styled.div`
   overflow-y: auto;
 `;
 
-const StyledStateViewActions = styled.ul`
-  margin: 0;
-  padding: 0;
-  list-style: none;
-`;
-
-const StyledStateViewAction = styled.li`
-  white-space: nowrap;
-  overflow-x: auto;
-`;
-
 export class StateChart extends React.Component<
   StateChartProps,
   StateChartState
@@ -216,78 +163,19 @@ export class StateChart extends React.Component<
             });
           }
         });
-      })
+      }),
+      isEditorShown: this.props.withEditor || false
     };
   })();
-  svgRef = React.createRef<SVGSVGElement>();
+
   componentDidMount() {
     this.state.service.start();
   }
-  renderView() {
-    const { view, current, machine, code } = this.state;
-
-    switch (view) {
-      case 'definition':
-        return (
-          <Editor
-            code={this.state.code}
-            onChange={code => this.updateMachine(code)}
-          />
-        );
-      case 'state':
-        return (
-          <>
-            <div style={{ overflowY: 'auto' }}>
-              <Field label="Value">
-                <StyledPre>{JSON.stringify(current.value, null, 2)}</StyledPre>
-              </Field>
-              <Field label="Context" disabled={!current.context}>
-                {current.context !== undefined ? (
-                  <StyledPre>
-                    {JSON.stringify(current.context, null, 2)}
-                  </StyledPre>
-                ) : null}
-              </Field>
-              <Field label="Actions" disabled={!current.actions.length}>
-                {!!current.actions.length && (
-                  <StyledPre>
-                    {JSON.stringify(current.actions, null, 2)}
-                  </StyledPre>
-                )}
-              </Field>
-            </div>
-            <Field
-              label="Event"
-              style={{
-                marginTop: 'auto',
-                borderTop: '1px solid #777',
-                flexShrink: 0,
-                background: 'var(--color-sidebar)'
-              }}
-            >
-              <Editor
-                height="5rem"
-                code={'{type: ""}'}
-                changeText="Send event"
-                onChange={code => {
-                  try {
-                    const eventData = eval(`(${code})`);
-
-                    this.state.service.send(eventData);
-                  } catch (e) {
-                    console.error(e);
-                    alert(
-                      'Unable to send event.\nCheck the console for more info.'
-                    );
-                  }
-                }}
-              />
-            </Field>
-          </>
-        );
-      default:
-        return null;
-    }
+  toggleEditor() {
+    this.setState(prevState => ({
+      ...prevState,
+      isEditorShown: !prevState.isEditorShown
+    }));
   }
   updateMachine(code: string) {
     let machine: StateNode;
@@ -337,7 +225,17 @@ export class StateChart extends React.Component<
     );
   }
   render() {
-    const { current, preview, previewEvent, machine, code } = this.state;
+    const {
+      current,
+      preview,
+      previewEvent,
+      machine,
+      code,
+      view,
+      service,
+      toggledStates,
+      isEditorShown
+    } = this.state;
 
     const edges = getEdges(machine);
 
@@ -362,6 +260,7 @@ export class StateChart extends React.Component<
       <StyledStateChart
         className={this.props.className}
         key={code}
+        isEditorShown={isEditorShown}
         style={{
           height: this.props.height || '100%',
           background: 'var(--color-app-background)',
@@ -382,121 +281,59 @@ export class StateChart extends React.Component<
         }}
       >
         <StyledVisualization>
-          <StateChartNode
-            stateNode={this.state.machine}
+          <Visualizer
+            machine={machine}
             current={current}
             preview={preview}
-            onReset={this.reset.bind(this)}
-            onEvent={this.state.service.send.bind(this)}
-            onPreEvent={event =>
+            previewEvent={previewEvent}
+            onStateChartNodeReset={this.reset.bind(this)}
+            onStateChartNodeEvent={service.send.bind(this)}
+            onStateChartNodePreEvent={event =>
               this.setState({
-                preview: this.state.service.nextState(event),
+                preview: service.nextState(event),
                 previewEvent: event
               })
             }
-            onExitPreEvent={() =>
+            onStateChartNodeExitPreEvent={() =>
               this.setState({ preview: undefined, previewEvent: undefined })
             }
-            toggledStates={this.state.toggledStates}
+            toggledStates={toggledStates}
+            toggleEditorPanel={this.toggleEditor.bind(this)}
+            edges={edges}
           />
-          <svg
-            width="100%"
-            height="100%"
-            style={{
-              position: 'absolute',
-              top: 0,
-              left: 0,
-              // @ts-ignore
-              '--color': 'gray',
-              overflow: 'visible',
-              pointerEvents: 'none'
-            }}
-            ref={this.svgRef}
-            key={JSON.stringify(this.state.toggledStates)}
-          >
-            <defs>
-              <marker
-                id="marker"
-                markerWidth="4"
-                markerHeight="4"
-                refX="2"
-                refY="2"
-                markerUnits="strokeWidth"
-                orient="auto"
-              >
-                <path d="M0,0 L0,4 L4,2 z" fill="var(--color-edge)" />
-              </marker>
-              <marker
-                id="marker-preview"
-                markerWidth="4"
-                markerHeight="4"
-                refX="2"
-                refY="2"
-                markerUnits="strokeWidth"
-                orient="auto"
-              >
-                <path d="M0,0 L0,4 L4,2 z" fill="gray" />
-              </marker>
-            </defs>
-            {edges.map(edge => {
-              if (!this.svgRef.current) {
-                return;
-              }
-
-              // const svgRect = this.svgRef.current.getBoundingClientRect();
-
-              return (
-                <Edge
-                  key={serializeEdge(edge)}
-                  svg={this.svgRef.current}
-                  edge={edge}
-                  preview={
-                    edge.event === previewEvent &&
-                    current.matches(edge.source.path.join('.')) &&
-                    !!preview &&
-                    preview.matches(edge.target.path.join('.'))
-                  }
-                />
-              );
-            })}
-            {initialStateNodes(machine).map((initialStateNode, i) => {
-              if (!this.svgRef.current) {
-                return;
-              }
-
-              // const svgRect = this.svgRef.current.getBoundingClientRect();
-
-              return (
-                <InitialEdge
-                  key={`${initialStateNode.id}_${i}`}
-                  source={initialStateNode}
-                  svgRef={this.svgRef.current}
-                  preview={
-                    current.matches(initialStateNode.path.join('.')) ||
-                    (!!preview &&
-                      preview.matches(initialStateNode.path.join('.')))
-                  }
-                />
-              );
-            })}
-          </svg>
         </StyledVisualization>
-        <StyledSidebar>
-          <StyledViewTabs>
-            {['definition', 'state'].map(view => {
-              return (
-                <StyledViewTab
-                  onClick={() => this.setState({ view })}
-                  key={view}
-                  data-active={this.state.view === view || undefined}
-                >
-                  {view}
-                </StyledViewTab>
-              );
-            })}
-          </StyledViewTabs>
-          <StyledView>{this.renderView()}</StyledView>
-        </StyledSidebar>
+        {isEditorShown ? (
+          <StyledSidebar>
+            <StyledViewTabs>
+              {['definition', 'state'].map(mappedView => {
+                return (
+                  <StyledViewTab
+                    onClick={() => this.setState({ view: mappedView })}
+                    key={mappedView}
+                    data-active={view === mappedView || undefined}
+                  >
+                    {mappedView}
+                  </StyledViewTab>
+                );
+              })}
+            </StyledViewTabs>
+            <StyledView>
+              <EditorRender
+                view={view}
+                current={current}
+                code={code}
+                onEditorChange={{
+                  definition: code => {
+                    this.updateMachine(code);
+                  },
+                  state: eventData => {
+                    service.send(eventData);
+                  }
+                }}
+              />
+            </StyledView>
+          </StyledSidebar>
+        ) : null}
       </StyledStateChart>
     );
   }

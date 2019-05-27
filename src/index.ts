@@ -1,3 +1,3 @@
-import { StateChart } from "./StateChart";
+import { StateChart } from './StateChart';
 
 export { StateChart };
