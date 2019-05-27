@@ -80,6 +80,7 @@ interface StateChartProps {
   className?: string;
   machine: StateNode<any> | string;
   height?: number | string;
+  withEditor?: boolean;
 }
 
 interface StateChartState {
@@ -163,7 +164,7 @@ export class StateChart extends React.Component<
           }
         });
       }),
-      isEditorShown: false
+      isEditorShown: this.props.withEditor || false
     };
   })();
 
