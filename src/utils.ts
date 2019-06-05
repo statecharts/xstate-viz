@@ -64,10 +64,6 @@ export function friendlyEventName(event: string) {
     return `done`;
   }
 
-  if (event === '') {
-    return 'transient';
-  }
-
   return event;
 }
 

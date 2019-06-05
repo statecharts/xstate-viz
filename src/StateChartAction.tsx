@@ -28,28 +28,52 @@ const StyledStateChartAction = styled.li`
   white-space: nowrap;
   // overflow: hidden;
   text-overflow: ellipsis;
-  max-width: 20ch;
-  padding: 0.25rem;
+  max-width: 30ch;
+  padding: 0 0.25rem;
+  line-height: 1rem;
 
   &:hover > ${StyledPopover} {
     opacity: 1;
   }
+
+  &:before {
+    color: gray;
+    margin-right: 0.25rem;
+    font-size: 75%;
+  }
+
+  &[data-action-type='exit'] {
+    &:before {
+      content: '◀';
+    }
+  }
+
+  &[data-action-type='entry'] {
+    &:before {
+      content: '▶';
+    }
+  }
 `;
 
 export const StateChartAction: React.SFC<StateChartActionProps> = ({
-  action
+  action,
+  ...dataAttrs
 }) => {
   switch (action.type) {
     case actionTypes.assign:
       return typeof action.assignment === 'function' ? (
-        <StyledStateChartAction>
+        <StyledStateChartAction {...dataAttrs}>
           <strong>assign</strong>
         </StyledStateChartAction>
       ) : (
         <>
           {Object.keys(action.assignment).map(key => {
             return (
-              <StyledStateChartAction key={key} title={`assign ${key}`}>
+              <StyledStateChartAction
+                key={key}
+                title={`assign ${key}`}
+                {...dataAttrs}
+              >
                 <Popover>
                   <Code>{action.assignment[key].toString()}</Code>
                 </Popover>
@@ -68,7 +92,7 @@ export const StateChartAction: React.SFC<StateChartActionProps> = ({
       }
 
       return (
-        <StyledStateChartAction>
+        <StyledStateChartAction {...dataAttrs}>
           <strong>send</strong> {sendAction.event.type}{' '}
           {sendAction.to ? `to ${JSON.stringify(sendAction.to)}` : ''}
         </StyledStateChartAction>
@@ -78,6 +102,10 @@ export const StateChartAction: React.SFC<StateChartActionProps> = ({
       if (action.type.indexOf('xstate.') === 0) {
         return null;
       }
-      return <div>{action.type}</div>;
+      return (
+        <StyledStateChartAction {...dataAttrs}>
+          {action.type}
+        </StyledStateChartAction>
+      );
   }
 };

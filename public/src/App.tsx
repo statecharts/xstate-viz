@@ -36,7 +36,8 @@ const fetchMachine = Machine({
     idle: {
       
       on: { FETCH: 'pending' },
-      exit: send('EVENT', { to: 'child' })
+      entry: ['one', 'two', 'three'],
+      exit: [send('EVENT', { to: 'child' }), 'foobar']
     },
     pending: {
       entry: assign({

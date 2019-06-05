@@ -1,5 +1,5 @@
 import React, { useState, useMemo } from 'react';
-import { Interpreter } from 'xstate';
+import { Interpreter, Machine } from 'xstate';
 import { StateChartVisualization } from './StateChartVisualization';
 import styled from 'styled-components';
 
@@ -8,7 +8,7 @@ interface VizTabsProps {
   selectedService?: Interpreter<any, any>;
 }
 
-const StyledVizTabsTabs = styled.ul`
+export const StyledVizTabsTabs = styled.ul`
   list-style: none;
   display: flex;
   flex-direction: row;
@@ -16,6 +16,16 @@ const StyledVizTabsTabs = styled.ul`
   align-items: flex-end;
   margin: 0;
   padding: 0;
+`;
+
+export const StyledVizContainer = styled.section`
+  display: grid;
+  grid-column-gap: 1rem;
+  grid-row-gap: 1rem;
+
+  &[data-child] {
+    grid-template-columns: 1fr 1fr;
+  }
 `;
 
 const StyledVizTabsTab = styled.li`
@@ -35,25 +45,15 @@ export const VizTabs: React.SFC<VizTabsProps> = ({
   service,
   selectedService
 }) => {
-  const childServices = useMemo(() => {
-    return Array.from((service as any).children.values()).filter(
-      (child): child is Interpreter<any, any> => child instanceof Interpreter
-    );
-  }, [(service as any).children.size]);
   const currentService = selectedService;
 
   return (
-    <div>
-      <StyledVizTabsTabs>
-        {[service, ...childServices].map(s => {
-          return <StyledVizTabsTab key={s.id}>{s.id} </StyledVizTabsTab>;
-        })}
-      </StyledVizTabsTabs>
-      <StateChartVisualization service={service} visible={!currentService} />
+    <StyledVizContainer data-child={!!selectedService || undefined}>
+      <StateChartVisualization service={service} visible={true} />
 
       {selectedService && (
         <StateChartVisualization service={selectedService} visible={true} />
       )}
-    </div>
+    </StyledVizContainer>
   );
 };

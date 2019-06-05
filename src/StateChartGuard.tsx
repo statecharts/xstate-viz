@@ -10,10 +10,10 @@ export const StateChartGuard: React.SFC<{
     : undefined;
 
   return (
-    <div
+    <span
       style={{ color: valid === undefined ? 'gray' : valid ? 'green' : 'red' }}
     >
       {guard.type === 'xstate.guard' ? (guard as any).name : guard.type}
-    </div>
+    </span>
   );
 };

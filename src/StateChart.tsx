@@ -15,7 +15,7 @@ import {
 } from 'xstate';
 import * as XState from 'xstate';
 import { Editor } from './Editor';
-import { VizTabs } from './VizTabs';
+import { VizTabs, StyledVizTabsTabs } from './VizTabs';
 
 const StyledViewTab = styled.li`
   padding: 0 1rem;
@@ -72,21 +72,22 @@ const StyledView = styled.div`
 export const StyledStateChart = styled.div`
   display: grid;
   grid-template-columns: 1fr 25rem;
-  grid-template-rows: 1fr 5rem;
+  grid-template-rows: 1fr;
+  grid-column-gap: 1rem;
   font-family: sans-serif;
   font-size: 12px;
   overflow: hidden;
   max-height: inherit;
   padding: 1rem;
 
-  > ${StyledSidebar} {
-    grid-column: 2 / 3;
+  > ${StyledVizTabsTabs} {
+    grid-column: 1 / 2;
     grid-row: 1 / -1;
   }
 
-  > footer {
-    grid-column: 1 / 2;
-    grid-row: -2 / -1;
+  > ${StyledSidebar} {
+    grid-column: 2 / 3;
+    grid-row: 1 / -1;
   }
 
   > * {
@@ -385,7 +386,6 @@ export class StateChart extends React.Component<
         className={this.props.className}
         key={code}
         style={{
-          height: this.props.height || '100%',
           background: 'var(--color-app-background)',
           // @ts-ignore
           '--color-app-background': '#FFF',
@@ -407,27 +407,6 @@ export class StateChart extends React.Component<
           service={service}
           selectedService={this.state.selectedService}
         />
-        <footer>
-          <div>
-            <button>Send Event...</button>
-            <form
-              onSubmit={e => {
-                e.preventDefault();
-                e.persist();
-                console.log(e);
-              }}
-            >
-              <fieldset>
-                <label>Event type</label>
-                {service.state.nextEvents.map(eventType => {
-                  return <button key={eventType}>{eventType}</button>;
-                })}
-                <label htmlFor="">Properties</label>
-                <textarea />
-              </fieldset>
-            </form>
-          </div>
-        </footer>
         <StyledSidebar>
           <StyledViewTabs>
             {['definition', 'state', 'children'].map(view => {

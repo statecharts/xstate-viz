@@ -240,12 +240,13 @@ export const StyledStateNodeActions = styled.ul`
 
   &:before {
     display: block;
+    color: var(--color-disabled);
     content: attr(data-title);
     padding: 0.25rem;
+    padding-bottom: 0;
     font-size: 75%;
     letter-spacing: 0.5px;
     text-transform: uppercase;
-    background: var(--color-border);
     font-weight: bold;
   }
 `;
@@ -267,8 +268,41 @@ const StyledEvent = styled.div`
   }
 `;
 
+const StyledEventDot = styled.div`
+  --size: 0.5rem;
+  position: relative;
+  display: inline-block;
+  height: var(--size);
+  width: var(--size);
+  border-radius: 50%;
+  background-color: white;
+
+  &:before {
+    content: '';
+    position: absolute;
+    top: -0.25rem;
+    left: -0.25rem;
+    width: calc(100% + 0.5rem);
+    height: calc(100% + 0.5rem);
+    border-radius: inherit;
+    background-color: var(--color-event);
+  }
+
+  &:after {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    border-radius: inherit;
+    background-color: white;
+  }
+`;
+
 const StyledEventButton = styled.button`
   --color-event: var(--color-primary);
+  padding: 0;
   position: relative;
   appearance: none;
   background-color: var(--color-event);
@@ -276,7 +310,6 @@ const StyledEventButton = styled.button`
   color: white;
   font-size: 0.75em;
   font-weight: bold;
-  padding: 0.25rem 0.25rem 0.25rem 0.5rem;
   cursor: pointer;
   border-radius: 2rem;
   line-height: 1;
@@ -287,7 +320,10 @@ const StyledEventButton = styled.button`
   margin-right: -0.5rem;
   margin-left: 0.5rem;
   text-shadow: 0 1px 1px rgba(0, 0, 0, 0.4);
-  overflow: hidden;
+
+  > span {
+    padding: 0.25rem 0.5rem;
+  }
 
   &:not(:disabled):not([data-builtin]):hover {
     --color-event: var(--color-primary);
@@ -332,6 +368,19 @@ const StyledEventButton = styled.button`
     color: black;
     font-style: italic;
   }
+
+  &[data-transient] {
+    border-radius: 0;
+    background: transparent;
+    color: black;
+
+    > ${StyledEventDot} {
+      --size: 0.3rem;
+      transform: rotate(45deg);
+      border-radius: 0;
+      order: -1;
+    }
+  }
 `;
 
 const StyledStateNodeAction = styled.li`
@@ -355,37 +404,6 @@ const StyledStateNodeAction = styled.li`
       content: ']';
       margin-left: 0.5ch;
     }
-  }
-`;
-const StyledEventDot = styled.div`
-  position: relative;
-  display: inline-block;
-  height: 0.5rem;
-  width: 0.5rem;
-  border-radius: 50%;
-  background-color: white;
-  margin-left: 0.5rem;
-
-  &:before {
-    content: '';
-    position: absolute;
-    top: -0.25rem;
-    left: -0.25rem;
-    width: calc(100% + 0.5rem);
-    height: calc(100% + 0.5rem);
-    border-radius: 50%;
-    background-color: var(--color-event);
-  }
-
-  &:after {
-    content: '';
-    position: absolute;
-    top: 0;
-    left: 0;
-    width: 100%;
-    height: 100%;
-    border-radius: 50%;
-    background-color: white;
   }
 `;
 
@@ -524,10 +542,10 @@ export class StateChartNode extends React.Component<StateChartNodeProps> {
         <StyledStateNodeEvents>
           {getEdges(stateNode, { depth: 0 }).map(edge => {
             const { event: ownEvent } = edge;
+            console.log(edge);
             const isBuiltInEvent =
               ownEvent.indexOf('xstate.') === 0 ||
-              ownEvent.indexOf('done.') === 0 ||
-              ownEvent === '';
+              ownEvent.indexOf('done.') === 0;
 
             const disabled: boolean =
               !isActive || current.nextEvents.indexOf(ownEvent) === -1;
@@ -547,6 +565,8 @@ export class StateChartNode extends React.Component<StateChartNodeProps> {
                   ? delayExpr
                   : delayExpr(current.context, current.event);
             }
+
+            const isTransient = ownEvent === '';
 
             return (
               <StyledEvent
@@ -569,16 +589,28 @@ export class StateChartNode extends React.Component<StateChartNodeProps> {
                       .delay
                   }
                   data-builtin={isBuiltInEvent || undefined}
+                  data-transient={isTransient || undefined}
                   data-id={serializeEdge(edge)}
                   title={ownEvent}
                 >
-                  <span>{friendlyEventName(ownEvent)}</span>
+                  {isTransient ? (
+                    edge.transition.cond ? (
+                      <StateChartGuard
+                        guard={edge.transition.cond}
+                        state={current}
+                      />
+                    ) : (
+                      ''
+                    )
+                  ) : (
+                    <span>{friendlyEventName(ownEvent)}</span>
+                  )}
                   <StyledEventDot />
                 </StyledEventButton>
 
                 {!!(edge.transition.actions.length || edge.transition.cond) && (
                   <>
-                    {edge.transition.cond && (
+                    {!isTransient && edge.transition.cond && (
                       <StyledStateNodeAction data-guard>
                         <StateChartGuard
                           guard={edge.transition.cond}
