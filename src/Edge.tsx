@@ -91,10 +91,16 @@ export class Edge extends Component<EdgeProps, EdgeState> {
     const eventCenterPt = center(eventRect);
     const targetCenterPt = center(targetRect);
 
-    const preStart = {
-      x: sourceRect.right,
-      y: eventCenterPt.y
-    };
+    const preStart = [
+      {
+        x: sourceRect.right,
+        y: Math.min(eventCenterPt.y, sourceRect.bottom)
+      },
+      {
+        x: eventRect.left,
+        y: eventCenterPt.y
+      }
+    ];
 
     const start = {
       x: eventRect.right - 4,
@@ -183,7 +189,7 @@ export class Edge extends Component<EdgeProps, EdgeState> {
             : start.y + bezierPad
           : start.y
     };
-    const points: Point[] = [preStart, start, postStart];
+    const points: Point[] = [...preStart, start, postStart];
 
     if (endSide === 'top') {
       preEnd.y = preEnd.y - bezierPad;
