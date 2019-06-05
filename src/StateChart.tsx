@@ -241,6 +241,11 @@ export class StateChart extends React.Component<
   componentDidMount() {
     this.state.service.start();
   }
+  setSelectedService(selectedService: Interpreter<any>) {
+    this.setState({
+      selectedService
+    });
+  }
   renderView() {
     const { view, current, machine, code, service } = this.state;
 
@@ -311,9 +316,7 @@ export class StateChart extends React.Component<
               style={{ paddingLeft: '1rem' }}
               onClick={e => {
                 e.stopPropagation();
-                this.setState({
-                  selectedService: parentService
-                });
+                this.setSelectedService(parentService);
               }}
             >
               <strong>{parentService.id}</strong>
@@ -406,6 +409,7 @@ export class StateChart extends React.Component<
         <VizTabs
           service={service}
           selectedService={this.state.selectedService}
+          onSelectService={s => this.setSelectedService(s)}
         />
         <StyledSidebar>
           <StyledViewTabs>

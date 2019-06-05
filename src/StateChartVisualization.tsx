@@ -17,7 +17,8 @@ const StyledVisualization = styled.div`
 export const StateChartVisualization: React.SFC<{
   service: Interpreter<any, any>;
   visible: boolean;
-}> = ({ service, visible }) => {
+  onSelectService: (service: Interpreter<any>) => void;
+}> = ({ service, visible, onSelectService }) => {
   const [current, send] = useService(service);
   const [state, setState] = React.useState<{
     [key: string]: any;
@@ -138,6 +139,13 @@ export const StateChartVisualization: React.SFC<{
             preview: undefined,
             previewEvent: undefined
           });
+        }}
+        onSelectServiceId={serviceId => {
+          const s = (service as any).children.get(serviceId);
+
+          if (s) {
+            onSelectService(s); // TODO: pass service via context
+          }
         }}
         toggledStates={state.toggledStates}
       />

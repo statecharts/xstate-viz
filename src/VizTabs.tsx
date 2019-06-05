@@ -6,6 +6,7 @@ import styled from 'styled-components';
 interface VizTabsProps {
   service: Interpreter<any, any>;
   selectedService?: Interpreter<any, any>;
+  onSelectService: (service: Interpreter<any>) => void;
 }
 
 export const StyledVizTabsTabs = styled.ul`
@@ -43,16 +44,25 @@ const StyledVizTabsTab = styled.li`
 
 export const VizTabs: React.SFC<VizTabsProps> = ({
   service,
-  selectedService
+  selectedService,
+  onSelectService
 }) => {
   const currentService = selectedService;
 
   return (
     <StyledVizContainer data-child={!!selectedService || undefined}>
-      <StateChartVisualization service={service} visible={true} />
+      <StateChartVisualization
+        service={service}
+        visible={true}
+        onSelectService={onSelectService}
+      />
 
       {selectedService && (
-        <StateChartVisualization service={selectedService} visible={true} />
+        <StateChartVisualization
+          service={selectedService}
+          visible={true}
+          onSelectService={onSelectService}
+        />
       )}
     </StyledVizContainer>
   );

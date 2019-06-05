@@ -3,7 +3,8 @@ import {
   Machine as _Machine,
   StateNode,
   State,
-  DelayedTransitionDefinition
+  DelayedTransitionDefinition,
+  Interpreter
 } from 'xstate';
 import styled from 'styled-components';
 import {
@@ -415,6 +416,7 @@ interface StateChartNodeProps {
   onPreEvent: (event: string) => void;
   onExitPreEvent: () => void;
   onReset?: () => void;
+  onSelectServiceId: (serviceId: string) => void;
   toggledStates: Record<string, boolean>;
 }
 
@@ -507,6 +509,19 @@ export class StateChartNode extends React.Component<StateChartNodeProps> {
               </StyledStateNodeActions>
             </>
           )}
+          <StyledStateNodeActions data-title="invoke">
+            {stateNode.invoke.map(invocation => {
+              console.log(invocation);
+
+              return (
+                <span
+                  onClick={() => this.props.onSelectServiceId(invocation.id)}
+                >
+                  {invocation.id}
+                </span>
+              );
+            })}
+          </StyledStateNodeActions>
           {Object.keys(stateNode.states).length ? (
             <StyledChildStates>
               {Object.keys(stateNode.states || []).map(key => {
@@ -522,6 +537,7 @@ export class StateChartNode extends React.Component<StateChartNodeProps> {
                     onPreEvent={onPreEvent}
                     onExitPreEvent={onExitPreEvent}
                     toggledStates={this.props.toggledStates}
+                    onSelectServiceId={this.props.onSelectServiceId}
                   />
                 );
               })}
@@ -542,7 +558,6 @@ export class StateChartNode extends React.Component<StateChartNodeProps> {
         <StyledStateNodeEvents>
           {getEdges(stateNode, { depth: 0 }).map(edge => {
             const { event: ownEvent } = edge;
-            console.log(edge);
             const isBuiltInEvent =
               ownEvent.indexOf('xstate.') === 0 ||
               ownEvent.indexOf('done.') === 0;
