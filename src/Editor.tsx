@@ -1,18 +1,19 @@
 import React, { Component } from 'react';
-import AceEditor from 'react-ace';
+import AceEditor, { AceEditorProps } from 'react-ace';
 import 'brace/theme/monokai';
 import 'brace/mode/javascript';
 import { StyledButton } from './Button';
 import styled from 'styled-components';
 
-interface EditorProps {
+interface EditorProps extends AceEditorProps {
   code: string;
   onChange?: (code: string) => void;
-  height?: number | string;
+  height?: string;
   changeText?: string;
+  mode?: string;
 }
 
-const StyledEditor = styled.div`
+export const StyledEditor = styled.div`
   height: 100%;
   width: 100%;
   display: flex;
@@ -26,12 +27,17 @@ export class Editor extends Component<EditorProps> {
   };
   render() {
     const { code } = this.state;
-    const { onChange, height = '100%', changeText = 'Update' } = this.props;
+    const {
+      onChange,
+      height = '100%',
+      changeText = 'Update',
+      mode = 'javascript'
+    } = this.props;
 
     return (
       <StyledEditor>
         <AceEditor
-          mode="javascript"
+          mode={mode}
           theme="monokai"
           editorProps={{ $blockScrolling: true }}
           value={code}

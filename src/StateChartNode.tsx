@@ -117,6 +117,7 @@ const StyledStateNode = styled.div`
   min-height: 1rem;
   display: inline-grid;
   grid-template-columns: min-content 1fr;
+  grid-column-gap: 0.5rem;
   border: none;
 
   &[data-type~='machine'] {
@@ -222,6 +223,9 @@ const StyledStateNodeEvents = styled.div`
   grid-column: 2 / 3;
   padding: 0;
   margin-right: 1rem;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
 
   &:empty {
     display: none;
@@ -258,7 +262,7 @@ const StyledEvent = styled.div`
   display: flex;
   flex-direction: column;
   justify-content: flex-start;
-  align-items: flex-start;
+  align-items: stretch;
 
   &:not(:last-child) {
     margin-bottom: 0.25rem;
@@ -282,7 +286,7 @@ const StyledEventDot = styled.div`
     content: '';
     position: absolute;
     top: -0.25rem;
-    left: -0.25rem;
+    right: 0;
     width: calc(100% + 0.5rem);
     height: calc(100% + 0.5rem);
     border-radius: inherit;
@@ -293,7 +297,7 @@ const StyledEventDot = styled.div`
     content: '';
     position: absolute;
     top: 0;
-    left: 0;
+    right: 0.25rem;
     width: 100%;
     height: 100%;
     border-radius: inherit;
@@ -318,9 +322,8 @@ const StyledEventButton = styled.button`
   flex-direction: row;
   justify-content: space-between;
   align-items: center;
-  margin-right: -0.5rem;
-  margin-left: 0.5rem;
   text-shadow: 0 1px 1px rgba(0, 0, 0, 0.4);
+  overflow: hidden;
 
   > span {
     padding: 0.25rem 0.5rem;
@@ -371,14 +374,9 @@ const StyledEventButton = styled.button`
   }
 
   &[data-transient] {
-    border-radius: 0;
     background: transparent;
-    color: black;
 
     > ${StyledEventDot} {
-      --size: 0.3rem;
-      transform: rotate(45deg);
-      border-radius: 0;
       order: -1;
     }
   }

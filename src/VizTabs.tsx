@@ -29,41 +29,14 @@ export const StyledVizContainer = styled.section`
   }
 `;
 
-const StyledVizTabsTab = styled.li`
-  padding: 0.5rem;
-  background: var(--color-border);
-
-  &:not(:last-child) {
-    border-right: 1px solid black;
-  }
-
-  &[data-active] {
-    background: var(--color-background);
-  }
-`;
-
-export const VizTabs: React.SFC<VizTabsProps> = ({
-  service,
-  selectedService,
-  onSelectService
-}) => {
-  const currentService = selectedService;
-
+export const VizTabs: React.SFC<VizTabsProps> = ({ service }) => {
   return (
-    <StyledVizContainer data-child={!!selectedService || undefined}>
+    <StyledVizContainer>
       <StateChartVisualization
         service={service}
         visible={true}
-        onSelectService={onSelectService}
+        onSelectService={() => void 0}
       />
-
-      {selectedService && (
-        <StateChartVisualization
-          service={selectedService}
-          visible={true}
-          onSelectService={onSelectService}
-        />
-      )}
     </StyledVizContainer>
   );
 };

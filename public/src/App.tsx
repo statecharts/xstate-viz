@@ -34,8 +34,13 @@ const fetchMachine = Machine({
   },
   states: {
     idle: {
-      
-      on: { FETCH: 'pending' },
+      on: {
+        FETCH: {
+          target: 'pending',
+          cond: function canFetch() { return true },
+          actions: 'fetchData'
+        }
+      },
       entry: ['one', 'two', 'three'],
       exit: [send('EVENT', { to: 'child' }), 'foobar']
     },

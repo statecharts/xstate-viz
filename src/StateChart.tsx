@@ -16,6 +16,7 @@ import {
 import * as XState from 'xstate';
 import { Editor } from './Editor';
 import { VizTabs, StyledVizTabsTabs } from './VizTabs';
+import { StatePanel } from './StatePanel';
 
 const StyledViewTab = styled.li`
   padding: 0 1rem;
@@ -66,7 +67,7 @@ const StyledView = styled.div`
   flex-direction: column;
   justify-content: flex-start;
   align-items: stretch;
-  overflow: hidden;
+  // overflow: hidden;
 `;
 
 export const StyledStateChart = styled.div`
@@ -95,39 +96,6 @@ export const StyledStateChart = styled.div`
     overflow-y: auto;
   }
 `;
-
-const StyledField = styled.div`
-  padding: 0.5rem 1rem;
-  width: 100%;
-  overflow: hidden;
-
-  > label {
-    text-transform: uppercase;
-    display: block;
-    margin-bottom: 0.5em;
-    font-weight: bold;
-  }
-`;
-
-const StyledPre = styled.pre`
-  overflow: auto;
-`;
-interface FieldProps {
-  label: string;
-  children: any;
-  disabled?: boolean;
-  style?: any;
-}
-function Field({ label, children, disabled, style }: FieldProps) {
-  return (
-    <StyledField
-      style={{ ...style, ...(disabled ? { opacity: 0.5 } : undefined) }}
-    >
-      <label>{label}</label>
-      {children}
-    </StyledField>
-  );
-}
 
 interface StateChartProps {
   className?: string;
@@ -174,7 +142,6 @@ export function toMachine(machine: StateNode<any> | string): StateNode<any> {
 
   const machineProxy = (config: any, options: any, ctx: any) => {
     if (resultMachine) {
-      console.log('already', config);
       return Machine(config, options);
     }
     resultMachine = Machine(config, options);
@@ -258,78 +225,7 @@ export class StateChart extends React.Component<
           />
         );
       case 'state':
-        return (
-          <>
-            <div style={{ overflowY: 'auto' }}>
-              <Field label="Value">
-                <StyledPre>{JSON.stringify(current.value, null, 2)}</StyledPre>
-              </Field>
-              <Field label="Context" disabled={!current.context}>
-                {current.context !== undefined ? (
-                  <StyledPre>
-                    {JSON.stringify(current.context, null, 2)}
-                  </StyledPre>
-                ) : null}
-              </Field>
-              <Field label="Actions" disabled={!current.actions.length}>
-                {!!current.actions.length && (
-                  <StyledPre>
-                    {JSON.stringify(current.actions, null, 2)}
-                  </StyledPre>
-                )}
-              </Field>
-            </div>
-            <Field
-              label="Event"
-              style={{
-                marginTop: 'auto',
-                borderTop: '1px solid #777',
-                flexShrink: 0,
-                background: 'var(--color-sidebar)'
-              }}
-            >
-              <Editor
-                height="5rem"
-                code={'{type: ""}'}
-                changeText="Send event"
-                onChange={code => {
-                  try {
-                    const eventData = eval(`(${code})`);
-
-                    this.state.service.send(eventData);
-                  } catch (e) {
-                    console.error(e);
-                    alert(
-                      'Unable to send event.\nCheck the console for more info.'
-                    );
-                  }
-                }}
-              />
-            </Field>
-          </>
-        );
-      case 'children':
-        const foo = (parentService: Interpreter<any, any>) => {
-          return (
-            <div
-              key={parentService.id}
-              style={{ paddingLeft: '1rem' }}
-              onClick={e => {
-                e.stopPropagation();
-                this.setSelectedService(parentService);
-              }}
-            >
-              <strong>{parentService.id}</strong>
-              {Array.from<Interpreter<any, any>>(
-                (parentService as any).children.values()
-              ).map(childService => {
-                return foo(childService);
-              })}
-            </div>
-          );
-        };
-
-        return foo(service);
+        return <StatePanel state={current} service={service} />;
       default:
         return null;
     }
@@ -413,7 +309,7 @@ export class StateChart extends React.Component<
         />
         <StyledSidebar>
           <StyledViewTabs>
-            {['definition', 'state', 'children'].map(view => {
+            {['definition', 'state'].map(view => {
               return (
                 <StyledViewTab
                   onClick={() => this.setState({ view })}
