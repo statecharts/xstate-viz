@@ -5,8 +5,6 @@ import styled from 'styled-components';
 
 interface VizTabsProps {
   service: Interpreter<any, any>;
-  selectedService?: Interpreter<any, any>;
-  onSelectService: (service: Interpreter<any>) => void;
 }
 
 export const StyledVizTabsTabs = styled.ul`

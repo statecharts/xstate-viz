@@ -17,6 +17,7 @@ import * as XState from 'xstate';
 import { Editor } from './Editor';
 import { VizTabs, StyledVizTabsTabs } from './VizTabs';
 import { StatePanel } from './StatePanel';
+import { EventPanel } from './EventPanel';
 
 const StyledViewTab = styled.li`
   padding: 0 1rem;
@@ -115,7 +116,7 @@ export interface StateChartState {
   toggledStates: Record<string, boolean>;
   service: Interpreter<any>;
   error?: any;
-  selectedService?: Interpreter<any>;
+  events: EventObject[];
 }
 
 export function toMachine(machine: StateNode<any> | string): StateNode<any> {
@@ -195,28 +196,26 @@ export class StateChart extends React.Component<
           : `Machine(${JSON.stringify(machine.config, null, 2)})`,
       toggledStates: {},
       service: interpret(machine, {}).onTransition(current => {
-        this.setState({ current }, () => {
-          if (this.state.previewEvent) {
-            // this.setState({
-            //   preview: this.state.service.nextState(this.state.previewEvent)
-            // });
+        this.setState(
+          { current, events: this.state.events.concat(current.event) },
+          () => {
+            if (this.state.previewEvent) {
+              // this.setState({
+              //   preview: this.state.service.nextState(this.state.previewEvent)
+              // });
+            }
           }
-        });
+        );
       }),
-      selectedService: undefined
+      events: []
     };
   })();
   svgRef = React.createRef<SVGSVGElement>();
   componentDidMount() {
     this.state.service.start();
   }
-  setSelectedService(selectedService: Interpreter<any>) {
-    this.setState({
-      selectedService
-    });
-  }
   renderView() {
-    const { view, current, machine, code, service } = this.state;
+    const { view, current, machine, code, service, events } = this.state;
 
     switch (view) {
       case 'definition':
@@ -228,6 +227,8 @@ export class StateChart extends React.Component<
         );
       case 'state':
         return <StatePanel state={current} service={service} />;
+      case 'events':
+        return <EventPanel events={events} />;
       default:
         return null;
     }
@@ -304,14 +305,10 @@ export class StateChart extends React.Component<
           '--border-width': '2px'
         }}
       >
-        <VizTabs
-          service={service}
-          selectedService={this.state.selectedService}
-          onSelectService={s => this.setSelectedService(s)}
-        />
+        <VizTabs service={service} />
         <StyledSidebar>
           <StyledViewTabs>
-            {['definition', 'state'].map(view => {
+            {['definition', 'state', 'events'].map(view => {
               return (
                 <StyledViewTab
                   onClick={() => this.setState({ view })}
