@@ -49,6 +49,8 @@ const StyledViewTabs = styled.ul`
   padding: 0;
   flex-grow: 0;
   flex-shrink: 0;
+  position: sticky;
+  top: 0;
 `;
 
 const StyledSidebar = styled.div`

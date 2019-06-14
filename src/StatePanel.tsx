@@ -4,7 +4,10 @@ import { Editor } from './Editor';
 import styled from 'styled-components';
 
 const StyledField = styled.div`
-  padding: 1rem 0;
+  &:not(:last-child) {
+    margin-bottom: 1rem;
+  }
+
   width: 100%;
   overflow: hidden;
 
@@ -14,6 +17,13 @@ const StyledField = styled.div`
     margin-bottom: 0.5em;
     font-weight: bold;
     opacity: 0.5;
+  }
+
+  &[data-empty] {
+    opacity: 0.5;
+    > label {
+      margin-bottom: 0;
+    }
   }
 `;
 
@@ -27,6 +37,7 @@ function Field({ label, children, disabled, style }: FieldProps) {
   return (
     <StyledField
       style={{ ...style, ...(disabled ? { opacity: 0.5 } : undefined) }}
+      data-empty={!children.length || undefined}
     >
       <label>{label}</label>
       {children}
@@ -35,11 +46,30 @@ function Field({ label, children, disabled, style }: FieldProps) {
 }
 
 const StyledDetails = styled.details`
-  margin: 0.5rem 0;
-  padding: 0 0.5rem;
+  margin: 0;
+  padding: 0 1rem;
 
   & & {
-    border-left: 2px solid white;
+    border-left: 2px solid #737373;
+  }
+
+  > summary {
+    font-weight: bold;
+    font-size: 1rem;
+  }
+`;
+
+const StyledPanelAction = styled.div`
+  display: grid;
+  grid-template-columns: min-content 1fr;
+  grid-column-gap: 1ch;
+
+  & + & {
+    margin-top: 0.5rem;
+  }
+
+  pre {
+    margin: 0;
   }
 `;
 
@@ -60,19 +90,20 @@ export const StatePanel: React.FunctionComponent<{
       <Field label="actions">
         {state.actions.map((action, i) => {
           return (
-            <div key={i}>
+            <StyledPanelAction key={i}>
               {Object.keys(action).map(key => {
                 const value = action[key];
                 if (value === undefined) {
                   return null;
                 }
                 return (
-                  <div key={key}>
-                    <strong>{key}:</strong> {JSON.stringify(action[key])}
-                  </div>
+                  <React.Fragment key={key}>
+                    <strong>{key}:</strong>
+                    <pre>{JSON.stringify(action[key], null, 2)}</pre>
+                  </React.Fragment>
                 );
               })}
-            </div>
+            </StyledPanelAction>
           );
         })}
       </Field>
