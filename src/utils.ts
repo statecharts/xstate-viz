@@ -4,7 +4,8 @@ import {
   Edge,
   Action,
   ActionObject,
-  Guard
+  Guard,
+  EventObject
 } from 'xstate';
 
 export function isChildOf(
@@ -145,4 +146,12 @@ export function center(rect: ClientRect): Point {
     x: rect.left + rect.width / 2,
     y: rect.top + rect.height / 2
   };
+}
+
+export function isBuiltInEvent(eventType: string): boolean {
+  return (
+    eventType.indexOf('xstate.') === 0 ||
+    eventType.indexOf('done.') === 0 ||
+    eventType === ''
+  );
 }

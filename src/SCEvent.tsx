@@ -1,6 +1,11 @@
 import React, { useMemo } from 'react';
 import { Edge, State, DelayedTransitionDefinition, Machine } from 'xstate';
-import { getEventDelay, serializeEdge, friendlyEventName } from './utils';
+import {
+  getEventDelay,
+  serializeEdge,
+  friendlyEventName,
+  isBuiltInEvent
+} from './utils';
 import styled from 'styled-components';
 import { StyledStateNodeActions } from './StateChartNode';
 import { StateChartGuard } from './StateChartGuard';
@@ -176,10 +181,6 @@ export const SCEvent: React.SFC<{
   onExitPreEvent: () => void;
 }> = ({ edge, current, onEvent, onPreEvent, onExitPreEvent }) => {
   const { event: ownEvent } = edge;
-  const isBuiltInEvent =
-    ownEvent.indexOf('xstate.') === 0 ||
-    ownEvent.indexOf('done.') === 0 ||
-    ownEvent === '';
 
   // const disabled: boolean =
   //   !isActive || current.nextEvents.indexOf(ownEvent) === -1;

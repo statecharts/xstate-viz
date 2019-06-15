@@ -228,7 +228,7 @@ export class StateChart extends React.Component<
       case 'state':
         return <StatePanel state={current} service={service} />;
       case 'events':
-        return <EventPanel events={events} />;
+        return <EventPanel state={current} service={service} events={events} />;
       default:
         return null;
     }
@@ -320,7 +320,7 @@ export class StateChart extends React.Component<
               );
             })}
           </StyledViewTabs>
-          <StyledView>{this.renderView()}</StyledView>
+          {this.renderView()}
         </StyledSidebar>
       </StyledStateChart>
     );

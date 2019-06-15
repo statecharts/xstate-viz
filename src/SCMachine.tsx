@@ -45,7 +45,7 @@ export const SCMachine: React.SFC<{
         '--border-width': '2px'
       }}
     >
-      <VizTabs service={service} onSelectService={() => undefined} />
+      <VizTabs service={service} />
     </StyledStateChart>
   );
 };
