@@ -1,9 +1,10 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { EventObject, State, Interpreter, Machine, assign } from 'xstate';
 import AceEditor from 'react-ace';
 import { isBuiltInEvent } from './utils';
 import styled from 'styled-components';
 import { useMachine } from '@xstate/react';
+import { StyledEventButton } from './SCEvent';
 
 function getNextEvents(state: State<any>): string[] {
   const { nextEvents } = state;
@@ -41,10 +42,22 @@ const StyledEventPanel = styled.section`
   overflow: hidden;
 `;
 
+const StyledEventPanelButton = styled.button`
+  appearance: none;
+  margin-right: 0.5rem;
+  background-color: var(--color-primary);
+  border: none;
+  color: white;
+  padding: 0.25rem 0.5rem;
+  border-radius: 2rem;
+  font-size: 0.75em;
+  font-weight: bold;
+`;
+
 const StyledEventPanelEditor = styled.div``;
 
 const sendEventContext = {
-  eventCode: JSON.stringify({ type: '' })
+  eventCode: JSON.stringify({ type: '' }, null, 2)
 };
 
 const sendEventMachine = Machine<typeof sendEventContext>({
@@ -58,6 +71,14 @@ const sendEventMachine = Machine<typeof sendEventContext>({
           actions: assign({
             eventCode: (_, e) => e.value
           })
+        },
+        AUTOFILL: {
+          actions: [
+            assign({
+              eventCode: (_, e) => e.value
+            }),
+            'moveCursor'
+          ]
         },
         UPDATE_AND_SEND: {
           actions: [
@@ -83,10 +104,18 @@ export const EventPanel: React.FunctionComponent<{
   const [current, send, sendEventService] = useMachine(sendEventMachine, {
     execute: false
   });
+  const editorRef = useRef<any>(null);
 
   useEffect(() => {
     sendEventService.execute(current, {
-      sendToService: ctx => service.send(JSON.parse(ctx.eventCode))
+      sendToService: ctx => service.send(JSON.parse(ctx.eventCode)),
+      moveCursor: () => {
+        if (editorRef.current) {
+          editorRef.current.moveCursorTo(1);
+          editorRef.current.navigateLineEnd();
+          editorRef.current.focus();
+        }
+      }
     });
   }, [current]);
 
@@ -95,11 +124,11 @@ export const EventPanel: React.FunctionComponent<{
       <StyledEventPanelEditor>
         {getNextEvents(state).map(nextEvent => {
           return (
-            <button
+            <StyledEventPanelButton
               key={nextEvent}
               onClick={e => {
                 e.stopPropagation();
-                send('UPDATE', {
+                send('AUTOFILL', {
                   value: JSON.stringify(
                     {
                       type: nextEvent
@@ -111,10 +140,16 @@ export const EventPanel: React.FunctionComponent<{
               }}
             >
               {nextEvent}
-            </button>
+            </StyledEventPanelButton>
           );
         })}
         <AceEditor
+          ref={r => {
+            if (!r) {
+              return;
+            }
+            editorRef.current = (r as any).editor;
+          }}
           mode="javascript"
           theme="monokai"
           editorProps={{ $blockScrolling: true }}
@@ -127,6 +162,7 @@ export const EventPanel: React.FunctionComponent<{
           height={'8em'}
           showGutter={false}
           readOnly={false}
+          cursorStart={3}
         />
         <button
           onClick={() => service.send(JSON.parse(current.context.eventCode))}
@@ -156,7 +192,7 @@ export const EventPanel: React.FunctionComponent<{
                   onClick={e => {
                     e.stopPropagation();
 
-                    send('UPDATE', { value: pastEventCode });
+                    send('AUTOFILL', { value: pastEventCode });
                   }}
                 >
                   Edit

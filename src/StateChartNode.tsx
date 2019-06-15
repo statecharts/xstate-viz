@@ -310,8 +310,7 @@ const StyledEventButton = styled.button`
   padding: 0;
   position: relative;
   appearance: none;
-  background-color: var(--color-event);
-  border: none;
+  border: 2px solid var(--color-event);
   color: white;
   font-size: 0.75em;
   font-weight: bold;
@@ -322,11 +321,15 @@ const StyledEventButton = styled.button`
   flex-direction: row;
   justify-content: space-between;
   align-items: center;
-  text-shadow: 0 1px 1px rgba(0, 0, 0, 0.4);
   overflow: hidden;
 
-  > span {
+  > * {
     padding: 0.25rem 0.5rem;
+  }
+
+  > label {
+    background-color: var(--color-event);
+    cursor: inherit;
   }
 
   &:not(:disabled):not([data-builtin]):hover {
@@ -343,8 +346,12 @@ const StyledEventButton = styled.button`
   }
 
   // duration
-  &[data-delay]:not([disabled]) {
-    &:before {
+  &[data-delay] {
+    > * {
+      background: none;
+    }
+
+    &:not([disabled]):before {
       content: '';
       position: absolute;
       top: 0;
@@ -382,27 +389,17 @@ const StyledEventButton = styled.button`
   }
 `;
 
-const StyledStateNodeAction = styled.li`
+const StyledStateNodeAction = styled.div`
   display: flex;
   flex-direction: row;
   align-items: center;
   list-style: none;
-  padding: 0 0.5rem;
+  padding: 0;
   margin: 0;
 
-  &[data-guard] {
-    &:before,
-    &:after {
-      font-weight: bold;
-    }
-    &:before {
-      content: '[';
-      margin-right: 0.5ch;
-    }
-    &:after {
-      content: ']';
-      margin-left: 0.5ch;
-    }
+  &:before {
+    content: '→';
+    margin-right: 0.5ch;
   }
 `;
 
@@ -606,50 +603,32 @@ export class StateChartNode extends React.Component<StateChartNodeProps> {
                   data-id={serializeEdge(edge)}
                   title={ownEvent}
                 >
-                  {isTransient ? (
-                    edge.transition.cond ? (
-                      <StateChartGuard
-                        guard={edge.transition.cond}
-                        state={current}
-                      />
-                    ) : (
-                      ''
-                    )
-                  ) : (
-                    <span>{friendlyEventName(ownEvent)}</span>
+                  <label>{friendlyEventName(ownEvent)}</label>
+                  {edge.transition.cond && (
+                    <StateChartGuard
+                      guard={edge.transition.cond}
+                      state={current}
+                    />
                   )}
-                  <StyledEventDot />
                 </StyledEventButton>
-
                 {!!(edge.transition.actions.length || edge.transition.cond) && (
-                  <>
-                    {!isTransient && edge.transition.cond && (
-                      <StyledStateNodeAction data-guard>
-                        <StateChartGuard
-                          guard={edge.transition.cond}
-                          state={current}
-                        />
-                      </StyledStateNodeAction>
-                    )}
+                  <StyledStateNodeActions>
+                    {edge.transition.actions.map((action, i) => {
+                      const actionString =
+                        action.type === actionTypes.assign
+                          ? JSON.stringify(action.assignments!)
+                          : action.type;
 
-                    <StyledStateNodeActions>
-                      {edge.transition.actions.map((action, i) => {
-                        const actionString =
-                          action.type === actionTypes.assign
-                            ? JSON.stringify(action.assignments!)
-                            : action.type;
-
-                        return (
-                          <StyledStateNodeAction
-                            data-action-type="do"
-                            key={actionString + ':' + i}
-                          >
-                            {actionString}
-                          </StyledStateNodeAction>
-                        );
-                      })}
-                    </StyledStateNodeActions>
-                  </>
+                      return (
+                        <StyledStateNodeAction
+                          data-action-type="do"
+                          key={actionString + ':' + i}
+                        >
+                          {actionString}
+                        </StyledStateNodeAction>
+                      );
+                    })}
+                  </StyledStateNodeActions>
                 )}
               </StyledEvent>
             );

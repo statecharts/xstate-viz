@@ -8,6 +8,7 @@ const StyledField = styled.div`
     margin-bottom: 1rem;
   }
 
+  margin-top: 0.5rem;
   width: 100%;
   overflow: hidden;
 
@@ -37,7 +38,7 @@ function Field({ label, children, disabled, style }: FieldProps) {
   return (
     <StyledField
       style={{ ...style, ...(disabled ? { opacity: 0.5 } : undefined) }}
-      data-empty={!children.length || undefined}
+      data-empty={!children || undefined}
     >
       <label>{label}</label>
       {children}
@@ -85,8 +86,9 @@ export const StatePanel: React.FunctionComponent<{
   return (
     <StyledDetails key={service.id}>
       <summary>{service.id}</summary>
-
-      <pre>{JSON.stringify(simplifiedState, null, 2)}</pre>
+      <Field label="state">
+        <pre>{JSON.stringify(simplifiedState, null, 2)}</pre>
+      </Field>
       <Field label="actions">
         {state.actions.map((action, i) => {
           return (

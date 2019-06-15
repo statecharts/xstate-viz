@@ -36,7 +36,7 @@ const StyledEvent = styled.div`
   }
 `;
 
-const StyledEventButton = styled.button`
+export const StyledEventButton = styled.button`
   --color-event: var(--color-primary);
   position: relative;
   appearance: none;
@@ -55,7 +55,6 @@ const StyledEventButton = styled.button`
   align-items: center;
   margin-right: -0.5rem;
   margin-left: 0.5rem;
-  text-shadow: 0 1px 1px rgba(0, 0, 0, 0.4);
   // overflow: hidden;
 
   &:not(:disabled):not([data-builtin]):hover {

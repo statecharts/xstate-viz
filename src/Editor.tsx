@@ -47,6 +47,7 @@ export class Editor extends Component<EditorProps> {
           height={height as string}
           showGutter={false}
           readOnly={!onChange}
+          wrapEnabled
         />
         {onChange ? (
           <StyledButton onClick={() => onChange(this.state.code)}>
