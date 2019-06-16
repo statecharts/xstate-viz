@@ -87,9 +87,101 @@ export class Edge extends Component<EdgeProps, EdgeState> {
     const sourceRect = relative(this.state.sourceData!.rect!, svgRef);
     const eventRect = relative(this.state.eventData!.rect!, svgRef);
     const targetRect = relative(this.state.targetData!.rect!, svgRef);
+    const magic = eventRect.height / 2;
 
     const eventCenterPt = center(eventRect);
     const targetCenterPt = center(targetRect);
+
+    const ptFns: Array<(prevPt: Point) => Point> = [
+      () => ({
+        x: sourceRect.right,
+        y: Math.min(eventCenterPt.y, sourceRect.bottom)
+      }),
+      () => ({
+        x: eventRect.left,
+        y: eventCenterPt.y
+      })
+    ];
+
+    const startPt = {
+      x: eventRect.right + magic,
+      y: eventCenterPt.y
+    };
+
+    const isSelf = edge.source === edge.target;
+
+    const endPt = isSelf
+      ? {
+          x: eventRect.right,
+          y: eventRect.top
+        }
+      : {
+          x:
+            Math.abs(eventRect.right - targetRect.left) <
+            Math.abs(eventRect.right - targetRect.right)
+              ? targetRect.left
+              : targetRect.right,
+          y:
+            Math.abs(eventRect.bottom - targetRect.top) <
+            Math.abs(eventRect.bottom - targetRect.bottom)
+              ? targetRect.top
+              : targetRect.bottom
+        };
+
+    if (!isSelf) {
+      endPt.x =
+        startPt.x < targetRect.right && startPt.x > targetRect.left
+          ? startPt.x
+          : endPt.x;
+      endPt.y =
+        startPt.y < targetRect.bottom && startPt.y > targetRect.top
+          ? startPt.y
+          : endPt.y;
+    }
+
+    const xDir = Math.sign(endPt.x - startPt.x);
+    const yDir = Math.sign(endPt.y - startPt.y);
+
+    ptFns.push(() => startPt);
+
+    if (xDir === -1 && Math.abs(startPt.y - endPt.y) < magic) {
+      ptFns.push(prevPt => ({
+        x: startPt.x,
+        y: startPt.y - magic
+      }));
+
+      ptFns.push(prevPt => ({
+        x: eventRect.left,
+        y: prevPt.y
+      }));
+    }
+
+    if (!isSelf) {
+      const midPts = [
+        {
+          x: startPt.x,
+          y: startPt.y + magic * yDir
+        },
+        {
+          x: endPt.x,
+          y: endPt.y - magic * yDir
+        }
+      ];
+
+      ptFns.push(...midPts.map(pt => () => pt));
+    } else {
+      ptFns.push(prevPt => ({
+        x: prevPt.x,
+        y: endPt.y
+      }));
+    }
+
+    if (endPt.y === targetRect.top) {
+      ptFns.push(() => ({
+        x: endPt.x,
+        y: endPt.y - magic
+      }));
+    } else if (endPt) ptFns.push(() => endPt);
 
     const preStart = [
       {
@@ -103,7 +195,7 @@ export class Edge extends Component<EdgeProps, EdgeState> {
     ];
 
     const start = {
-      x: eventRect.right - 4,
+      x: eventRect.right,
       y: eventCenterPt.y
     };
 
@@ -117,7 +209,7 @@ export class Edge extends Component<EdgeProps, EdgeState> {
       (targetCenterPt.x - eventCenterPt.x);
     let b = eventCenterPt.y - m * eventCenterPt.x;
     let endSide: 'left' | 'top' | 'bottom' | 'right';
-    const bezierPad = 10;
+    const bezierPad = magic;
 
     if (edge.source === edge.target) {
       endSide = 'right';
@@ -203,26 +295,40 @@ export class Edge extends Component<EdgeProps, EdgeState> {
       preEnd.x = end.x + bezierPad;
     }
 
+    points.push({
+      x: start.x,
+      y: start.y + Math.abs(start.y - end.y) / 2
+    });
+
+    points.push({
+      x: end.x,
+      y: start.y + Math.abs(start.y - end.y) / 2
+    });
+
     points.push(preEnd);
     points.push(end);
 
-    const path = points.reduce((acc, point, i) => {
+    const pts = ptFns.reduce(
+      (acc, ptFn, i) => {
+        acc.push(ptFn(acc[i - 1] || startPt));
+        return acc;
+      },
+      [] as Point[]
+    );
+
+    const circles: Point[] = pts.slice();
+
+    const path = pts.reduce((acc, point, i) => {
       if (i === 0) {
         return `M ${point.x},${point.y}`;
       }
 
-      if (i === points.length - 1) {
+      if (i === pts.length - 1) {
         return acc + ` L ${point.x},${point.y}`;
       }
 
-      const prevPoint = points[i - 1];
-      const nextPoint = points[i + 1];
-
-      if (prevPoint.x === point.x || prevPoint.y === point.y) {
-        return acc + ` L ${point.x},${point.y}`;
-      }
-
-      // return acc + ` L ${point.x},${point.y}`;
+      const prevPoint = pts[i - 1];
+      const nextPoint = pts[i + 1];
 
       const dx = point.x - prevPoint.x;
       const dy = point.y - prevPoint.y;
@@ -238,7 +344,15 @@ export class Edge extends Component<EdgeProps, EdgeState> {
         y: point.y + nextDy / 2
       };
 
-      return acc + ` Q ${point.x},${point.y} ${midpoint2.x},${midpoint2.y}`;
+      circles.push(midpoint1, midpoint2);
+
+      return (
+        // acc + `L ${midpoint1.x},${midpoint1.y} L ${midpoint2.x},${midpoint2.y}`
+        acc +
+        `L ${midpoint1.x},${midpoint1.y} Q ${point.x},${point.y} ${
+          midpoint2.x
+        },${midpoint2.y}`
+      );
     }, '');
 
     const isHighlighted = this.props.preview;
@@ -247,12 +361,18 @@ export class Edge extends Component<EdgeProps, EdgeState> {
       <g>
         <path
           d={path}
-          stroke={isHighlighted ? 'gray' : 'var(--color-edge)'}
+          stroke={
+            isHighlighted ? 'var(--color-edge-active)' : 'var(--color-edge)'
+          }
           strokeWidth={strokeWidth}
           fill="none"
           markerEnd={isHighlighted ? `url(#marker-preview)` : `url(#marker)`}
           ref={this.ref}
         />
+        {circles.map((circle, i) => {
+          const fill = i > pts.length ? 'red' : 'blue';
+          return <circle cx={circle.x} cy={circle.y} r={2} fill={fill} />;
+        })}
       </g>
     );
   }

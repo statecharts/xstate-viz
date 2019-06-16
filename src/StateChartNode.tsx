@@ -311,6 +311,7 @@ const StyledEventButton = styled.button`
   position: relative;
   appearance: none;
   border: 2px solid var(--color-event);
+  background: white;
   color: white;
   font-size: 0.75em;
   font-weight: bold;
@@ -330,6 +331,10 @@ const StyledEventButton = styled.button`
   > label {
     background-color: var(--color-event);
     cursor: inherit;
+
+    &:empty {
+      display: none;
+    }
   }
 
   &:not(:disabled):not([data-builtin]):hover {
@@ -375,14 +380,11 @@ const StyledEventButton = styled.button`
   }
 
   &[data-builtin] {
-    background-color: transparent;
     color: black;
     font-style: italic;
   }
 
   &[data-transient] {
-    background: transparent;
-
     > ${StyledEventDot} {
       order: -1;
     }
@@ -556,15 +558,20 @@ export class StateChartNode extends React.Component<StateChartNodeProps> {
             const isBuiltInEvent =
               ownEvent.indexOf('xstate.') === 0 ||
               ownEvent.indexOf('done.') === 0;
-
+            const guard = edge.transition.cond;
+            const valid =
+              guard && guard.predicate
+                ? guard.predicate(current.context, current.event, {
+                    cond: guard
+                  })
+                : true;
             const disabled: boolean =
-              !isActive || current.nextEvents.indexOf(ownEvent) === -1;
+              !valid ||
+              !isActive ||
+              current.nextEvents.indexOf(ownEvent) === -1;
             // || (!!edge.cond &&
             //   typeof edge.cond === 'function' &&
             //   !edge.cond(current.context, { type: ownEvent }, { cond: undefined, }));
-            const cond = edge.cond
-              ? `[${edge.cond.toString().replace(/\n/g, '')}]`
-              : '';
 
             let delay = isBuiltInEvent ? getEventDelay(ownEvent) : false;
 

@@ -298,6 +298,7 @@ export class StateChart extends React.Component<
           '--color-link': 'rgba(87, 176, 234, 1)',
           '--color-disabled': '#c7c5c5',
           '--color-edge': 'rgba(0, 0, 0, 0.2)',
+          '--color-edge-active': 'var(--color-primary)',
           '--color-secondary': 'rgba(255,152,0,1)',
           '--color-secondary-light': 'rgba(255,152,0,.5)',
           '--color-sidebar': '#272722',

@@ -73,7 +73,7 @@ export const StateChartVisualization: React.SFC<{
             markerUnits="strokeWidth"
             orient="auto"
           >
-            <path d="M0,0 L0,4 L4,2 z" fill="gray" />
+            <path d="M0,0 L0,4 L4,2 z" fill="var(--color-edge-active)" />
           </marker>
         </defs>
         {edges.map(edge => {

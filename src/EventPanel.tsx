@@ -1,10 +1,9 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useEffect, useRef } from 'react';
 import { EventObject, State, Interpreter, Machine, assign } from 'xstate';
 import AceEditor from 'react-ace';
 import { isBuiltInEvent } from './utils';
 import styled from 'styled-components';
 import { useMachine } from '@xstate/react';
-import { StyledEventButton } from './SCEvent';
 
 function getNextEvents(state: State<any>): string[] {
   const { nextEvents } = state;
