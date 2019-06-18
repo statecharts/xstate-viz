@@ -92,225 +92,208 @@ export class Edge extends Component<EdgeProps, EdgeState> {
     const eventCenterPt = center(eventRect);
     const targetCenterPt = center(targetRect);
 
-    const ptFns: Array<(prevPt: Point) => Point> = [
-      () => ({
-        x: sourceRect.right,
-        y: Math.min(eventCenterPt.y, sourceRect.bottom)
-      }),
-      () => ({
+    const isSelf = edge.source === edge.target;
+    const isInternal = edge.transition.internal;
+
+    const ptFns: Array<(prevPt: Point) => Point> = [];
+
+    if (isInternal) {
+      ptFns.push(() => ({
         x: eventRect.left,
         y: eventCenterPt.y
-      })
-    ];
-
-    const startPt = {
-      x: eventRect.right + magic,
-      y: eventCenterPt.y
-    };
-
-    const isSelf = edge.source === edge.target;
-
-    const endPt = isSelf
-      ? {
-          x: eventRect.right,
-          y: eventRect.top
-        }
-      : {
-          x:
-            Math.abs(eventRect.right - targetRect.left) <
-            Math.abs(eventRect.right - targetRect.right)
-              ? targetRect.left
-              : targetRect.right,
-          y:
-            Math.abs(eventRect.bottom - targetRect.top) <
-            Math.abs(eventRect.bottom - targetRect.bottom)
-              ? targetRect.top
-              : targetRect.bottom
-        };
-
-    if (!isSelf) {
-      endPt.x =
-        startPt.x < targetRect.right && startPt.x > targetRect.left
-          ? startPt.x
-          : endPt.x;
-      endPt.y =
-        startPt.y < targetRect.bottom && startPt.y > targetRect.top
-          ? startPt.y
-          : endPt.y;
-    }
-
-    const xDir = Math.sign(endPt.x - startPt.x);
-    const yDir = Math.sign(endPt.y - startPt.y);
-
-    ptFns.push(() => startPt);
-
-    if (xDir === -1 && Math.abs(startPt.y - endPt.y) < magic) {
-      ptFns.push(prevPt => ({
-        x: startPt.x,
-        y: startPt.y - magic
       }));
 
       ptFns.push(prevPt => ({
-        x: eventRect.left,
+        x: sourceRect.right,
         y: prevPt.y
       }));
-    }
-
-    if (!isSelf) {
-      const midPts = [
-        {
-          x: startPt.x,
-          y: startPt.y + magic * yDir
-        },
-        {
-          x: endPt.x,
-          y: endPt.y - magic * yDir
-        }
-      ];
-
-      ptFns.push(...midPts.map(pt => () => pt));
-    } else {
-      ptFns.push(prevPt => ({
-        x: prevPt.x,
-        y: endPt.y
-      }));
-    }
-
-    if (endPt.y === targetRect.top) {
-      ptFns.push(() => ({
-        x: endPt.x,
-        y: endPt.y - magic
-      }));
-    } else if (endPt) ptFns.push(() => endPt);
-
-    const preStart = [
-      {
-        x: sourceRect.right,
-        y: Math.min(eventCenterPt.y, sourceRect.bottom)
-      },
-      {
-        x: eventRect.left,
-        y: eventCenterPt.y
+      if (!isSelf) {
+        ptFns.push(
+          () => ({
+            x: targetRect.right + magic,
+            y: targetRect.top - magic
+          }),
+          () => ({
+            x: targetRect.right,
+            y: targetRect.top - magic
+          }),
+          prevPt => ({
+            x: prevPt.x,
+            y: targetRect.top
+          })
+        );
       }
-    ];
-
-    const start = {
-      x: eventRect.right,
-      y: eventCenterPt.y
-    };
-
-    const end = {
-      x: 0,
-      y: 0
-    };
-
-    let m =
-      (targetCenterPt.y - eventCenterPt.y) /
-      (targetCenterPt.x - eventCenterPt.x);
-    let b = eventCenterPt.y - m * eventCenterPt.x;
-    let endSide: 'left' | 'top' | 'bottom' | 'right';
-    const bezierPad = magic;
-
-    if (edge.source === edge.target) {
-      endSide = 'right';
-      end.y = start.y + 10;
-      end.x = start.x;
+    } else if (isSelf) {
+      ptFns.push(
+        () => ({
+          x: sourceRect.right,
+          y: Math.min(eventCenterPt.y, sourceRect.bottom)
+        }),
+        prevPt => ({
+          x: eventRect.left,
+          y: eventCenterPt.y
+        }),
+        prevPt => ({
+          x: eventRect.right,
+          y: eventCenterPt.y
+        }),
+        prevPt => ({
+          x: eventRect.right + magic,
+          y: eventRect.bottom
+        }),
+        prevPt => ({
+          x: eventRect.right + magic * 2,
+          y: eventCenterPt.y
+        }),
+        prevPt => ({
+          x: eventRect.right + magic,
+          y: eventRect.top
+        }),
+        prevPt => ({
+          x: eventRect.right,
+          y: eventCenterPt.y
+        })
+      );
     } else {
-      if (eventCenterPt.x <= targetCenterPt.x) {
-        if (m * targetRect.left + b < targetRect.top) {
-          end.y = targetRect.top;
-          end.x = (end.y - b) / m;
+      // go through event label
+      ptFns.push(
+        () => ({
+          x: sourceRect.right,
+          y: Math.min(eventCenterPt.y, sourceRect.bottom)
+        }),
+        () => ({
+          x: eventRect.left,
+          y: eventCenterPt.y
+        }),
+        () => ({
+          x: eventRect.right,
+          y: eventCenterPt.y
+        })
+      );
+
+      const startPt = {
+        x: eventRect.right + magic,
+        y: eventCenterPt.y
+      };
+
+      let endSide: 'left' | 'top' | 'bottom' | 'right';
+
+      const endPt = {
+        x:
+          startPt.x < targetRect.right && startPt.x > targetRect.left
+            ? startPt.x
+            : Math.abs(eventRect.right - targetRect.left) <
+              Math.abs(eventRect.right - targetRect.right)
+            ? targetRect.left
+            : targetRect.right,
+        y:
+          startPt.y < targetRect.bottom && startPt.y > targetRect.top
+            ? startPt.y
+            : Math.abs(eventRect.bottom - targetRect.top) <
+              Math.abs(eventRect.bottom - targetRect.bottom)
+            ? targetRect.top
+            : targetRect.bottom
+      };
+
+      if (endPt.y === targetRect.top) {
+        endSide = 'top';
+      } else if (endPt.y === targetRect.bottom) {
+        endSide = 'bottom';
+      } else {
+        if (endPt.x === targetRect.right) {
+          endPt.y = targetRect.top;
           endSide = 'top';
-        } else if (m * targetRect.left + b > targetRect.bottom) {
-          end.y = targetRect.bottom;
-          end.x = (end.y - b) / m;
-          endSide = 'bottom';
         } else {
-          end.x = targetRect.left;
-          end.y = m * end.x + b;
           endSide = 'left';
         }
-      } else {
-        if (m * targetRect.right + b < targetRect.top) {
-          end.y = targetRect.top;
-          end.x = (end.y - b) / m;
-          endSide = 'top';
-        } else if (m * targetRect.right + b > targetRect.bottom) {
-          end.y = targetRect.bottom;
-          end.x = (end.y - b) / m;
-          endSide = 'bottom';
-        } else {
-          end.x = targetRect.right - bezierPad;
-          if (eventCenterPt.y > targetCenterPt.y) {
-            end.y = targetRect.bottom;
-            endSide = 'bottom';
-          } else {
-            end.y = targetRect.top;
-            endSide = 'top';
+      }
+
+      const dx = endPt.x - startPt.x;
+      const dy = endPt.y - startPt.y;
+      const slope = dy / dx;
+
+      const xDir = Math.sign(dx);
+      const yDir = Math.sign(dy);
+
+      ptFns.push(() => startPt);
+
+      if (xDir === -1) {
+        if (yDir === -1) {
+          ptFns.push(prevPt => ({
+            x: prevPt.x,
+            y:
+              endSide === 'top'
+                ? sourceRect.top - magic
+                : eventRect.bottom + magic
+          }));
+
+          if (endSide === 'bottom') {
+            ptFns.push(prevPt => ({
+              x: eventRect.left,
+              y: prevPt.y
+            }));
           }
+        } else {
+          ptFns.push(
+            prevPt => ({
+              x: prevPt.x,
+              y: startPt.y + magic
+            }),
+            prevPt => ({
+              x: eventRect.left,
+              y: prevPt.y
+            })
+          );
         }
       }
+
+      // if going left
+      //   if (
+      //     xDir === -1 &&
+      //     Math.abs(startPt.y - endPt.y) < magic * 2 &&
+      //     endSide === 'top'
+      //   ) {
+      //     ptFns.push(prevPt => ({
+      //       x: startPt.x,
+      //       y: sourceRect.top - magic
+      //     }));
+      //     ptFns.push(prevPt => ({
+      //       x: eventRect.left,
+      //       y: prevPt.y
+      //     }));
+      //   } else {
+      //     // ptFns.push(prevPt => ({
+      //     //   x: startPt.x,
+      //     //   y: yDir === -1 ? sourceRect.top - magic : prevPt.y + magic
+      //     // }));
+      //   }
+
+      //   ptFns.push(
+      //     prevPt => {
+      //       return {
+      //         x: endPt.x - magic * xDir,
+      //         y:
+      //           endSide === 'top'
+      //             ? endPt.y - magic
+      //             : endSide === 'bottom'
+      //             ? endPt.y + magic
+      //             : endPt.y
+      //       };
+      //     },
+      //     prevPt => ({
+      //       x: endPt.x,
+      //       y: prevPt.y
+      //     }),
+      //     prevPt => prevPt,
+      //     () => endPt
+      //   );
+      // }
+
+      ptFns.push(() => endPt, () => endPt);
     }
-
-    switch (endSide) {
-      case 'bottom':
-        end.y += 4;
-        break;
-      case 'top':
-        end.y -= 4;
-        break;
-      case 'left':
-        end.x -= 4;
-        break;
-      case 'right':
-        end.x += 4;
-        break;
-    }
-
-    const dx = end.x - start.x;
-    const dy = end.y - start.y;
-    const preEnd = { ...end };
-    const postStart = {
-      x: start.x + bezierPad,
-      y:
-        Math.abs(dy) > bezierPad
-          ? start.x > end.x
-            ? dy > 0
-              ? start.y + bezierPad
-              : start.y - bezierPad
-            : start.y + bezierPad
-          : start.y
-    };
-    const points: Point[] = [...preStart, start, postStart];
-
-    if (endSide === 'top') {
-      preEnd.y = preEnd.y - bezierPad;
-    } else if (endSide === 'bottom') {
-      preEnd.y = preEnd.y + bezierPad;
-    } else if (endSide === 'left') {
-      preEnd.y = end.y;
-      preEnd.x = end.x - bezierPad;
-    } else if (endSide === 'right') {
-      preEnd.y = end.y;
-      preEnd.x = end.x + bezierPad;
-    }
-
-    points.push({
-      x: start.x,
-      y: start.y + Math.abs(start.y - end.y) / 2
-    });
-
-    points.push({
-      x: end.x,
-      y: start.y + Math.abs(start.y - end.y) / 2
-    });
-
-    points.push(preEnd);
-    points.push(end);
-
     const pts = ptFns.reduce(
       (acc, ptFn, i) => {
-        acc.push(ptFn(acc[i - 1] || startPt));
+        acc.push(ptFn(acc[i - 1] || acc[0]));
         return acc;
       },
       [] as Point[]
@@ -324,7 +307,7 @@ export class Edge extends Component<EdgeProps, EdgeState> {
       }
 
       if (i === pts.length - 1) {
-        return acc + ` L ${point.x},${point.y}`;
+        return acc;
       }
 
       const prevPoint = pts[i - 1];
@@ -351,7 +334,7 @@ export class Edge extends Component<EdgeProps, EdgeState> {
         acc +
         `L ${midpoint1.x},${midpoint1.y} Q ${point.x},${point.y} ${
           midpoint2.x
-        },${midpoint2.y}`
+        },${midpoint2.y} `
       );
     }, '');
 
@@ -371,7 +354,16 @@ export class Edge extends Component<EdgeProps, EdgeState> {
         />
         {circles.map((circle, i) => {
           const fill = i > pts.length ? 'red' : 'blue';
-          return <circle cx={circle.x} cy={circle.y} r={2} fill={fill} />;
+          return (
+            <circle
+              cx={circle.x}
+              cy={circle.y}
+              r={i > pts.length ? 0.5 : 1}
+              fill={fill}
+            >
+              <text>{i}</text>
+            </circle>
+          );
         })}
       </g>
     );

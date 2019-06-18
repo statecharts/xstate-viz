@@ -108,6 +108,7 @@ const StyledStateNodeHeader = styled.header`
 const StyledStateNode = styled.div`
   --color-shadow: rgba(0, 0, 0, 0.05);
   --color-node-border: var(--color-border);
+  --state-event-gap: 0.5rem;
   position: relative;
   margin: 0.5rem;
   flex-grow: 0;
@@ -116,8 +117,8 @@ const StyledStateNode = styled.div`
   color: #313131;
   min-height: 1rem;
   display: inline-grid;
-  grid-template-columns: min-content 1fr;
-  grid-column-gap: 0.5rem;
+  grid-template-columns: auto 1fr;
+  grid-column-gap: var(--state-event-gap);
   border: none;
 
   &[data-type~='machine'] {
@@ -173,12 +174,6 @@ const StyledStateNode = styled.div`
     --color-node-border: var(--color-primary-faded);
   }
 
-  &[data-type~='parallel']
-    > ${StyledChildStates}
-    > *:not(${StyledChildStatesToggle}) {
-    border-style: dashed;
-  }
-
   &[data-type~='final'] {
     > div:first-child:after {
       content: '';
@@ -217,6 +212,10 @@ const StyledStateNodeState = styled.div`
   color: #313131;
   min-height: 1rem;
   z-index: 1;
+
+  &[data-type='parallel'] > ${StyledChildStates} > ${StyledStateNode} > & {
+    border-style: dashed;
+  }
 `;
 
 const StyledStateNodeEvents = styled.div`
@@ -253,23 +252,6 @@ export const StyledStateNodeActions = styled.ul`
     letter-spacing: 0.5px;
     text-transform: uppercase;
     font-weight: bold;
-  }
-`;
-
-const StyledEvent = styled.div`
-  list-style: none;
-  margin: 0;
-  display: flex;
-  flex-direction: column;
-  justify-content: flex-start;
-  align-items: stretch;
-
-  &:not(:last-child) {
-    margin-bottom: 0.25rem;
-  }
-
-  &[data-disabled] > ${StyledStateNodeActions} {
-    opacity: 0.7;
   }
 `;
 
@@ -325,7 +307,7 @@ const StyledEventButton = styled.button`
   overflow: hidden;
 
   > * {
-    padding: 0.25rem 0.5rem;
+    padding: 0.15rem 0.35rem;
   }
 
   > label {
@@ -388,6 +370,26 @@ const StyledEventButton = styled.button`
     > ${StyledEventDot} {
       order: -1;
     }
+  }
+`;
+
+const StyledEvent = styled.div`
+  list-style: none;
+  margin: 0;
+  display: flex;
+  flex-direction: column;
+  justify-content: flex-start;
+  align-items: stretch;
+
+  &:not(:last-child) {
+    margin-bottom: 0.25rem;
+  }
+
+  &[data-disabled] > ${StyledStateNodeActions} {
+    opacity: 0.7;
+  }
+
+  &[data-internal] {
   }
 `;
 
@@ -460,7 +462,7 @@ export class StateChartNode extends React.Component<StateChartNodeProps> {
         ref={this.stateRef}
         // data-open={true}
       >
-        <StyledStateNodeState data-id={stateNode.id}>
+        <StyledStateNodeState data-id={stateNode.id} data-type={dataType}>
           <StyledStateNodeHeader
             style={{
               // @ts-ignore
@@ -593,6 +595,7 @@ export class StateChartNode extends React.Component<StateChartNodeProps> {
                 }}
                 data-disabled={disabled || undefined}
                 key={serializeEdge(edge)}
+                data-internal={edge.transition.internal || undefined}
               >
                 <StyledEventButton
                   onClick={() =>
