@@ -1,7 +1,7 @@
-import React from "react";
-import { StateNode } from "xstate";
-import { tracker } from "./tracker";
-import { relative } from "./utils";
+import React from 'react';
+import { StateNode } from 'xstate';
+import { tracker } from './tracker';
+import { relative } from './utils';
 
 interface InitialEdgeProps {
   source: StateNode;
@@ -38,7 +38,7 @@ export class InitialEdge extends React.Component<
     );
     const { top, left } = rect;
 
-    const stroke = preview ? "gray" : "var(--color-edge)";
+    const stroke = preview ? 'var(--color-edge-active)' : 'var(--color-edge)';
 
     return (
       <g>

@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import styled from 'styled-components';
 import { getEdges } from 'xstate/lib/graph';
 import { serializeEdge, initialStateNodes } from './utils';
@@ -19,6 +19,7 @@ export const StateChartVisualization: React.SFC<{
   visible: boolean;
   onSelectService: (service: Interpreter<any>) => void;
 }> = ({ service, visible, onSelectService }) => {
+  const [transitionCount, setTransitionCount] = useState(0);
   const [current, send] = useService(service);
   const [state, setState] = React.useState<{
     [key: string]: any;
@@ -30,6 +31,10 @@ export const StateChartVisualization: React.SFC<{
   });
   const svgRef = React.useRef<SVGSVGElement>(null);
   const edges = getEdges(service.machine);
+
+  useEffect(() => {
+    setTransitionCount(transitionCount + 1);
+  }, [current]);
 
   if (!visible) {
     return null;
@@ -119,6 +124,8 @@ export const StateChartVisualization: React.SFC<{
       <StateChartNode
         stateNode={service.machine}
         current={service.state}
+        transitionCount={transitionCount}
+        level={0}
         preview={state.preview}
         onReset={() => {}}
         onEvent={event => {

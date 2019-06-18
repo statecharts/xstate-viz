@@ -65,12 +65,21 @@ const StyledChildStatesToggle = styled.button`
   }
 `;
 
+const StyledToken = styled.div`
+  background: var(--color-border);
+  color: inherit;
+  font-weight: bold;
+`;
+
 const StyledStateNodeHeader = styled.header`
   z-index: 1;
   display: flex;
   flex-direction: row;
-  padding: 0.25rem;
   white-space: nowrap;
+
+  > * {
+    padding: 0.25rem;
+  }
 
   &:before {
     display: none;
@@ -407,6 +416,28 @@ const StyledStateNodeAction = styled.div`
   }
 `;
 
+const StyledActiveAnim = styled.div`
+  position: absolute;
+  z-index: 0;
+  height: 100%;
+  width: 100%;
+  top: 0;
+  left: 0;
+  opacity: 0.5;
+  animation: bg 1s;
+  background: var(--color-primary);
+  will-change: transform;
+
+  @keyframes bg {
+    from {
+      opacity: 0.5;
+    }
+    to {
+      opacity: 0;
+    }
+  }
+`;
+
 interface StateChartNodeProps {
   stateNode: StateNode;
   current: State<any, any>;
@@ -417,6 +448,8 @@ interface StateChartNodeProps {
   onReset?: () => void;
   onSelectServiceId: (serviceId: string) => void;
   toggledStates: Record<string, boolean>;
+  transitionCount: number;
+  level: number;
 }
 
 export class StateChartNode extends React.Component<StateChartNodeProps> {
@@ -463,12 +496,22 @@ export class StateChartNode extends React.Component<StateChartNodeProps> {
         // data-open={true}
       >
         <StyledStateNodeState data-id={stateNode.id} data-type={dataType}>
+          {isActive && (dataType === 'atomic' || dataType === 'final') && (
+            <StyledActiveAnim
+              key={this.props.transitionCount}
+              style={{
+                // @ts-ignore
+                '--level': this.props.level
+              }}
+            />
+          )}
           <StyledStateNodeHeader
             style={{
               // @ts-ignore
               '--depth': stateNode.path.length
             }}
           >
+            {dataType === 'history' && <StyledToken>H</StyledToken>}
             <strong>{stateNode.key}</strong>
             {stateNode.path.length === 0 ? (
               <StyledButton
@@ -529,6 +572,7 @@ export class StateChartNode extends React.Component<StateChartNodeProps> {
                 return (
                   <StateChartNode
                     stateNode={childStateNode}
+                    level={this.props.level + 1}
                     current={current}
                     preview={preview}
                     key={childStateNode.id}
@@ -537,6 +581,7 @@ export class StateChartNode extends React.Component<StateChartNodeProps> {
                     onExitPreEvent={onExitPreEvent}
                     toggledStates={this.props.toggledStates}
                     onSelectServiceId={this.props.onSelectServiceId}
+                    transitionCount={this.props.transitionCount}
                   />
                 );
               })}

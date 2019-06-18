@@ -14,6 +14,13 @@ const example = `Machine({
         NEXT: 'compound'
       }
     },
+    'another leaf': {
+      entry: ['one', 'two'],
+      exit: ['three', 'four'],
+      on: {
+        NEXT: 'compound'
+      }
+    },
     compound: {
       initial: 'child 1',
       states: {
