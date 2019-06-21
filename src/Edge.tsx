@@ -183,22 +183,30 @@ export class Edge extends Component<EdgeProps, EdgeState> {
 
       let endSide: 'left' | 'top' | 'bottom' | 'right';
 
+      const endPtX =
+        startPt.x < targetRect.right && startPt.x > targetRect.left
+          ? startPt.x
+          : Math.abs(eventRect.right - targetRect.left) <
+            Math.abs(eventRect.right - targetRect.right)
+          ? targetRect.left
+          : targetRect.right;
+
+      const dx = endPtX - startPt.x;
+
       const endPt = {
-        x:
-          startPt.x < targetRect.right && startPt.x > targetRect.left
-            ? startPt.x
-            : Math.abs(eventRect.right - targetRect.left) <
-              Math.abs(eventRect.right - targetRect.right)
-            ? targetRect.left
-            : targetRect.right,
+        x: endPtX,
         y:
-          startPt.y < targetRect.bottom && startPt.y > targetRect.top
+          dx <= 0
+            ? targetRect.top
+            : startPt.y < targetRect.bottom && startPt.y > targetRect.top
             ? startPt.y
             : Math.abs(eventRect.bottom - targetRect.top) <
               Math.abs(eventRect.bottom - targetRect.bottom)
             ? targetRect.top
             : targetRect.bottom
       };
+
+      const dy = endPt.y - startPt.y;
 
       if (endPt.y === targetRect.top) {
         endSide = 'top';
@@ -213,8 +221,6 @@ export class Edge extends Component<EdgeProps, EdgeState> {
         }
       }
 
-      const dx = endPt.x - startPt.x;
-      const dy = endPt.y - startPt.y;
       const slope = dy / dx;
 
       const xDir = Math.sign(dx);
@@ -226,15 +232,13 @@ export class Edge extends Component<EdgeProps, EdgeState> {
         if (yDir === -1) {
           ptFns.push(prevPt => ({
             x: prevPt.x,
-            y: sourceRect.top - magic
+            y: Math.min(sourceRect.top - magic, targetRect.top - magic)
           }));
 
-          if (endSide === 'bottom') {
-            ptFns.push(prevPt => ({
-              x: eventRect.left,
-              y: prevPt.y
-            }));
-          }
+          ptFns.push(prevPt => ({
+            x: endPt.x,
+            y: endPt.y - magic
+          }));
         } else {
           ptFns.push(
             prevPt => ({
@@ -247,6 +251,11 @@ export class Edge extends Component<EdgeProps, EdgeState> {
             })
           );
         }
+      } else if (startPt.x !== endPt.x) {
+        ptFns.push(prevPt => ({
+          x: endPt.x,
+          y: prevPt.y
+        }));
       }
 
       // if going left
@@ -354,7 +363,7 @@ export class Edge extends Component<EdgeProps, EdgeState> {
           markerEnd={isHighlighted ? `url(#marker-preview)` : `url(#marker)`}
           ref={this.ref}
         />
-        {/* {circles.map((circle, i) => {
+        {circles.map((circle, i) => {
           const fill = i > pts.length ? 'red' : 'blue';
           return (
             <circle
@@ -366,7 +375,7 @@ export class Edge extends Component<EdgeProps, EdgeState> {
               <text>{i}</text>
             </circle>
           );
-        })} */}
+        })}
       </g>
     );
   }

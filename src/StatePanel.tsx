@@ -62,7 +62,7 @@ const StyledDetails = styled.details`
 
 const StyledPanelAction = styled.div`
   display: grid;
-  grid-template-columns: min-content 1fr;
+  grid-template-columns: auto 1fr;
   grid-column-gap: 1ch;
 
   & + & {

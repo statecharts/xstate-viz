@@ -250,18 +250,6 @@ export const StyledStateNodeActions = styled.ul`
   &:empty {
     display: none;
   }
-
-  &:before {
-    display: block;
-    color: var(--color-disabled);
-    content: attr(data-title);
-    padding: 0.25rem;
-    padding-bottom: 0;
-    font-size: 75%;
-    letter-spacing: 0.5px;
-    text-transform: uppercase;
-    font-weight: bold;
-  }
 `;
 
 const StyledEventDot = styled.div`
@@ -423,10 +411,9 @@ const StyledActiveAnim = styled.div`
   width: 100%;
   top: 0;
   left: 0;
-  opacity: 0.5;
-  animation: bg 1s;
+  animation: bg 1s both;
   background: var(--color-primary);
-  will-change: transform;
+  will-change: opacity;
 
   @keyframes bg {
     from {

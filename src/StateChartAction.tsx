@@ -41,18 +41,7 @@ const StyledStateChartAction = styled.li`
     color: gray;
     margin-right: 0.25rem;
     font-size: 75%;
-  }
-
-  &[data-action-type='exit'] {
-    &:before {
-      content: '←';
-    }
-  }
-
-  &[data-action-type='entry'] {
-    &:before {
-      content: '→';
-    }
+    content: attr(data-action-type) ' /';
   }
 `;
 

@@ -18,7 +18,7 @@ export const StateChartGuard: React.SFC<{
     <StyledSCGuard
       style={{ color: valid === undefined ? 'gray' : valid ? 'green' : 'red' }}
     >
-      {guard.type === 'xstate.guard' ? (guard as any).name : guard.type}
+      [{guard.type === 'xstate.guard' ? (guard as any).name : guard.type}]
     </StyledSCGuard>
   );
 };

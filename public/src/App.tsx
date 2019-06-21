@@ -18,7 +18,14 @@ const example = `Machine({
       entry: ['one', 'two'],
       exit: ['three', 'four'],
       on: {
-        NEXT: 'compound'
+        NEXT: {
+          target: 'compound',
+          cond: function someCondition() { return true }
+        },
+        NEVER: {
+          target: 'leaf',
+          cond: function falseCondition() { return false }
+        }
       }
     },
     compound: {
