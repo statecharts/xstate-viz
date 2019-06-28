@@ -177,12 +177,15 @@ export const EventPanel: React.FunctionComponent<{
           return (
             <StyledEventPanelEvent
               key={i}
-              title="Click to send"
+              title="Double-click to send, click to edit"
               data-builtin={isBuiltIn || undefined}
-              onClick={e => {
+              onDoubleClick={e => {
                 !isBuiltIn
                   ? send('UPDATE_AND_SEND', { value: pastEventCode })
                   : undefined;
+              }}
+              onClick={_ => {
+                send('AUTOFILL', { value: pastEventCode });
               }}
             >
               <pre>{JSON.stringify(event, null, 2)}</pre>

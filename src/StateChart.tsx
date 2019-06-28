@@ -18,6 +18,7 @@ import { Editor } from './Editor';
 import { VizTabs, StyledVizTabsTabs } from './VizTabs';
 import { StatePanel } from './StatePanel';
 import { EventPanel } from './EventPanel';
+import { EditorPanel } from './EditorPanel';
 
 const StyledViewTab = styled.li`
   padding: 0 1rem;
@@ -74,8 +75,9 @@ const StyledView = styled.div`
 `;
 
 export const StyledStateChart = styled.div`
+  grid-area: content;
   display: grid;
-  grid-template-columns: 1fr 25rem;
+  grid-template-columns: 1fr var(--sidebar-width, 25rem);
   grid-template-rows: 1fr;
   grid-column-gap: 1rem;
   font-family: sans-serif;
@@ -103,6 +105,7 @@ export const StyledStateChart = styled.div`
 interface StateChartProps {
   className?: string;
   machine: StateNode<any> | string;
+  onSave: (machineString: string) => void;
   height?: number | string;
 }
 
@@ -214,15 +217,24 @@ export class StateChart extends React.Component<
   componentDidMount() {
     this.state.service.start();
   }
+  componentDidUpdate(prevProps: StateChartProps) {
+    const { machine } = this.props;
+
+    if (machine !== prevProps.machine) {
+      this.updateMachine(machine.toString());
+    }
+  }
   renderView() {
     const { view, current, machine, code, service, events } = this.state;
+    const { onSave } = this.props;
 
     switch (view) {
       case 'definition':
         return (
-          <Editor
-            code={this.state.code}
+          <EditorPanel
+            code={code}
             onChange={code => this.updateMachine(code)}
+            onSave={onSave}
           />
         );
       case 'state':

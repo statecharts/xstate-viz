@@ -7,7 +7,8 @@ import styled from 'styled-components';
 
 interface EditorProps extends AceEditorProps {
   code: string;
-  onChange?: (code: string) => void;
+  onChange: (code: string) => void;
+  onSave: (code: string) => void;
   height?: string;
   changeText?: string;
   mode?: string;
@@ -18,7 +19,13 @@ export const StyledEditor = styled.div`
   width: 100%;
   display: flex;
   flex-direction: column;
-  padding: 1rem 0 0 1rem;
+  padding: 1rem;
+`;
+
+export const StyledButtons = styled.div`
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  grid-column-gap: 1rem;
 `;
 
 export class Editor extends Component<EditorProps> {
@@ -29,6 +36,7 @@ export class Editor extends Component<EditorProps> {
     const { code } = this.state;
     const {
       onChange,
+      onSave,
       height = '100%',
       changeText = 'Update',
       mode = 'javascript'
@@ -49,11 +57,14 @@ export class Editor extends Component<EditorProps> {
           readOnly={!onChange}
           wrapEnabled
         />
-        {onChange ? (
+        <StyledButtons>
           <StyledButton onClick={() => onChange(this.state.code)}>
             {changeText}
           </StyledButton>
-        ) : null}
+          <StyledButton onClick={() => onSave(this.state.code)}>
+            Save
+          </StyledButton>
+        </StyledButtons>
       </StyledEditor>
     );
   }

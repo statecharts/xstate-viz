@@ -19,7 +19,7 @@
   "author": "David Khourshid",
   "license": "MIT",
   "devDependencies": {
-    "@types/react": "^16.8.18",
+    "@types/react": "^16.8.22",
     "@types/react-dom": "^16.8.4",
     "@types/react-syntax-highlighter": "^10.2.0",
     "@types/styled-components": "^4.0.3",
@@ -42,7 +42,7 @@
     "react-ace": "^6.2.0",
     "react-syntax-highlighter": "^10.3.0",
     "styled-components": "^4.0.2",
-    "xstate": "^4.6.0"
+    "xstate": "^4.6.3"
   },
   "peerDependencies": {
     "react": "^16.8.6",

@@ -123,10 +123,19 @@ export class Edge extends Component<EdgeProps, EdgeState> {
           })
         );
       } else {
-        ptFns.push(prevPt => ({
-          x: targetRect.right,
-          y: Math.min(prevPt.y, sourceRect.bottom)
-        }));
+        ptFns.push(prevPt => {
+          if (prevPt.y > sourceRect.bottom) {
+            return {
+              x: targetRect.right - magic,
+              y: sourceRect.bottom
+            };
+          } else {
+            return {
+              x: targetRect.right,
+              y: prevPt.y
+            };
+          }
+        });
       }
     } else if (isSelf) {
       ptFns.push(
@@ -196,7 +205,7 @@ export class Edge extends Component<EdgeProps, EdgeState> {
       const endPt = {
         x: endPtX,
         y:
-          dx <= 0
+          dx < 0
             ? targetRect.top
             : startPt.y < targetRect.bottom && startPt.y > targetRect.top
             ? startPt.y
@@ -244,11 +253,11 @@ export class Edge extends Component<EdgeProps, EdgeState> {
             prevPt => ({
               x: prevPt.x,
               y: startPt.y + magic
-            }),
-            prevPt => ({
-              x: eventRect.left,
-              y: prevPt.y
             })
+            // prevPt => ({
+            //   x: eventRect.left,
+            //   y: prevPt.y
+            // })
           );
         }
       } else if (startPt.x !== endPt.x) {
@@ -363,7 +372,7 @@ export class Edge extends Component<EdgeProps, EdgeState> {
           markerEnd={isHighlighted ? `url(#marker-preview)` : `url(#marker)`}
           ref={this.ref}
         />
-        {circles.map((circle, i) => {
+        {/* {circles.map((circle, i) => {
           const fill = i > pts.length ? 'red' : 'blue';
           return (
             <circle
@@ -375,7 +384,7 @@ export class Edge extends Component<EdgeProps, EdgeState> {
               <text>{i}</text>
             </circle>
           );
-        })}
+        })} */}
       </g>
     );
   }

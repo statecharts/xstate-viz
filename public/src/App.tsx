@@ -3,7 +3,10 @@ import logo from './logo.svg';
 import './App.css';
 import { StateChart } from '@statecharts/xstate-viz';
 import styled from 'styled-components';
-import { Machine } from 'xstate';
+import { Machine, assign, EventObject } from 'xstate';
+import queryString from 'query-string';
+import { useMachine } from '@xstate/react';
+import { log } from 'xstate/lib/actions';
 
 const example = `Machine({
   id: 'example',
@@ -237,13 +240,15 @@ const m = Machine({
 `;
 
 const StyledApp = styled.main`
+  --sidebar-width: 25rem;
+
   height: 100%;
   display: grid;
   grid-template-areas:
-    'header'
-    'content';
+    'header sidebar'
+    'content content';
   grid-template-rows: 3rem auto;
-  grid-template-columns: 100%;
+  grid-template-columns: auto var(--sidebar-width);
 `;
 
 const StyledHeader = styled.header`
@@ -279,42 +284,265 @@ const StyledLink = styled.a`
   margin: 0 0.25rem;
 `;
 
-class Header extends Component {
-  render() {
-    return (
-      <StyledHeader>
-        <StyledLogo src={logo} />
-        <StyledLinks>
-          <StyledLink
-            href="https://github.com/davidkpiano/xstate"
-            target="_xstate-github"
-          >
-            GitHub
-          </StyledLink>
-          <StyledLink href="https://xstate.js.org/docs" target="_xstate-docs">
-            Docs
-          </StyledLink>
-          <StyledLink
-            href="https://spectrum.chat/statecharts"
-            target="_statecharts-community"
-          >
-            Community
-          </StyledLink>
-        </StyledLinks>
-      </StyledHeader>
-    );
-  }
+function Header() {
+  return (
+    <StyledHeader>
+      <StyledLogo src={logo} />
+      <StyledLinks>
+        <StyledLink
+          href="https://github.com/davidkpiano/xstate"
+          target="_xstate-github"
+        >
+          GitHub
+        </StyledLink>
+        <StyledLink href="https://xstate.js.org/docs" target="_xstate-docs">
+          Docs
+        </StyledLink>
+        <StyledLink
+          href="https://spectrum.chat/statecharts"
+          target="_statecharts-community"
+        >
+          Community
+        </StyledLink>
+      </StyledLinks>
+    </StyledHeader>
+  );
 }
 
-class App extends Component {
-  render() {
-    return (
-      <StyledApp>
-        <Header />
-        <StateChart machine={example} />
-      </StyledApp>
-    );
+interface AppContext {
+  query: {
+    gist?: string;
+    code?: string;
+  };
+  token?: string;
+  example: any;
+}
+
+const invokeSaveGist = (ctx: AppContext, e: EventObject) => {
+  return fetch(`https://api.github.com/gists/` + ctx.query.gist!, {
+    method: 'post',
+    body: JSON.stringify({
+      description: 'XState test',
+      files: {
+        'machine.js': { content: e.code }
+      }
+    }),
+    headers: {
+      Authorization: `token ${ctx.token}`
+    }
+  }).then(response => {
+    if (!response.ok) {
+      throw new Error('Unable to save gist');
+    }
+
+    return response.json();
+  });
+};
+
+const invokePostGist = (ctx: AppContext, e: EventObject) => {
+  return fetch(`https://api.github.com/gists`, {
+    method: 'post',
+    body: JSON.stringify({
+      description: 'XState test',
+      files: {
+        'machine.js': { content: e.code }
+      }
+    }),
+    headers: {
+      Authorization: `token ${ctx.token}`
+    }
+  }).then(response => {
+    if (!response.ok) {
+      throw new Error('Unable to post gist');
+    }
+
+    return response.json();
+  });
+};
+
+function createAuthActor() {
+  let listener: ((code: string) => void) | null = null;
+  let code: string | null = null;
+
+  return {
+    send(_code: string) {
+      code = _code;
+
+      if (listener) {
+        listener(_code);
+      }
+    },
+    listen(l: (code: string) => void) {
+      listener = l;
+
+      if (code) {
+        listener(code);
+      }
+    }
+  };
+}
+
+const authActor = createAuthActor();
+
+(window as any).authCallback = (code: string) => {
+  authActor.send(code);
+};
+
+const appMachine = Machine<AppContext>({
+  id: 'app',
+  context: {
+    query: queryString.parse(window.location.search),
+    token: undefined,
+    example: anotherMachine
+  },
+  invoke: {
+    id: 'test',
+    src: () => cb => {
+      authActor.listen(code => {
+        cb({ type: 'CODE', code });
+      });
+    }
+  },
+  initial: 'checkingCode',
+  states: {
+    checkingCode: {
+      on: {
+        '': [
+          {
+            target: 'authorizing',
+            cond: ctx => {
+              return !!ctx.query.code;
+            }
+          },
+          {
+            target: 'fetchingGist',
+            cond: ctx => {
+              return !!ctx.query.gist;
+            }
+          },
+          {
+            target: 'newGist',
+            actions: assign<AppContext>({
+              example
+            })
+          }
+        ]
+      }
+    },
+    authorizing: {
+      invoke: {
+        src: (ctx, e) => {
+          console.log(e);
+          return fetch(
+            `http://xstate-gist.azurewebsites.net/api/GistPost?code=${e.code}`
+          )
+            .then(response => {
+              if (!response.ok) {
+                throw new Error('unauthorized');
+              }
+
+              return response.json();
+            })
+            .then(data => {
+              if (data.error) {
+                throw new Error('expired code');
+              }
+
+              return data;
+            });
+        },
+        onDone: {
+          target: 'authorized',
+          actions: assign<AppContext>({
+            token: (ctx, e) => e.data.access_token
+          })
+        },
+        onError: {
+          target: 'unauthorized',
+          actions: (_, e) => alert(e.data)
+        }
+      }
+    },
+    authorized: {},
+    unauthorized: {},
+    newGist: {},
+    fetchingGist: {
+      invoke: {
+        src: ctx => {
+          return fetch(`https://api.github.com/gists/${ctx.query.gist}`, {
+            headers: {
+              Accept: 'application/json'
+            }
+          }).then(data => data.json());
+        },
+        onDone: {
+          target: 'gistLoaded',
+          actions: assign<AppContext>({
+            // @ts-ignore
+            example: (_, e) => e.data.files['machine.js'].content
+          })
+        }
+      }
+    },
+    gistLoaded: {},
+    patchingGist: {
+      invoke: {
+        src: invokeSaveGist,
+        onDone: {
+          actions: log()
+        }
+      }
+    },
+    postingGist: {
+      invoke: {
+        src: invokePostGist,
+        onDone: {
+          actions: log()
+        }
+      }
+    }
+  },
+  on: {
+    'GIST.SAVE': [
+      { target: '.patchingGist', cond: ctx => !!ctx.query.gist },
+      { target: '.postingGist' }
+    ],
+
+    LOGIN: {
+      actions: () => {
+        window.open(
+          'https://github.com/login/oauth/authorize?client_id=39c1ec91c4ed507f6e4c&scope=gist',
+          'Login with GitHub',
+          'width=800,height=600'
+        );
+      }
+    },
+
+    CODE: '.authorizing'
   }
+});
+
+function App() {
+  const [current, send] = useMachine(appMachine);
+
+  if (!current.context.example) {
+    return <div>'Loading...'</div>;
+  }
+
+  console.log(current);
+
+  return (
+    <StyledApp>
+      <button onClick={() => send('LOGIN')}>Login</button>
+      <Header />
+      <StateChart
+        machine={current.context.example}
+        onSave={code => {
+          send('GIST.SAVE', { code });
+        }}
+      />
+    </StyledApp>
+  );
 }
 
 export default App;
