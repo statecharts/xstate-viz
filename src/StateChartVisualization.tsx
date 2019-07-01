@@ -30,13 +30,20 @@ export const StateChartVisualization: React.SFC<{
     preview: undefined
   });
   const svgRef = React.useRef<SVGSVGElement>(null);
-  const edges = getEdges(service.machine);
+  let edges: ReturnType<typeof getEdges> | null;
+
+  try {
+    edges = getEdges(service.machine);
+  } catch (err) {
+    edges = null;
+    console.error(err);
+  }
 
   useEffect(() => {
     setTransitionCount(transitionCount + 1);
   }, [current]);
 
-  if (!visible) {
+  if (!visible || !edges) {
     return null;
   }
 

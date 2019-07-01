@@ -116,7 +116,7 @@ export const EventPanel: React.FunctionComponent<{
         }
       }
     });
-  }, [current]);
+  }, [current, service]);
 
   return (
     <StyledEventPanel>

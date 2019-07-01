@@ -37,6 +37,7 @@ export const User: React.FunctionComponent = () => {
           <figure>
             <img src={user!.avatar_url} />
           </figure>
+          <div>{user!.login}</div>
         </StyledUser>
       ) : (
         <div>loading user</div>

@@ -1,4 +1,4 @@
-import React, { Component } from 'react';
+import React, { Component, useState, useEffect } from 'react';
 import AceEditor, { AceEditorProps } from 'react-ace';
 import 'brace/theme/monokai';
 import 'brace/mode/javascript';
@@ -28,44 +28,42 @@ export const StyledButtons = styled.div`
   grid-column-gap: 1rem;
 `;
 
-export class Editor extends Component<EditorProps> {
-  state = {
-    code: this.props.code
-  };
-  render() {
-    const { code } = this.state;
-    const {
-      onChange,
-      onSave,
-      height = '100%',
-      changeText = 'Update',
-      mode = 'javascript'
-    } = this.props;
+export const Editor: React.FunctionComponent<EditorProps> = props => {
+  const [code, setCode] = useState(props.code);
+  const {
+    onChange,
+    onSave,
+    height = '100%',
+    changeText = 'Update',
+    mode = 'javascript'
+  } = props;
 
-    return (
-      <StyledEditor>
-        <AceEditor
-          mode={mode}
-          theme="monokai"
-          editorProps={{ $blockScrolling: true }}
-          value={code}
-          onChange={value => this.setState({ code: value })}
-          setOptions={{ tabSize: 2, fontSize: '12px' }}
-          width="100%"
-          height={height as string}
-          showGutter={false}
-          readOnly={!onChange}
-          wrapEnabled
-        />
-        <StyledButtons>
-          <StyledButton onClick={() => onChange(this.state.code)}>
-            {changeText}
-          </StyledButton>
-          <StyledButton onClick={() => onSave(this.state.code)}>
-            Save
-          </StyledButton>
-        </StyledButtons>
-      </StyledEditor>
-    );
-  }
-}
+  return (
+    <StyledEditor>
+      <AceEditor
+        mode={mode}
+        theme="monokai"
+        editorProps={{ $blockScrolling: true }}
+        value={code}
+        onChange={value => setCode(value)}
+        setOptions={{ tabSize: 2, fontSize: '12px' }}
+        width="100%"
+        height={height as string}
+        showGutter={false}
+        readOnly={!onChange}
+        wrapEnabled
+      />
+      <StyledButtons>
+        <StyledButton onClick={() => onChange(code)}>{changeText}</StyledButton>
+        <StyledButton
+          onClick={() => {
+            onChange(code);
+            onSave(code);
+          }}
+        >
+          Save
+        </StyledButton>
+      </StyledButtons>
+    </StyledEditor>
+  );
+};

@@ -18,7 +18,7 @@ import { Editor } from './Editor';
 import { VizTabs, StyledVizTabsTabs } from './VizTabs';
 import { StatePanel } from './StatePanel';
 import { EventPanel } from './EventPanel';
-import { EditorPanel } from './EditorPanel';
+import { CodePanel } from './CodePanel';
 
 const StyledViewTab = styled.li`
   padding: 0 1rem;
@@ -231,7 +231,7 @@ export class StateChart extends React.Component<
     switch (view) {
       case 'definition':
         return (
-          <EditorPanel
+          <CodePanel
             code={code}
             onChange={code => this.updateMachine(code)}
             onSave={onSave}

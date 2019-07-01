@@ -110,44 +110,14 @@ export const StatePanel: React.FunctionComponent<{
         })}
       </Field>
       <Field label="Children">
-        {Array.from((service as any).children.values()).map((child: any) => {
-          return <StatePanel state={child.state} service={child} />;
+        {Array.from((service as any).children.values()).map((child: any, i) => {
+          if (!child.state) {
+            return null;
+          }
+
+          return <StatePanel state={child.state} service={child} key={i} />;
         })}
       </Field>
     </StyledDetails>
-  );
-
-  return (
-    <>
-      {/* <Editor mode="json" code={JSON.stringify(simplifiedState, null, 2)} /> */}
-      <pre>{JSON.stringify(simplifiedState, null, 2)}</pre>
-      {Array.from((service as any).children.values()).map((child: any) => {
-        return (
-          <details key={child.id}>
-            <summary>{child.id}</summary>
-            <StatePanel state={child.state} service={child} />
-          </details>
-        );
-      })}
-      <div>
-        {/* <Editor
-          height="5rem"
-          code={'{type: ""}'}
-          changeText="Send event"
-          onChange={code => {
-            try {
-              const eventData = eval(`(${code})`);
-
-              this.state.service.send(eventData);
-            } catch (e) {
-              console.error(e);
-              alert(
-                'Unable to send event.\nCheck the console for more info.'
-              );
-            }
-          }}
-        /> */}
-      </div>
-    </>
   );
 };
