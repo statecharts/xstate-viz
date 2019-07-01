@@ -1,12 +1,13 @@
-import React, { Component } from 'react';
+import React, { Component, createContext } from 'react';
 import logo from './logo.svg';
 import './App.css';
 import { StateChart } from '@statecharts/xstate-viz';
 import styled from 'styled-components';
-import { Machine, assign, EventObject } from 'xstate';
+import { Machine, assign, EventObject, State } from 'xstate';
 import queryString from 'query-string';
 import { useMachine } from '@xstate/react';
 import { log } from 'xstate/lib/actions';
+import { User } from './User';
 
 const example = `Machine({
   id: 'example',
@@ -316,6 +317,7 @@ interface AppContext {
   };
   token?: string;
   example: any;
+  user: any;
 }
 
 const invokeSaveGist = (ctx: AppContext, e: EventObject) => {
@@ -360,6 +362,28 @@ const invokePostGist = (ctx: AppContext, e: EventObject) => {
   });
 };
 
+const invokeFetchGist = (ctx: AppContext) => {
+  return fetch(`https://api.github.com/gists/${ctx.query.gist}`, {
+    headers: {
+      Accept: 'application/json'
+    }
+  }).then(data => data.json());
+};
+
+const getUser = (ctx: AppContext) => {
+  return fetch(`https://api.github.com/user`, {
+    headers: {
+      Authorization: `token ${ctx.token}`
+    }
+  }).then(response => {
+    if (!response.ok) {
+      throw new Error('Unable to get user');
+    }
+
+    return response.json();
+  });
+};
+
 function createAuthActor() {
   let listener: ((code: string) => void) | null = null;
   let code: string | null = null;
@@ -392,8 +416,9 @@ const appMachine = Machine<AppContext>({
   id: 'app',
   context: {
     query: queryString.parse(window.location.search),
-    token: undefined,
-    example: anotherMachine
+    token: process.env.REACT_APP_TEST_TOKEN,
+    example: anotherMachine,
+    user: undefined
   },
   invoke: {
     id: 'test',
@@ -409,6 +434,10 @@ const appMachine = Machine<AppContext>({
       on: {
         '': [
           {
+            target: 'authorized',
+            cond: ctx => !!ctx.token
+          },
+          {
             target: 'authorizing',
             cond: ctx => {
               return !!ctx.query.code;
@@ -421,7 +450,7 @@ const appMachine = Machine<AppContext>({
             }
           },
           {
-            target: 'newGist',
+            target: 'unauthorized',
             actions: assign<AppContext>({
               example
             })
@@ -432,7 +461,6 @@ const appMachine = Machine<AppContext>({
     authorizing: {
       invoke: {
         src: (ctx, e) => {
-          console.log(e);
           return fetch(
             `http://xstate-gist.azurewebsites.net/api/GistPost?code=${e.code}`
           )
@@ -463,8 +491,97 @@ const appMachine = Machine<AppContext>({
         }
       }
     },
-    authorized: {},
-    unauthorized: {},
+    authorized: {
+      type: 'parallel',
+      states: {
+        user: {
+          initial: 'fetching',
+          states: {
+            fetching: {
+              invoke: {
+                src: getUser,
+                onDone: {
+                  target: 'loaded',
+                  actions: assign<AppContext>({
+                    // @ts-ignore
+                    user: (_, e) => e.data
+                  })
+                }
+              }
+            },
+            loaded: {}
+          }
+        },
+        gist: {
+          initial: 'idle',
+          states: {
+            idle: {
+              on: {
+                '': {
+                  target: 'fetching',
+                  cond: ctx => !!ctx.query.gist
+                }
+              }
+            },
+            gistLoaded: {},
+            fetching: {
+              invoke: {
+                src: invokeFetchGist,
+                onDone: {
+                  target: 'gistLoaded',
+                  actions: assign<AppContext>({
+                    // @ts-ignore
+                    example: (_, e) => {
+                      console.log(e);
+                      return e.data.files['machine.js'].content;
+                    }
+                  })
+                }
+              }
+            },
+            patchingGist: {
+              invoke: {
+                src: invokeSaveGist,
+                onDone: {
+                  actions: log()
+                }
+              }
+            },
+            postingGist: {
+              invoke: {
+                src: invokePostGist,
+                onDone: {
+                  actions: log()
+                }
+              }
+            }
+          },
+          on: {
+            'GIST.SAVE': [
+              { target: '.patchingGist', cond: ctx => !!ctx.query.gist },
+              { target: '.postingGist' }
+            ]
+          }
+        }
+      }
+    },
+    unauthorized: {
+      on: {
+        LOGIN: 'pendingAuthorization'
+      }
+    },
+    pendingAuthorization: {
+      entry: () => {
+        window.open(
+          'https://github.com/login/oauth/authorize?client_id=39c1ec91c4ed507f6e4c&scope=gist',
+          'Login with GitHub',
+          'width=800,height=600'
+        );
+      },
+      on: {
+        CODE: 'authorizing'
+      }
+    },
     newGist: {},
     fetchingGist: {
       invoke: {
@@ -479,68 +596,47 @@ const appMachine = Machine<AppContext>({
           target: 'gistLoaded',
           actions: assign<AppContext>({
             // @ts-ignore
-            example: (_, e) => e.data.files['machine.js'].content
+            example: (_, e) => {
+              console.log(e);
+              return e.data.files['machine.js'].content;
+            }
           })
         }
       }
     },
-    gistLoaded: {},
-    patchingGist: {
-      invoke: {
-        src: invokeSaveGist,
-        onDone: {
-          actions: log()
-        }
-      }
-    },
-    postingGist: {
-      invoke: {
-        src: invokePostGist,
-        onDone: {
-          actions: log()
-        }
-      }
-    }
+    gistLoaded: {}
   },
   on: {
-    'GIST.SAVE': [
-      { target: '.patchingGist', cond: ctx => !!ctx.query.gist },
-      { target: '.postingGist' }
-    ],
-
-    LOGIN: {
-      actions: () => {
-        window.open(
-          'https://github.com/login/oauth/authorize?client_id=39c1ec91c4ed507f6e4c&scope=gist',
-          'Login with GitHub',
-          'width=800,height=600'
-        );
-      }
-    },
-
-    CODE: '.authorizing'
+    LOGIN: '.pendingAuthorization'
   }
 });
+
+export const AppContext = createContext<{
+  state: State<AppContext>;
+  send: (event: any) => void;
+}>({ state: appMachine.initialState, send: () => {} });
 
 function App() {
   const [current, send] = useMachine(appMachine);
 
-  if (!current.context.example) {
-    return <div>'Loading...'</div>;
+  if (current.matches('fetchingGist')) {
+    return <div>Loading...</div>;
   }
 
   console.log(current);
 
   return (
     <StyledApp>
-      <button onClick={() => send('LOGIN')}>Login</button>
-      <Header />
-      <StateChart
-        machine={current.context.example}
-        onSave={code => {
-          send('GIST.SAVE', { code });
-        }}
-      />
+      <AppContext.Provider value={{ state: current, send }}>
+        <User />
+        <Header />
+        <StateChart
+          machine={current.context.example}
+          onSave={code => {
+            send('GIST.SAVE', { code });
+          }}
+        />
+      </AppContext.Provider>
     </StyledApp>
   );
 }
