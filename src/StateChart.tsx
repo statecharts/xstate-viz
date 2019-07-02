@@ -15,7 +15,7 @@ import {
 } from 'xstate';
 import * as XState from 'xstate';
 import { Editor } from './Editor';
-import { VizTabs, StyledVizTabsTabs } from './VizTabs';
+import { StateChartContainer, StyledVizTabsTabs } from './VizTabs';
 import { StatePanel } from './StatePanel';
 import { EventPanel } from './EventPanel';
 import { CodePanel } from './CodePanel';
@@ -273,15 +273,18 @@ export class StateChart extends React.Component<
           {
             service: interpret(this.state.machine)
               .onTransition(current => {
-                this.setState({ current }, () => {
-                  if (this.state.previewEvent) {
-                    this.setState({
-                      preview: this.state.service.nextState(
-                        this.state.previewEvent
-                      )
-                    });
+                this.setState(
+                  { current, events: this.state.events.concat(current.event) },
+                  () => {
+                    if (this.state.previewEvent) {
+                      this.setState({
+                        preview: this.state.service.nextState(
+                          this.state.previewEvent
+                        )
+                      });
+                    }
                   }
-                });
+                );
               })
               .start()
           },
@@ -318,7 +321,7 @@ export class StateChart extends React.Component<
           '--border-width': '2px'
         }}
       >
-        <VizTabs service={service} />
+        <StateChartContainer service={service} />
         <StyledSidebar>
           <StyledViewTabs>
             {['definition', 'state', 'events'].map(view => {

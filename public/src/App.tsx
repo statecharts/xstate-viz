@@ -89,6 +89,10 @@ interface AppContext {
   token?: string;
   example: any;
   user: any;
+  /**
+   * Gist ID
+   */
+  gist?: string;
 }
 
 const invokeSaveGist = (ctx: AppContext, e: EventObject) => {
@@ -177,6 +181,19 @@ function createAuthActor() {
   };
 }
 
+function updateQuery(query: Record<string, string>): void {
+  if (!window.history) return;
+
+  const fullQuery = {
+    ...queryString.parse(window.location.search),
+    ...query
+  };
+
+  window.history.replaceState(null, '', `?${queryString.stringify(fullQuery)}`);
+}
+
+(window as any).updateQuery = updateQuery;
+
 const authActor = createAuthActor();
 
 (window as any).authCallback = (code: string) => {
@@ -188,6 +205,7 @@ const appMachine = Machine<AppContext>({
   context: {
     query: queryString.parse(window.location.search),
     token: process.env.REACT_APP_TEST_TOKEN,
+    gist: undefined,
     example: examples.omni,
     user: undefined
   },
@@ -322,9 +340,15 @@ const appMachine = Machine<AppContext>({
               invoke: {
                 src: invokePostGist,
                 onDone: {
-                  actions: log()
+                  target: 'posted',
+                  actions: assign<AppContext>({
+                    gist: (_, e) => e.data.id
+                  })
                 }
               }
+            },
+            posted: {
+              entry: ({ gist }) => updateQuery({ gist: gist! })
             }
           },
           on: {

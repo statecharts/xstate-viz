@@ -3,7 +3,7 @@ import { Interpreter, Machine } from 'xstate';
 import { StateChartVisualization } from './StateChartVisualization';
 import styled from 'styled-components';
 
-interface VizTabsProps {
+interface StateChartContainerProps {
   service: Interpreter<any, any>;
 }
 
@@ -27,7 +27,9 @@ export const StyledVizContainer = styled.section`
   }
 `;
 
-export const VizTabs: React.SFC<VizTabsProps> = ({ service }) => {
+export const StateChartContainer: React.SFC<StateChartContainerProps> = ({
+  service
+}) => {
   return (
     <StyledVizContainer>
       <StateChartVisualization

@@ -5,9 +5,11 @@ import styled from 'styled-components';
 const StyledUser = styled.div`
   height: 100%;
   display: grid;
-  grid-template-columns: 3rem 1fr;
+  grid-template-columns: 1fr 3rem;
   grid-template-rows: 50% 50%;
-  grid-template-areas: 'avatar name' 'avatar details';
+  grid-template-areas:
+    'name avatar'
+    'details avatar';
   padding: 0.5rem 0;
 
   > figure {
@@ -31,13 +33,13 @@ export const User: React.FunctionComponent = () => {
   return (
     <div>
       {!state.matches('authorized') ? (
-        <button onClick={() => send('LOGIN')}>Loginnn</button>
+        <button onClick={() => send('LOGIN')}>Login</button>
       ) : state.matches({ authorized: { user: 'loaded' } }) ? (
         <StyledUser>
+          <div>{user!.login}</div>
           <figure>
             <img src={user!.avatar_url} />
           </figure>
-          <div>{user!.login}</div>
         </StyledUser>
       ) : (
         <div>loading user</div>

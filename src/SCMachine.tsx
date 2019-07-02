@@ -1,6 +1,6 @@
 import { State, StateMachine, Interpreter, interpret } from 'xstate';
 import React, { useState } from 'react';
-import { VizTabs } from './VizTabs';
+import { StateChartContainer } from './VizTabs';
 import { StyledStateChart, toMachine } from './StateChart';
 
 interface SCMachineState {
@@ -45,7 +45,7 @@ export const SCMachine: React.SFC<{
         '--border-width': '2px'
       }}
     >
-      <VizTabs service={service} />
+      <StateChartContainer service={service} />
     </StyledStateChart>
   );
 };
