@@ -1,12 +1,16 @@
-import React, { Component, createContext } from 'react';
+import React, { Component, createContext, useState, useContext } from 'react';
 import logo from './logo.svg';
 import './App.css';
-import { StateChart } from '@statecharts/xstate-viz';
+import {
+  StateChart,
+  Notifications,
+  notificationsMachine
+} from '@statecharts/xstate-viz';
 import styled from 'styled-components';
-import { Machine, assign, EventObject, State } from 'xstate';
+import { Machine, assign, EventObject, State, Interpreter } from 'xstate';
 import queryString from 'query-string';
 import { useMachine } from '@xstate/react';
-import { log } from 'xstate/lib/actions';
+import { log, send } from 'xstate/lib/actions';
 import { User } from './User';
 
 import { examples } from './examples';
@@ -30,6 +34,7 @@ const StyledHeader = styled.header`
   justify-content: stretch;
   grid-area: header;
   padding: 0.5rem 1rem;
+  z-index: 1;
 `;
 
 const StyledLogo = styled.img`
@@ -57,8 +62,14 @@ const StyledLink = styled.a`
 `;
 
 function Header() {
+  const { service } = useContext(AppContext);
   return (
     <StyledHeader>
+      {(service as any).children.get('notifications') ? (
+        <Notifications
+          notifier={(service as any).children.get('notifications')}
+        />
+      ) : null}
       <StyledLogo src={logo} />
       <StyledLinks>
         <StyledLink
@@ -142,7 +153,13 @@ const invokeFetchGist = (ctx: AppContext) => {
     headers: {
       Accept: 'application/json'
     }
-  }).then(data => data.json());
+  }).then(async data => {
+    if (!data.ok) {
+      throw new Error((await data.json()).message);
+    }
+
+    return data.json();
+  });
 };
 
 const getUser = (ctx: AppContext) => {
@@ -200,23 +217,31 @@ const authActor = createAuthActor();
   authActor.send(code);
 };
 
+const query = queryString.parse(window.location.search);
+
 const appMachine = Machine<AppContext>({
   id: 'app',
   context: {
-    query: queryString.parse(window.location.search),
+    query,
     token: process.env.REACT_APP_TEST_TOKEN,
-    gist: undefined,
+    gist: (query.gist as string) || undefined,
     example: examples.omni,
     user: undefined
   },
-  invoke: {
-    id: 'test',
-    src: () => cb => {
-      authActor.listen(code => {
-        cb({ type: 'CODE', code });
-      });
+  invoke: [
+    {
+      id: 'test',
+      src: () => cb => {
+        authActor.listen(code => {
+          cb({ type: 'CODE', code });
+        });
+      }
+    },
+    {
+      id: 'notifications',
+      src: notificationsMachine
     }
-  },
+  ],
   initial: 'checkingCode',
   states: {
     checkingCode: {
@@ -308,11 +333,24 @@ const appMachine = Machine<AppContext>({
               on: {
                 '': {
                   target: 'fetching',
-                  cond: ctx => !!ctx.query.gist
+                  cond: ctx => !!ctx.gist
                 }
               }
             },
-            gistLoaded: {},
+            gistLoaded: {
+              entry: send<AppContext, EventObject>(
+                (ctx, e) => {
+                  return {
+                    type: 'NOTIFICATIONS.QUEUE',
+                    data: {
+                      type: 'success',
+                      message: 'Gist loaded!'
+                    }
+                  };
+                },
+                { to: 'notifications' }
+              )
+            },
             fetching: {
               invoke: {
                 src: invokeFetchGist,
@@ -321,9 +359,14 @@ const appMachine = Machine<AppContext>({
                   actions: assign<AppContext>({
                     // @ts-ignore
                     example: (_, e) => {
-                      console.log(e);
                       return e.data.files['machine.js'].content;
                     }
+                  })
+                },
+                onError: {
+                  target: 'idle',
+                  actions: assign<AppContext>({
+                    gist: undefined
                   })
                 }
               }
@@ -332,7 +375,21 @@ const appMachine = Machine<AppContext>({
               invoke: {
                 src: invokeSaveGist,
                 onDone: {
-                  actions: log()
+                  actions: [
+                    log(),
+                    send<AppContext, EventObject>(
+                      (ctx, e) => {
+                        return {
+                          type: 'NOTIFICATIONS.QUEUE',
+                          data: {
+                            type: 'success',
+                            message: 'Gist saved!'
+                          }
+                        };
+                      },
+                      { to: 'notifications' }
+                    )
+                  ]
                 }
               }
             },
@@ -341,9 +398,23 @@ const appMachine = Machine<AppContext>({
                 src: invokePostGist,
                 onDone: {
                   target: 'posted',
-                  actions: assign<AppContext>({
-                    gist: (_, e) => e.data.id
-                  })
+                  actions: [
+                    assign<AppContext>({
+                      gist: (_, e) => e.data.id
+                    }),
+                    send<AppContext, EventObject>(
+                      (ctx, e) => {
+                        return {
+                          type: 'NOTIFICATIONS.QUEUE',
+                          data: {
+                            type: 'success',
+                            message: 'Gist created!'
+                          }
+                        };
+                      },
+                      { to: 'notifications' }
+                    )
+                  ]
                 }
               }
             },
@@ -353,7 +424,7 @@ const appMachine = Machine<AppContext>({
           },
           on: {
             'GIST.SAVE': [
-              { target: '.patchingGist', cond: ctx => !!ctx.query.gist },
+              { target: '.patchingGist', cond: ctx => !!ctx.gist },
               { target: '.postingGist' }
             ]
           }
@@ -392,14 +463,28 @@ const appMachine = Machine<AppContext>({
           actions: assign<AppContext>({
             // @ts-ignore
             example: (_, e) => {
-              console.log(e);
+              console.log('...', e);
               return e.data.files['machine.js'].content;
             }
           })
         }
       }
     },
-    gistLoaded: {}
+    gistLoaded: {
+      entry: send<AppContext, EventObject>(
+        (ctx, e) => {
+          console.log('>>>', e);
+          return {
+            type: 'NOTIFICATIONS.QUEUE',
+            data: {
+              type: 'success',
+              message: 'Gist loaded!'
+            }
+          };
+        },
+        { to: 'notifications' }
+      )
+    }
   },
   on: {
     LOGIN: '.pendingAuthorization'
@@ -409,20 +494,19 @@ const appMachine = Machine<AppContext>({
 export const AppContext = createContext<{
   state: State<AppContext>;
   send: (event: any) => void;
-}>({ state: appMachine.initialState, send: () => {} });
+  service: Interpreter<AppContext>;
+}>({ state: appMachine.initialState, send: () => {}, service: {} as any });
 
 function App() {
-  const [current, send] = useMachine(appMachine);
+  const [current, send, service] = useMachine(appMachine);
 
   if (current.matches('fetchingGist')) {
     return <div>Loading...</div>;
   }
 
-  console.log(current);
-
   return (
     <StyledApp>
-      <AppContext.Provider value={{ state: current, send }}>
+      <AppContext.Provider value={{ state: current, send, service }}>
         <User />
         <Header />
         <StateChart

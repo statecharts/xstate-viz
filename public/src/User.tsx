@@ -1,6 +1,7 @@
 import React, { useContext } from 'react';
 import { AppContext } from './App';
 import styled from 'styled-components';
+import { Notifications } from '@statecharts/xstate-viz';
 
 const StyledUser = styled.div`
   height: 100%;
@@ -24,7 +25,9 @@ const StyledUser = styled.div`
 `;
 
 export const User: React.FunctionComponent = () => {
-  const { state, send } = useContext(AppContext);
+  const { state, send, service } = useContext(AppContext);
+
+  console.log((service as any).children.get('notifications'));
 
   const {
     context: { user }

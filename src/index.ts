@@ -1,3 +1,4 @@
-import { StateChart } from "./StateChart";
+import { StateChart } from './StateChart';
+import { Notifications, notificationsMachine } from './Notifications';
 
-export { StateChart };
+export { StateChart, Notifications, notificationsMachine };

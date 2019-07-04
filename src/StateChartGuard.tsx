@@ -10,9 +10,10 @@ export const StateChartGuard: React.SFC<{
   guard: Guard<any, any>;
   state: State<any>;
 }> = ({ guard, state }) => {
-  const valid = guard.predicate
-    ? guard.predicate(state.context, state.event, { cond: guard })
-    : undefined;
+  const valid =
+    guard.predicate && typeof guard.predicate === 'function'
+      ? guard.predicate(state.context, state.event, { cond: guard })
+      : undefined;
 
   return (
     <StyledSCGuard

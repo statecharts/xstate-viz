@@ -131,7 +131,7 @@ const StyledStateNode = styled.div`
   border: none;
 
   &[data-type~='machine'] {
-    display: block;
+    display: grid;
     border: none;
     box-shadow: none;
     width: 100%;
