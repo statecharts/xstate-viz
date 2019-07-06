@@ -1,6 +1,5 @@
 import React from 'react';
 import { State, Interpreter } from 'xstate';
-import { Editor } from './Editor';
 import styled from 'styled-components';
 
 const StyledField = styled.div`

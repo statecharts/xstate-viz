@@ -1,11 +1,6 @@
-import React, { Component, createContext, useState, useContext } from 'react';
-import logo from './logo.svg';
+import React, { Component, createContext, useState } from 'react';
 import './App.css';
-import {
-  StateChart,
-  Notifications,
-  notificationsMachine
-} from '@statecharts/xstate-viz';
+import { StateChart, notificationsMachine } from '@statecharts/xstate-viz';
 import styled from 'styled-components';
 import { Machine, assign, EventObject, State, Interpreter } from 'xstate';
 import queryString from 'query-string';
@@ -14,6 +9,7 @@ import { log, send } from 'xstate/lib/actions';
 import { User } from './User';
 
 import { examples } from './examples';
+import { Header, notificationsActor } from './Header';
 
 const StyledApp = styled.main`
   --sidebar-width: 25rem;
@@ -27,7 +23,7 @@ const StyledApp = styled.main`
   grid-template-columns: auto var(--sidebar-width);
 `;
 
-const StyledHeader = styled.header`
+export const StyledHeader = styled.header`
   display: flex;
   flex-direction: row;
   align-items: center;
@@ -37,11 +33,11 @@ const StyledHeader = styled.header`
   z-index: 1;
 `;
 
-const StyledLogo = styled.img`
+export const StyledLogo = styled.img`
   height: 100%;
 `;
 
-const StyledLinks = styled.nav`
+export const StyledLinks = styled.nav`
   display: flex;
   flex-direction: row;
   margin-left: auto;
@@ -51,7 +47,7 @@ const StyledLinks = styled.nav`
   }
 `;
 
-const StyledLink = styled.a`
+export const StyledLink = styled.a`
   text-decoration: none;
   color: #57b0ea;
   text-transform: uppercase;
@@ -60,37 +56,6 @@ const StyledLink = styled.a`
   font-weight: bold;
   margin: 0 0.25rem;
 `;
-
-function Header() {
-  const { service } = useContext(AppContext);
-  return (
-    <StyledHeader>
-      {(service as any).children.get('notifications') ? (
-        <Notifications
-          notifier={(service as any).children.get('notifications')}
-        />
-      ) : null}
-      <StyledLogo src={logo} />
-      <StyledLinks>
-        <StyledLink
-          href="https://github.com/davidkpiano/xstate"
-          target="_xstate-github"
-        >
-          GitHub
-        </StyledLink>
-        <StyledLink href="https://xstate.js.org/docs" target="_xstate-docs">
-          Docs
-        </StyledLink>
-        <StyledLink
-          href="https://spectrum.chat/statecharts"
-          target="_statecharts-community"
-        >
-          Community
-        </StyledLink>
-      </StyledLinks>
-    </StyledHeader>
-  );
-}
 
 interface AppContext {
   query: {
@@ -236,10 +201,6 @@ const appMachine = Machine<AppContext>({
           cb({ type: 'CODE', code });
         });
       }
-    },
-    {
-      id: 'notifications',
-      src: notificationsMachine
     }
   ],
   initial: 'checkingCode',
@@ -327,29 +288,22 @@ const appMachine = Machine<AppContext>({
           }
         },
         gist: {
-          initial: 'idle',
+          initial: 'unknown',
           states: {
-            idle: {
+            idle: {},
+            unknown: {
               on: {
-                '': {
-                  target: 'fetching',
-                  cond: ctx => !!ctx.gist
-                }
+                '': [
+                  {
+                    target: 'fetching',
+                    cond: ctx => !!ctx.gist
+                  },
+                  { target: 'idle' }
+                ]
               }
             },
             gistLoaded: {
-              entry: send<AppContext, EventObject>(
-                (ctx, e) => {
-                  return {
-                    type: 'NOTIFICATIONS.QUEUE',
-                    data: {
-                      type: 'success',
-                      message: 'Gist loaded!'
-                    }
-                  };
-                },
-                { to: 'notifications' }
-              )
+              entry: (ctx, e) => notificationsActor.notify('Gist loaded!')
             },
             fetching: {
               invoke: {
@@ -365,9 +319,12 @@ const appMachine = Machine<AppContext>({
                 },
                 onError: {
                   target: 'idle',
-                  actions: assign<AppContext>({
-                    gist: undefined
-                  })
+                  actions: [
+                    assign<AppContext>({
+                      gist: undefined
+                    }),
+                    ctx => notificationsActor.notify('Gist not found.')
+                  ]
                 }
               }
             },
@@ -377,18 +334,7 @@ const appMachine = Machine<AppContext>({
                 onDone: {
                   actions: [
                     log(),
-                    send<AppContext, EventObject>(
-                      (ctx, e) => {
-                        return {
-                          type: 'NOTIFICATIONS.QUEUE',
-                          data: {
-                            type: 'success',
-                            message: 'Gist saved!'
-                          }
-                        };
-                      },
-                      { to: 'notifications' }
-                    )
+                    ctx => notificationsActor.notify('Gist saved!')
                   ]
                 }
               }
@@ -402,18 +348,7 @@ const appMachine = Machine<AppContext>({
                     assign<AppContext>({
                       gist: (_, e) => e.data.id
                     }),
-                    send<AppContext, EventObject>(
-                      (ctx, e) => {
-                        return {
-                          type: 'NOTIFICATIONS.QUEUE',
-                          data: {
-                            type: 'success',
-                            message: 'Gist created!'
-                          }
-                        };
-                      },
-                      { to: 'notifications' }
-                    )
+                    () => notificationsActor.notify('Gist created!')
                   ]
                 }
               }
@@ -451,13 +386,7 @@ const appMachine = Machine<AppContext>({
     newGist: {},
     fetchingGist: {
       invoke: {
-        src: ctx => {
-          return fetch(`https://api.github.com/gists/${ctx.query.gist}`, {
-            headers: {
-              Accept: 'application/json'
-            }
-          }).then(data => data.json());
-        },
+        src: invokeFetchGist,
         onDone: {
           target: 'gistLoaded',
           actions: assign<AppContext>({
@@ -469,21 +398,6 @@ const appMachine = Machine<AppContext>({
           })
         }
       }
-    },
-    gistLoaded: {
-      entry: send<AppContext, EventObject>(
-        (ctx, e) => {
-          console.log('>>>', e);
-          return {
-            type: 'NOTIFICATIONS.QUEUE',
-            data: {
-              type: 'success',
-              message: 'Gist loaded!'
-            }
-          };
-        },
-        { to: 'notifications' }
-      )
     }
   },
   on: {

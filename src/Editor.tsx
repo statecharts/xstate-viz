@@ -1,4 +1,4 @@
-import React, { Component, useState, useEffect } from 'react';
+import React, { Component, useState, useEffect, useContext } from 'react';
 import AceEditor, { AceEditorProps } from 'react-ace';
 import 'brace/theme/monokai';
 import 'brace/mode/javascript';
@@ -54,8 +54,11 @@ export const Editor: React.FunctionComponent<EditorProps> = props => {
         wrapEnabled
       />
       <StyledButtons>
-        <StyledButton onClick={() => onChange(code)}>{changeText}</StyledButton>
+        <StyledButton data-variant="secondary" onClick={() => onChange(code)}>
+          {changeText}
+        </StyledButton>
         <StyledButton
+          data-variant="primary"
           onClick={() => {
             onChange(code);
             onSave(code);

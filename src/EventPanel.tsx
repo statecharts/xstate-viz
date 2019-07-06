@@ -4,6 +4,7 @@ import AceEditor from 'react-ace';
 import { isBuiltInEvent } from './utils';
 import styled from 'styled-components';
 import { useMachine } from '@xstate/react';
+import { StyledButton } from './Button';
 
 function getNextEvents(state: State<any>): string[] {
   const { nextEvents } = state;
@@ -23,6 +24,7 @@ const StyledEventPanelEvent = styled.li`
   display: flex;
   flex-direction: row;
   align-items: center;
+  padding: 0.5rem;
 
   > pre {
     margin: 0;
@@ -32,6 +34,22 @@ const StyledEventPanelEvent = styled.li`
   &[data-builtin] {
     opacity: 0.5;
     cursor: not-allowed;
+  }
+
+  details {
+    width: 100%;
+  }
+
+  summary {
+    width: 100%;
+    display: flex;
+    flex-direction: row;
+    justify-content: flex-start;
+    align-items: center;
+
+    > :first-child {
+      margin-right: auto;
+    }
   }
 `;
 
@@ -188,18 +206,30 @@ export const EventPanel: React.FunctionComponent<{
                 send('AUTOFILL', { value: pastEventCode });
               }}
             >
-              <pre>{JSON.stringify(event, null, 2)}</pre>
-              {!isBuiltIn && (
-                <button
-                  onClick={e => {
-                    e.stopPropagation();
+              <details>
+                <summary>
+                  {isBuiltIn ? (
+                    <em>{event.type}</em>
+                  ) : (
+                    <>
+                      <strong title={event.type}>{event.type}</strong>
+                      <StyledButton
+                        onClick={e => {
+                          e.stopPropagation();
 
-                    send('AUTOFILL', { value: pastEventCode });
-                  }}
-                >
-                  Edit
-                </button>
-              )}
+                          send('AUTOFILL', { value: pastEventCode });
+                        }}
+                      >
+                        Edit
+                      </StyledButton>
+                    </>
+                  )}
+                  <time>{Date.now()}</time>
+                </summary>
+                <pre>
+                  {isBuiltIn ? event.type : JSON.stringify(event, null, 2)}
+                </pre>
+              </details>
             </StyledEventPanelEvent>
           );
         })}
