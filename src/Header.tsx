@@ -1,13 +1,6 @@
 import React, { useContext } from 'react';
-import logo from './logo.svg';
-import { Notifications, notificationsMachine } from '@statecharts/xstate-viz';
-import {
-  AppContext,
-  StyledHeader,
-  StyledLogo,
-  StyledLinks,
-  StyledLink
-} from './App';
+import { Notifications, notificationsMachine } from './Notifications';
+import { StyledHeader, StyledLogo, StyledLinks, StyledLink } from './App';
 import { interpret } from 'xstate';
 import { Actor } from 'xstate/lib/Actor';
 
@@ -36,7 +29,7 @@ export function Header() {
   return (
     <StyledHeader>
       <Notifications notifier={notificationsActor} />
-      <StyledLogo src={logo} />
+      <StyledLogo />
       <StyledLinks>
         <StyledLink
           href="https://github.com/davidkpiano/xstate"

@@ -76,6 +76,9 @@ const StyledStateNodeHeader = styled.header`
   display: flex;
   flex-direction: row;
   white-space: nowrap;
+  // position: sticky;
+  // top: calc(var(--depth, 0) * 1rem);
+  // background: rgba(255, 255, 255, 0.5);
 
   > * {
     padding: 0.25rem;
@@ -126,7 +129,7 @@ const StyledStateNode = styled.div`
   color: #313131;
   min-height: 1rem;
   display: inline-grid;
-  grid-template-columns: auto 1fr;
+  grid-template-columns: min-content auto;
   grid-column-gap: var(--state-event-gap);
   border: none;
 
@@ -137,6 +140,7 @@ const StyledStateNode = styled.div`
     width: 100%;
     background: none;
     margin: 2rem 0;
+    grid-template-columns: auto 1fr;
 
     > ${StyledStateNodeHeader} {
       left: 1rem;
@@ -181,6 +185,10 @@ const StyledStateNode = styled.div`
 
   &[data-preview]:not([data-active]) {
     --color-node-border: var(--color-primary-faded);
+  }
+
+  &[data-type~='parallel'] {
+    grid-template-columns: auto 1fr;
   }
 
   &[data-type~='final'] {

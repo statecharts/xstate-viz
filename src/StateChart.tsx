@@ -62,7 +62,7 @@ const StyledSidebar = styled.div`
   display: grid;
   grid-template-columns: 1fr;
   grid-template-rows: 2rem 1fr;
-  border-radius: 0.5rem;
+  border-top-left-radius: 1rem;
   box-shadow: 0 0.5rem 1rem rgba(0, 0, 0, 0.2);
 `;
 
@@ -84,15 +84,14 @@ export const StyledStateChart = styled.div`
   font-size: 12px;
   overflow: hidden;
   max-height: inherit;
-  padding: 1rem;
-
-  > ${StyledVizTabsTabs} {
-    grid-column: 1 / 2;
-    grid-row: 1 / -1;
-  }
 
   > ${StyledSidebar} {
     grid-column: 2 / 3;
+    grid-row: 1 / -1;
+  }
+
+  > ${StyledViewTabs} {
+    grid-column: 1 / 2;
     grid-row: 1 / -1;
   }
 

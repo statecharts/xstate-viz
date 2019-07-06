@@ -1,7 +1,7 @@
 import React, { useContext } from 'react';
 import { AppContext } from './App';
 import styled from 'styled-components';
-import { Notifications } from '@statecharts/xstate-viz';
+import { Notifications } from './Notifications';
 
 const StyledUser = styled.div`
   height: 100%;

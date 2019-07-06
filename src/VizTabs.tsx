@@ -21,6 +21,7 @@ export const StyledVizContainer = styled.section`
   display: grid;
   grid-column-gap: 1rem;
   grid-row-gap: 1rem;
+  padding-left: 1rem;
 
   &[data-child] {
     grid-template-columns: 1fr 1fr;
