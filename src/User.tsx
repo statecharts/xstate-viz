@@ -1,7 +1,6 @@
 import React, { useContext } from 'react';
 import { AppContext } from './App';
 import styled from 'styled-components';
-import { Notifications } from './Notifications';
 
 const StyledUser = styled.div`
   height: 100%;
@@ -25,9 +24,7 @@ const StyledUser = styled.div`
 `;
 
 export const User: React.FunctionComponent = () => {
-  const { state, send, service } = useContext(AppContext);
-
-  console.log((service as any).children.get('notifications'));
+  const { state, send } = useContext(AppContext);
 
   const {
     context: { user }
@@ -35,9 +32,9 @@ export const User: React.FunctionComponent = () => {
 
   return (
     <div>
-      {!state.matches('authorized') ? (
+      {!state.matches({ auth: 'authorized' }) ? (
         <button onClick={() => send('LOGIN')}>Login</button>
-      ) : state.matches({ authorized: { user: 'loaded' } }) ? (
+      ) : state.matches({ auth: { authorized: { user: 'loaded' } } }) ? (
         <StyledUser>
           <div>{user!.login}</div>
           <figure>

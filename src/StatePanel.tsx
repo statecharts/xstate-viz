@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { State, Interpreter } from 'xstate';
 import styled from 'styled-components';
 
@@ -83,7 +83,7 @@ export const StatePanel: React.FunctionComponent<{
   };
 
   return (
-    <StyledDetails key={service.id}>
+    <StyledDetails key={service.id} open={true}>
       <summary>{service.id}</summary>
       <Field label="state">
         <pre>{JSON.stringify(simplifiedState, null, 2)}</pre>

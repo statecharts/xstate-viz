@@ -57,7 +57,7 @@ export const StyledLink = styled.a`
   margin: 0 0.25rem;
 `;
 
-interface AppContext {
+interface AppMachineContext {
   query: {
     gist?: string;
     code?: string;
@@ -71,7 +71,7 @@ interface AppContext {
   gist?: string;
 }
 
-const invokeSaveGist = (ctx: AppContext, e: EventObject) => {
+const invokeSaveGist = (ctx: AppMachineContext, e: EventObject) => {
   return fetch(`https://api.github.com/gists/` + ctx.query.gist!, {
     method: 'post',
     body: JSON.stringify({
@@ -92,7 +92,7 @@ const invokeSaveGist = (ctx: AppContext, e: EventObject) => {
   });
 };
 
-const invokePostGist = (ctx: AppContext, e: EventObject) => {
+const invokePostGist = (ctx: AppMachineContext, e: EventObject) => {
   return fetch(`https://api.github.com/gists`, {
     method: 'post',
     body: JSON.stringify({
@@ -113,7 +113,7 @@ const invokePostGist = (ctx: AppContext, e: EventObject) => {
   });
 };
 
-const invokeFetchGist = (ctx: AppContext) => {
+const invokeFetchGist = (ctx: AppMachineContext) => {
   return fetch(`https://api.github.com/gists/${ctx.query.gist}`, {
     headers: {
       Accept: 'application/json'
@@ -127,7 +127,7 @@ const invokeFetchGist = (ctx: AppContext) => {
   });
 };
 
-const getUser = (ctx: AppContext) => {
+const getUser = (ctx: AppMachineContext) => {
   return fetch(`https://api.github.com/user`, {
     headers: {
       Authorization: `token ${ctx.token}`
@@ -184,7 +184,7 @@ const authActor = createAuthActor();
 
 const query = queryString.parse(window.location.search);
 
-const appMachine = Machine<AppContext>({
+const appMachine = Machine<AppMachineContext>({
   id: 'app',
   context: {
     query,
@@ -203,220 +203,227 @@ const appMachine = Machine<AppContext>({
       }
     }
   ],
-  initial: 'checkingCode',
+  type: 'parallel',
   states: {
-    checkingCode: {
-      on: {
-        '': [
-          {
-            target: 'authorized',
-            cond: ctx => !!ctx.token
-          },
-          {
-            target: 'authorizing',
-            cond: ctx => {
-              return !!ctx.query.code;
-            }
-          },
-          {
-            target: 'fetchingGist',
-            cond: ctx => {
-              return !!ctx.query.gist;
-            }
-          },
-          {
-            target: 'unauthorized',
-            actions: assign<AppContext>({
-              example: examples.light
-            })
-          }
-        ]
-      }
-    },
-    authorizing: {
-      invoke: {
-        src: (ctx, e) => {
-          return fetch(
-            `http://xstate-gist.azurewebsites.net/api/GistPost?code=${e.code}`
-          )
-            .then(response => {
-              if (!response.ok) {
-                throw new Error('unauthorized');
-              }
-
-              return response.json();
-            })
-            .then(data => {
-              if (data.error) {
-                throw new Error('expired code');
-              }
-
-              return data;
-            });
-        },
-        onDone: {
-          target: 'authorized',
-          actions: assign<AppContext>({
-            token: (ctx, e) => e.data.access_token
-          })
-        },
-        onError: {
-          target: 'unauthorized',
-          actions: (_, e) => alert(e.data)
-        }
-      }
-    },
-    authorized: {
-      type: 'parallel',
+    auth: {
+      initial: 'checkingCode',
       states: {
-        user: {
-          initial: 'fetching',
-          states: {
-            fetching: {
-              invoke: {
-                src: getUser,
-                onDone: {
-                  target: 'loaded',
-                  actions: assign<AppContext>({
-                    // @ts-ignore
-                    user: (_, e) => e.data
-                  })
-                }
-              }
-            },
-            loaded: {}
-          }
-        },
-        gist: {
-          initial: 'unknown',
-          states: {
-            idle: {},
-            unknown: {
-              on: {
-                '': [
-                  {
-                    target: 'fetching',
-                    cond: ctx => !!ctx.gist
-                  },
-                  { target: 'idle' }
-                ]
-              }
-            },
-            gistLoaded: {
-              entry: (ctx, e) => notificationsActor.notify('Gist loaded!')
-            },
-            fetching: {
-              invoke: {
-                src: invokeFetchGist,
-                onDone: {
-                  target: 'gistLoaded',
-                  actions: assign<AppContext>({
-                    // @ts-ignore
-                    example: (_, e) => {
-                      return e.data.files['machine.js'].content;
-                    }
-                  })
-                },
-                onError: {
-                  target: 'idle',
-                  actions: [
-                    assign<AppContext>({
-                      gist: undefined
-                    }),
-                    ctx => notificationsActor.notify('Gist not found.')
-                  ]
-                }
-              }
-            },
-            patchingGist: {
-              invoke: {
-                src: invokeSaveGist,
-                onDone: {
-                  actions: [
-                    log(),
-                    ctx => notificationsActor.notify('Gist saved!')
-                  ]
-                }
-              }
-            },
-            postingGist: {
-              invoke: {
-                src: invokePostGist,
-                onDone: {
-                  target: 'posted',
-                  actions: [
-                    assign<AppContext>({
-                      gist: (_, e) => e.data.id
-                    }),
-                    () => notificationsActor.notify('Gist created!')
-                  ]
-                }
-              }
-            },
-            posted: {
-              entry: ({ gist }) => updateQuery({ gist: gist! })
-            }
-          },
+        checkingCode: {
           on: {
-            'GIST.SAVE': [
-              { target: '.patchingGist', cond: ctx => !!ctx.gist },
-              { target: '.postingGist' }
+            '': [
+              {
+                target: 'authorized',
+                cond: ctx => !!ctx.token
+              },
+              {
+                target: 'authorizing',
+                cond: ctx => {
+                  return !!ctx.query.code;
+                }
+              },
+              {
+                target: 'unauthorized',
+                actions: assign<AppMachineContext>({
+                  example: examples.light
+                })
+              }
             ]
           }
+        },
+        authorizing: {
+          invoke: {
+            src: (ctx, e) => {
+              return fetch(
+                `http://xstate-gist.azurewebsites.net/api/GistPost?code=${
+                  e.code
+                }`
+              )
+                .then(response => {
+                  if (!response.ok) {
+                    throw new Error('unauthorized');
+                  }
+
+                  return response.json();
+                })
+                .then(data => {
+                  if (data.error) {
+                    throw new Error('expired code');
+                  }
+
+                  return data;
+                });
+            },
+            onDone: {
+              target: 'authorized',
+              actions: assign<AppMachineContext>({
+                token: (ctx, e) => e.data.access_token
+              })
+            },
+            onError: {
+              target: 'unauthorized',
+              actions: (_, e) => alert(e.data)
+            }
+          }
+        },
+        authorized: {
+          type: 'parallel',
+          states: {
+            user: {
+              initial: 'fetching',
+              states: {
+                fetching: {
+                  invoke: {
+                    src: getUser,
+                    onDone: {
+                      target: 'loaded',
+                      actions: assign<AppMachineContext>({
+                        // @ts-ignore
+                        user: (_, e) => e.data
+                      })
+                    }
+                  }
+                },
+                loaded: {}
+              }
+            },
+            gist: {
+              initial: 'idle',
+              states: {
+                idle: {
+                  initial: 'default',
+                  states: {
+                    default: {},
+                    patched: {
+                      after: {
+                        1000: 'default'
+                      }
+                    },
+                    posted: {
+                      after: {
+                        1000: 'default'
+                      }
+                    }
+                  }
+                },
+                patching: {
+                  invoke: {
+                    src: invokeSaveGist,
+                    onDone: {
+                      target: 'idle.patched',
+                      actions: [
+                        log(),
+                        ctx => notificationsActor.notify('Gist saved!')
+                      ]
+                    }
+                  }
+                },
+                posting: {
+                  invoke: {
+                    src: invokePostGist,
+                    onDone: {
+                      target: 'idle.posted',
+                      actions: [
+                        assign<AppMachineContext>({
+                          gist: (_, e) => e.data.id
+                        }),
+                        () => notificationsActor.notify('Gist created!')
+                      ]
+                    }
+                  }
+                },
+                posted: {
+                  entry: ({ gist }) => updateQuery({ gist: gist! })
+                }
+              },
+              on: {
+                'GIST.SAVE': [
+                  { target: '.patching', cond: ctx => !!ctx.gist },
+                  { target: '.posting' }
+                ]
+              }
+            }
+          }
+        },
+        unauthorized: {
+          on: {
+            LOGIN: 'pendingAuthorization'
+          }
+        },
+        pendingAuthorization: {
+          entry: () => {
+            window.open(
+              'https://github.com/login/oauth/authorize?client_id=39c1ec91c4ed507f6e4c&scope=gist',
+              'Login with GitHub',
+              'width=800,height=600'
+            );
+          },
+          on: {
+            CODE: 'authorizing'
+          }
         }
-      }
-    },
-    unauthorized: {
-      on: {
-        LOGIN: 'pendingAuthorization'
-      }
-    },
-    pendingAuthorization: {
-      entry: () => {
-        window.open(
-          'https://github.com/login/oauth/authorize?client_id=39c1ec91c4ed507f6e4c&scope=gist',
-          'Login with GitHub',
-          'width=800,height=600'
-        );
       },
       on: {
-        CODE: 'authorizing'
+        LOGIN: '.pendingAuthorization'
       }
     },
-    newGist: {},
-    fetchingGist: {
-      invoke: {
-        src: invokeFetchGist,
-        onDone: {
-          target: 'gistLoaded',
-          actions: assign<AppContext>({
-            // @ts-ignore
-            example: (_, e) => {
-              console.log('...', e);
-              return e.data.files['machine.js'].content;
+    gist: {
+      initial: 'checking',
+      states: {
+        checking: {
+          on: {
+            '': [
+              { target: 'fetching', cond: ctx => !!ctx.query.gist },
+              { target: 'idle' }
+            ]
+          }
+        },
+        idle: {},
+
+        fetching: {
+          invoke: {
+            src: invokeFetchGist,
+            onDone: {
+              target: 'loaded',
+              actions: assign<AppMachineContext>({
+                // @ts-ignore
+                example: (_, e) => {
+                  return e.data.files['machine.js'].content;
+                }
+              })
+            },
+            onError: {
+              target: 'idle',
+              actions: [
+                assign<AppMachineContext>({
+                  gist: undefined
+                }),
+                ctx => notificationsActor.notify('Gist not found.')
+              ]
             }
-          })
+          }
+        },
+        loaded: {
+          entry: (ctx, e) => notificationsActor.notify('Gist loaded!')
         }
       }
     }
-  },
-  on: {
-    LOGIN: '.pendingAuthorization'
   }
 });
 
 export const AppContext = createContext<{
-  state: State<AppContext>;
+  state: State<AppMachineContext>;
   send: (event: any) => void;
-  service: Interpreter<AppContext>;
+  service: Interpreter<AppMachineContext>;
 }>({ state: appMachine.initialState, send: () => {}, service: {} as any });
 
 export function App() {
   const [current, send, service] = useMachine(appMachine);
 
-  if (current.matches('fetchingGist')) {
+  if (current.matches({ gist: 'fetching' })) {
     return <div>Loading...</div>;
   }
+
+  console.log(current.value);
 
   return (
     <StyledApp>

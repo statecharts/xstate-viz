@@ -4,6 +4,7 @@ import 'brace/theme/monokai';
 import 'brace/mode/javascript';
 import { StyledButton } from './Button';
 import styled from 'styled-components';
+import { AppContext } from './App';
 
 interface EditorProps extends AceEditorProps {
   code: string;
@@ -30,6 +31,7 @@ export const StyledButtons = styled.div`
 
 export const Editor: React.FunctionComponent<EditorProps> = props => {
   const [code, setCode] = useState(props.code);
+  const { state } = useContext(AppContext);
   const {
     onChange,
     onSave,
@@ -37,6 +39,9 @@ export const Editor: React.FunctionComponent<EditorProps> = props => {
     changeText = 'Update',
     mode = 'javascript'
   } = props;
+  const isSaving = state.matches({
+    auth: { authorized: { gist: 'patching' } }
+  });
 
   return (
     <StyledEditor>
@@ -54,17 +59,32 @@ export const Editor: React.FunctionComponent<EditorProps> = props => {
         wrapEnabled
       />
       <StyledButtons>
-        <StyledButton data-variant="secondary" onClick={() => onChange(code)}>
+        <StyledButton
+          data-variant="secondary"
+          disabled={isSaving}
+          onClick={() => onChange(code)}
+        >
           {changeText}
         </StyledButton>
         <StyledButton
           data-variant="primary"
+          disabled={isSaving}
           onClick={() => {
             onChange(code);
             onSave(code);
           }}
         >
-          Save
+          {isSaving
+            ? 'Saving...'
+            : state.matches({
+                auth: { authorized: { gist: { idle: 'patched' } } }
+              })
+            ? 'Saved!'
+            : state.matches({
+                auth: { authorized: { gist: { idle: 'posted' } } }
+              })
+            ? 'Created!'
+            : 'Save'}
         </StyledButton>
       </StyledButtons>
     </StyledEditor>
