@@ -2,8 +2,9 @@
   "name": "xstate-viz-site",
   "version": "0.1.0",
   "private": true,
-  "homepage": "https://statecharts.github.io/xstate-viz",
+  "homepage": "https://xstate.js.org/viz",
   "dependencies": {
+    "@statecharts/xstate-viz": "^0.3.0",
     "@types/jest": "23.3.9",
     "@types/node": "10.12.1",
     "@xstate/react": "^0.6.1",
@@ -17,7 +18,7 @@
     "test": "react-scripts test",
     "eject": "react-scripts eject",
     "predeploy": "react-scripts build",
-    "deploy": "./node_modules/.bin/gh-pages --d build --repo https://github.com/davidkpiano/xstate.git --dest viz"
+    "deploy": "./node_modules/.bin/gh-pages -d build --repo https://github.com/davidkpiano/xstate.git --dest viz"
   },
   "eslintConfig": {
     "extends": "react-app"

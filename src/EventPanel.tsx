@@ -27,6 +27,7 @@ const StyledEventPanelEvent = styled.li`
   flex-direction: row;
   align-items: center;
   padding: 0.5rem;
+  border-bottom: 1px solid #444;
 
   > pre {
     margin: 0;
