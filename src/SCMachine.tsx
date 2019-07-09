@@ -45,7 +45,7 @@ export const SCMachine: React.SFC<{
         '--border-width': '2px'
       }}
     >
-      <StateChartContainer service={service} />
+      <StateChartContainer service={service} onReset={() => void 0} />
     </StyledStateChart>
   );
 };
