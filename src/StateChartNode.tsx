@@ -322,6 +322,10 @@ const StyledEventButton = styled.button`
     &:empty {
       display: none;
     }
+
+    &:first-child:last-child {
+      width: 100%;
+    }
   }
 
   &:not(:disabled):not([data-builtin]):hover {
@@ -519,7 +523,7 @@ export class StateChartNode extends React.Component<StateChartNodeProps> {
           </StyledStateNodeHeader>
           {!!stateActions(stateNode).length && (
             <>
-              <StyledStateNodeActions data-title="entry">
+              <StyledStateNodeActions>
                 {stateNode.definition.onEntry.map(action => {
                   const actionString = action.type;
 
@@ -532,7 +536,7 @@ export class StateChartNode extends React.Component<StateChartNodeProps> {
                   );
                 })}
               </StyledStateNodeActions>
-              <StyledStateNodeActions data-title="exit">
+              <StyledStateNodeActions>
                 {stateNode.definition.onExit.map(action => {
                   const actionString = action.type;
                   return (
@@ -551,11 +555,13 @@ export class StateChartNode extends React.Component<StateChartNodeProps> {
               console.log(invocation);
 
               return (
-                <span
-                  onClick={() => this.props.onSelectServiceId(invocation.id)}
+                <StateChartAction
+                  key={invocation.id}
+                  data-action-type="invoke"
+                  action={invocation}
                 >
                   {invocation.id}
-                </span>
+                </StateChartAction>
               );
             })}
           </StyledStateNodeActions>
@@ -668,14 +674,11 @@ export class StateChartNode extends React.Component<StateChartNodeProps> {
                         action.type === actionTypes.assign
                           ? JSON.stringify(action.assignments!)
                           : action.type;
-
                       return (
-                        <StyledStateNodeAction
+                        <StateChartAction
+                          action={action}
                           data-action-type="do"
-                          key={actionString + ':' + i}
-                        >
-                          {actionString}
-                        </StyledStateNodeAction>
+                        />
                       );
                     })}
                   </StyledStateNodeActions>

@@ -74,6 +74,13 @@ export const StateChartAction: React.SFC<StateChartActionProps> = ({
         </>
       );
 
+    case actionTypes.invoke:
+      return (
+        <StyledStateChartAction {...dataAttrs}>
+          {action.id}
+        </StyledStateChartAction>
+      );
+
     case actionTypes.send:
       const sendAction = action as SendActionObject<any, any>;
 
@@ -83,15 +90,26 @@ export const StateChartAction: React.SFC<StateChartActionProps> = ({
 
       return (
         <StyledStateChartAction {...dataAttrs}>
-          <strong>send</strong> {sendAction.event.type}{' '}
+          <em>send</em> {sendAction.event.type}{' '}
           {sendAction.to ? `to ${JSON.stringify(sendAction.to)}` : ''}
         </StyledStateChartAction>
       );
 
+    case actionTypes.log:
+      return (
+        <StyledStateChartAction {...dataAttrs}>
+          <em>log</em>
+        </StyledStateChartAction>
+      );
+
     default:
-      if (action.type.indexOf('xstate.') === 0) {
+      if (
+        action.type.indexOf('xstate.') === 0 &&
+        action.type !== 'xstate.invoke'
+      ) {
         return null;
       }
+
       return (
         <StyledStateChartAction {...dataAttrs}>
           {action.type}

@@ -19,6 +19,7 @@ import { StateChartContainer, StyledVizTabsTabs } from './VizTabs';
 import { StatePanel } from './StatePanel';
 import { EventPanel } from './EventPanel';
 import { CodePanel } from './CodePanel';
+import { raise } from 'xstate/lib/actions';
 
 const StyledViewTab = styled.li`
   padding: 0 1rem;
@@ -131,7 +132,21 @@ export function toMachine(machine: StateNode<any> | string): StateNode<any> {
   }
 
   let createMachine: Function;
-
+  // export {
+  //   Machine,
+  //   StateNode,
+  //   State,
+  //   matchesState,
+  //   mapState,
+  //   actions,
+  //   assign,
+  //   send,
+  //   sendParent,
+  //   interpret,
+  //   Interpreter,
+  //   matchState,
+  //   spawn
+  // };
   try {
     createMachine = new Function(
       'Machine',
@@ -140,6 +155,8 @@ export function toMachine(machine: StateNode<any> | string): StateNode<any> {
       'send',
       'sendParent',
       'spawn',
+      'raise',
+      'actions',
       'XState',
       machine
     );
@@ -147,15 +164,12 @@ export function toMachine(machine: StateNode<any> | string): StateNode<any> {
     throw e;
   }
 
-  let resultMachine: StateNode<any>;
+  const machines: Array<StateNode<any>> = [];
 
-  const machineProxy = (config: any, options: any, ctx: any) => {
-    if (resultMachine) {
-      return Machine(config, options);
-    }
-    resultMachine = Machine(config, options);
-
-    return resultMachine;
+  const machineProxy = (config: any, options: any) => {
+    const machine = Machine(config, options);
+    machines.push(machine);
+    return machine;
   };
 
   createMachine(
@@ -165,10 +179,12 @@ export function toMachine(machine: StateNode<any> | string): StateNode<any> {
     send,
     XState.sendParent,
     spawn,
+    raise,
+    XState.actions,
     XState
   );
 
-  return resultMachine! as StateNode<any>;
+  return machines[machines.length - 1]! as StateNode<any>;
 }
 
 const StyledStateViewActions = styled.ul`

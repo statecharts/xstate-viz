@@ -87,7 +87,7 @@ export class Edge extends Component<EdgeProps, EdgeState> {
     const sourceRect = relative(this.state.sourceData!.rect!, svgRef);
     const eventRect = relative(this.state.eventData!.rect!, svgRef);
     const targetRect = relative(this.state.targetData!.rect!, svgRef);
-    const magic = eventRect.height / 2;
+    const magic = 10;
 
     const eventCenterPt = center(eventRect);
     const targetCenterPt = center(targetRect);
@@ -249,16 +249,10 @@ export class Edge extends Component<EdgeProps, EdgeState> {
             y: endPt.y - magic
           }));
         } else {
-          ptFns.push(
-            prevPt => ({
-              x: prevPt.x,
-              y: startPt.y + magic
-            })
-            // prevPt => ({
-            //   x: eventRect.left,
-            //   y: prevPt.y
-            // })
-          );
+          ptFns.push(prevPt => ({
+            x: prevPt.x,
+            y: startPt.y + magic
+          }));
         }
       } else if (startPt.x !== endPt.x) {
         ptFns.push(prevPt => ({
@@ -266,48 +260,6 @@ export class Edge extends Component<EdgeProps, EdgeState> {
           y: prevPt.y
         }));
       }
-
-      // if going left
-      //   if (
-      //     xDir === -1 &&
-      //     Math.abs(startPt.y - endPt.y) < magic * 2 &&
-      //     endSide === 'top'
-      //   ) {
-      //     ptFns.push(prevPt => ({
-      //       x: startPt.x,
-      //       y: sourceRect.top - magic
-      //     }));
-      //     ptFns.push(prevPt => ({
-      //       x: eventRect.left,
-      //       y: prevPt.y
-      //     }));
-      //   } else {
-      //     // ptFns.push(prevPt => ({
-      //     //   x: startPt.x,
-      //     //   y: yDir === -1 ? sourceRect.top - magic : prevPt.y + magic
-      //     // }));
-      //   }
-
-      //   ptFns.push(
-      //     prevPt => {
-      //       return {
-      //         x: endPt.x - magic * xDir,
-      //         y:
-      //           endSide === 'top'
-      //             ? endPt.y - magic
-      //             : endSide === 'bottom'
-      //             ? endPt.y + magic
-      //             : endPt.y
-      //       };
-      //     },
-      //     prevPt => ({
-      //       x: endPt.x,
-      //       y: prevPt.y
-      //     }),
-      //     prevPt => prevPt,
-      //     () => endPt
-      //   );
-      // }
 
       ptFns.push(() => endPt, () => endPt);
     }
