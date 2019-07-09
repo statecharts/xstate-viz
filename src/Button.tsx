@@ -54,6 +54,10 @@ export const StyledButton = styled.button`
     }
   }
 
+  &[data-size='small'] {
+    height: 1rem;
+  }
+
   &:disabled {
     opacity: 0.5;
     cursor: not-allowed;

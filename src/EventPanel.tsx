@@ -5,6 +5,8 @@ import { isBuiltInEvent } from './utils';
 import styled from 'styled-components';
 import { useMachine } from '@xstate/react';
 import { StyledButton } from './Button';
+import { EventRecord } from './StateChart';
+import { format } from 'date-fns';
 
 function getNextEvents(state: State<any>): string[] {
   const { nextEvents } = state;
@@ -55,7 +57,8 @@ const StyledEventPanelEvent = styled.li`
 
 const StyledEventPanel = styled.section`
   display: grid;
-  grid-template-rows: 10rem 1fr;
+  grid-template-rows: 1fr 10rem;
+  grid-template-areas: 'events' 'editor';
   overflow: hidden;
 `;
 
@@ -114,14 +117,15 @@ const sendEventMachine = Machine<typeof sendEventContext>({
 });
 
 export const EventPanel: React.FunctionComponent<{
-  events: EventObject[];
+  records: EventRecord[];
   state: State<any>;
   service: Interpreter<any>;
-}> = ({ events, state, service }) => {
+}> = ({ records, state, service }) => {
   const [current, send, sendEventService] = useMachine(sendEventMachine, {
     execute: false
   });
   const editorRef = useRef<any>(null);
+  const eventsRef = useRef<any>(null);
 
   useEffect(() => {
     sendEventService.execute(current, {
@@ -136,8 +140,64 @@ export const EventPanel: React.FunctionComponent<{
     });
   }, [current, service]);
 
+  useEffect(() => {
+    if (eventsRef.current) {
+      eventsRef.current.scrollTop = eventsRef.current.scrollHeight;
+    }
+  }, [eventsRef.current, records.length]);
+
   return (
     <StyledEventPanel>
+      <StyledEventPanelEvents ref={eventsRef}>
+        {records.map(({ event, time }, i) => {
+          const pastEventCode = JSON.stringify(event, null, 2);
+          const isBuiltIn = isBuiltInEvent(event.type);
+
+          return (
+            <StyledEventPanelEvent
+              key={i}
+              title="Double-click to send, click to edit"
+              data-builtin={isBuiltIn || undefined}
+            >
+              <details>
+                <summary>
+                  {isBuiltIn ? (
+                    <em>{event.type}</em>
+                  ) : (
+                    <>
+                      <strong title={event.type}>{event.type}</strong>
+                      <StyledButton
+                        data-size="small"
+                        onClick={e => {
+                          !isBuiltIn
+                            ? send('UPDATE_AND_SEND', { value: pastEventCode })
+                            : undefined;
+                        }}
+                      >
+                        Replay
+                      </StyledButton>
+                      <StyledButton
+                        data-size="small"
+                        onClick={e => {
+                          e.stopPropagation();
+
+                          send('AUTOFILL', { value: pastEventCode });
+                        }}
+                      >
+                        Edit
+                      </StyledButton>
+                    </>
+                  )}
+                  <time>{format(time, 'hh:mm:ss.SS')}</time>
+                </summary>
+                <pre>
+                  {isBuiltIn ? event.type : JSON.stringify(event, null, 2)}
+                </pre>
+              </details>
+            </StyledEventPanelEvent>
+          );
+        })}
+      </StyledEventPanelEvents>
       <StyledEventPanelEditor>
         {getNextEvents(state).map(nextEvent => {
           return (
@@ -181,59 +241,12 @@ export const EventPanel: React.FunctionComponent<{
           readOnly={false}
           cursorStart={3}
         />
-        <button
+        <StyledButton
           onClick={() => service.send(JSON.parse(current.context.eventCode))}
         >
           Send
-        </button>
+        </StyledButton>
       </StyledEventPanelEditor>
-      <StyledEventPanelEvents>
-        {events.map((event, i) => {
-          const pastEventCode = JSON.stringify(event, null, 2);
-          const isBuiltIn = isBuiltInEvent(event.type);
-
-          return (
-            <StyledEventPanelEvent
-              key={i}
-              title="Double-click to send, click to edit"
-              data-builtin={isBuiltIn || undefined}
-              onDoubleClick={e => {
-                !isBuiltIn
-                  ? send('UPDATE_AND_SEND', { value: pastEventCode })
-                  : undefined;
-              }}
-              onClick={_ => {
-                send('AUTOFILL', { value: pastEventCode });
-              }}
-            >
-              <details>
-                <summary>
-                  {isBuiltIn ? (
-                    <em>{event.type}</em>
-                  ) : (
-                    <>
-                      <strong title={event.type}>{event.type}</strong>
-                      <StyledButton
-                        onClick={e => {
-                          e.stopPropagation();
-
-                          send('AUTOFILL', { value: pastEventCode });
-                        }}
-                      >
-                        Edit
-                      </StyledButton>
-                    </>
-                  )}
-                  <time>{Date.now()}</time>
-                </summary>
-                <pre>
-                  {isBuiltIn ? event.type : JSON.stringify(event, null, 2)}
-                </pre>
-              </details>
-            </StyledEventPanelEvent>
-          );
-        })}
-      </StyledEventPanelEvents>
     </StyledEventPanel>
   );
 };

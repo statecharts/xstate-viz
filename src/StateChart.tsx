@@ -108,6 +108,10 @@ interface StateChartProps {
   height?: number | string;
 }
 
+export interface EventRecord {
+  event: EventObject;
+  time: number;
+}
 export interface StateChartState {
   machine: StateNode<any>;
   current: State<any, any>;
@@ -118,7 +122,7 @@ export interface StateChartState {
   toggledStates: Record<string, boolean>;
   service: Interpreter<any>;
   error?: any;
-  events: EventObject[];
+  events: Array<EventRecord>;
 }
 
 export function toMachine(machine: StateNode<any> | string): StateNode<any> {
@@ -198,20 +202,27 @@ export class StateChart extends React.Component<
           : `Machine(${JSON.stringify(machine.config, null, 2)})`,
       toggledStates: {},
       service: interpret(machine, {}).onTransition(current => {
-        this.setState(
-          { current, events: this.state.events.concat(current.event) },
-          () => {
-            if (this.state.previewEvent) {
-              // this.setState({
-              //   preview: this.state.service.nextState(this.state.previewEvent)
-              // });
-            }
-          }
-        );
+        this.handleTransition(current);
       }),
       events: []
     };
   })();
+  handleTransition(state: State<any>): void {
+    const formattedEvent = {
+      event: state.event,
+      time: Date.now()
+    };
+    this.setState(
+      { current: state, events: this.state.events.concat(formattedEvent) },
+      () => {
+        if (this.state.previewEvent) {
+          // this.setState({
+          //   preview: this.state.service.nextState(this.state.previewEvent)
+          // });
+        }
+      }
+    );
+  }
   svgRef = React.createRef<SVGSVGElement>();
   componentDidMount() {
     this.state.service.start();
@@ -239,7 +250,9 @@ export class StateChart extends React.Component<
       case 'state':
         return <StatePanel state={current} service={service} />;
       case 'events':
-        return <EventPanel state={current} service={service} events={events} />;
+        return (
+          <EventPanel state={current} service={service} records={events} />
+        );
       default:
         return null;
     }
@@ -265,6 +278,7 @@ export class StateChart extends React.Component<
       {
         code,
         machine,
+        events: [],
         current: machine.initialState
       },
       () => {
@@ -272,18 +286,17 @@ export class StateChart extends React.Component<
           {
             service: interpret(this.state.machine)
               .onTransition(current => {
-                this.setState(
-                  { current, events: this.state.events.concat(current.event) },
-                  () => {
-                    if (this.state.previewEvent) {
-                      this.setState({
-                        preview: this.state.service.nextState(
-                          this.state.previewEvent
-                        )
-                      });
-                    }
-                  }
-                );
+                this.handleTransition(current);
+                // TODO: fix events
+                // this.setState({ current, events: [] }, () => {
+                //   if (this.state.previewEvent) {
+                //     this.setState({
+                //       preview: this.state.service.nextState(
+                //         this.state.previewEvent
+                //       )
+                //     });
+                //   }
+                // });
               })
               .start()
           },
@@ -320,7 +333,7 @@ export class StateChart extends React.Component<
           '--border-width': '2px'
         }}
       >
-        <StateChartContainer service={service} />
+        <StateChartContainer service={service} onReset={() => this.reset()} />
         <StyledSidebar>
           <StyledViewTabs>
             {['definition', 'state', 'events'].map(view => {

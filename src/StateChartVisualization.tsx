@@ -18,7 +18,8 @@ export const StateChartVisualization: React.SFC<{
   service: Interpreter<any, any>;
   visible: boolean;
   onSelectService: (service: Interpreter<any>) => void;
-}> = ({ service, visible, onSelectService }) => {
+  onReset: () => void;
+}> = ({ service, visible, onSelectService, onReset }) => {
   const [transitionCount, setTransitionCount] = useState(0);
   const [current, send] = useService(service);
   const [state, setState] = React.useState<{
@@ -134,7 +135,7 @@ export const StateChartVisualization: React.SFC<{
         transitionCount={transitionCount}
         level={0}
         preview={state.preview}
-        onReset={() => {}}
+        onReset={onReset}
         onEvent={event => {
           send(event);
         }}
