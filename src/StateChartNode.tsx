@@ -318,6 +318,7 @@ const StyledEventButton = styled.button`
   > label {
     background-color: var(--color-event);
     cursor: inherit;
+    text-align: left;
 
     &:empty {
       display: none;

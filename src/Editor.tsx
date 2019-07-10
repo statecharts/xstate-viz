@@ -84,7 +84,9 @@ export const Editor: React.FunctionComponent<EditorProps> = props => {
                 auth: { authorized: { gist: { idle: 'posted' } } }
               })
             ? 'Created!'
-            : 'Save'}
+            : state.matches({ auth: 'authorized' })
+            ? 'Save'
+            : 'Sign in to Save'}
         </StyledButton>
       </StyledButtons>
     </StyledEditor>

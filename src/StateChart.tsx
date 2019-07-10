@@ -65,14 +65,8 @@ const StyledSidebar = styled.div`
   grid-template-rows: 2rem 1fr;
   border-top-left-radius: 1rem;
   box-shadow: 0 0.5rem 1rem rgba(0, 0, 0, 0.2);
-`;
-
-const StyledView = styled.div`
-  display: flex;
-  flex-direction: column;
-  justify-content: flex-start;
-  align-items: stretch;
-  // overflow: hidden;
+  transition: transform 0.6s cubic-bezier(0.5, 0, 0.5, 1);
+  z-index: 1;
 `;
 
 export const StyledStateChart = styled.div`
@@ -80,6 +74,7 @@ export const StyledStateChart = styled.div`
   display: grid;
   grid-template-columns: 1fr var(--sidebar-width, 25rem);
   grid-template-rows: 1fr;
+  grid-template-areas: 'content sidebar';
   grid-column-gap: 1rem;
   font-family: sans-serif;
   font-size: 12px;
@@ -87,18 +82,26 @@ export const StyledStateChart = styled.div`
   max-height: inherit;
 
   > ${StyledSidebar} {
-    grid-column: 2 / 3;
-    grid-row: 1 / -1;
+    grid-area: sidebar;
   }
 
-  > ${StyledViewTabs} {
-    grid-column: 1 / 2;
-    grid-row: 1 / -1;
+  > :not(${StyledSidebar}) {
+    grid-area: content;
   }
 
   > * {
     max-height: inherit;
     overflow-y: auto;
+  }
+
+  [data-layout='viz'] & {
+    > :not(${StyledSidebar}) {
+      grid-column: 1 / -1;
+    }
+
+    > ${StyledSidebar} {
+      transform: translateX(100%);
+    }
   }
 `;
 
@@ -132,21 +135,6 @@ export function toMachine(machine: StateNode<any> | string): StateNode<any> {
   }
 
   let createMachine: Function;
-  // export {
-  //   Machine,
-  //   StateNode,
-  //   State,
-  //   matchesState,
-  //   mapState,
-  //   actions,
-  //   assign,
-  //   send,
-  //   sendParent,
-  //   interpret,
-  //   Interpreter,
-  //   matchState,
-  //   spawn
-  // };
   try {
     createMachine = new Function(
       'Machine',
@@ -187,24 +175,12 @@ export function toMachine(machine: StateNode<any> | string): StateNode<any> {
   return machines[machines.length - 1]! as StateNode<any>;
 }
 
-const StyledStateViewActions = styled.ul`
-  margin: 0;
-  padding: 0;
-  list-style: none;
-`;
-
-const StyledStateViewAction = styled.li`
-  white-space: nowrap;
-  overflow-x: auto;
-`;
-
 export class StateChart extends React.Component<
   StateChartProps,
   StateChartState
 > {
   state: StateChartState = (() => {
     const machine = toMachine(this.props.machine);
-    // const machine = this.props.machine;
 
     return {
       current: machine.initialState,
@@ -363,6 +339,7 @@ export class StateChart extends React.Component<
                 </StyledViewTab>
               );
             })}
+            <button>Hide</button>
           </StyledViewTabs>
           {this.renderView()}
         </StyledSidebar>

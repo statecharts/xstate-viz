@@ -1,17 +1,19 @@
 import React from 'react';
 
-export default () => (
+export const Logo: React.FunctionComponent<{ className: string }> = ({
+  className
+}) => (
   <svg
     version="1.1"
-    id="Layer_1"
     xmlnsXlink="http://www.w3.org/1999/xlink"
     x="0px"
     y="0px"
     viewBox="0 0 279.8 98.5"
     xmlSpace="preserve"
+    className={className}
   >
     <g>
-      <g id="Layer_6">
+      <g>
         <path
           d="M55.8,10.4L55.8,10.4h19.5L55.6,44.6l0,0C49.6,33.9,49.7,20.9,55.8,10.4z"
           fill="var(--fill, black)"

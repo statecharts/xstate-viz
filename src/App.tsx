@@ -9,7 +9,7 @@ import { User } from './User';
 
 import { examples } from './examples';
 import { Header, notificationsActor } from './Header';
-import Logo from './logo';
+import { Logo } from './logo';
 
 const StyledApp = styled.main`
   --sidebar-width: 25rem;
@@ -34,7 +34,7 @@ export const StyledHeader = styled.header`
 `;
 
 export const StyledLogo = styled(Logo)`
-  height: 100%;
+  height: 2rem;
 `;
 
 export const StyledLinks = styled.nav`
@@ -61,6 +61,7 @@ interface AppMachineContext {
   query: {
     gist?: string;
     code?: string;
+    layout?: string;
   };
   token?: string;
   example: any;
@@ -69,6 +70,10 @@ interface AppMachineContext {
    * Gist ID
    */
   gist?: string;
+  /**
+   * Saving deferred until authorization
+   */
+  pendingSave: boolean;
 }
 
 const invokeSaveGist = (ctx: AppMachineContext, e: EventObject) => {
@@ -191,7 +196,8 @@ const appMachine = Machine<AppMachineContext>({
     token: process.env.REACT_APP_TEST_TOKEN,
     gist: (query.gist as string) || undefined,
     example: examples.omni,
-    user: undefined
+    user: undefined,
+    pendingSave: false
   },
   invoke: [
     {
@@ -212,13 +218,15 @@ const appMachine = Machine<AppMachineContext>({
           on: {
             '': [
               {
-                target: 'authorized',
-                cond: ctx => !!ctx.token
-              },
-              {
                 target: 'authorizing',
                 cond: ctx => {
                   return !!ctx.query.code;
+                }
+              },
+              {
+                target: 'gettingUser',
+                cond: ctx => {
+                  return !!ctx.token;
                 }
               },
               {
@@ -254,7 +262,7 @@ const appMachine = Machine<AppMachineContext>({
                 });
             },
             onDone: {
-              target: 'authorized',
+              target: 'gettingUser',
               actions: assign<AppMachineContext>({
                 token: (ctx, e) => e.data.access_token
               })
@@ -265,27 +273,23 @@ const appMachine = Machine<AppMachineContext>({
             }
           }
         },
+        gettingUser: {
+          invoke: {
+            src: getUser,
+            onDone: {
+              target: 'authorized',
+              actions: assign<AppMachineContext>({
+                // @ts-ignore
+                user: (_, e) => e.data
+              })
+            },
+            onError: 'unauthorized'
+          }
+        },
         authorized: {
           type: 'parallel',
           states: {
-            user: {
-              initial: 'fetching',
-              states: {
-                fetching: {
-                  invoke: {
-                    src: getUser,
-                    onDone: {
-                      target: 'loaded',
-                      actions: assign<AppMachineContext>({
-                        // @ts-ignore
-                        user: (_, e) => e.data
-                      })
-                    }
-                  }
-                },
-                loaded: {}
-              }
-            },
+            user: {},
             gist: {
               initial: 'idle',
               states: {
@@ -336,17 +340,37 @@ const appMachine = Machine<AppMachineContext>({
                 }
               },
               on: {
+                '': {
+                  actions: [
+                    assign<AppMachineContext>({ pendingSave: false }),
+                    send('GIST.SAVE')
+                  ],
+                  cond: ctx => ctx.pendingSave
+                },
                 'GIST.SAVE': [
                   { target: '.patching', cond: ctx => !!ctx.gist },
                   { target: '.posting' }
                 ]
               }
             }
+          },
+          on: {
+            LOGOUT: {
+              target: 'unauthorized',
+              actions: assign<AppMachineContext>({
+                token: undefined,
+                user: undefined
+              })
+            }
           }
         },
         unauthorized: {
           on: {
-            LOGIN: 'pendingAuthorization'
+            LOGIN: 'pendingAuthorization',
+            'GIST.SAVE': {
+              target: 'pendingAuthorization',
+              actions: assign<AppMachineContext>({ pendingSave: true })
+            }
           }
         },
         pendingAuthorization: {
@@ -426,7 +450,7 @@ export function App() {
   console.log(current.value);
 
   return (
-    <StyledApp>
+    <StyledApp data-layout={current.context.query.layout}>
       <AppContext.Provider value={{ state: current, send, service }}>
         <User />
         <Header />
