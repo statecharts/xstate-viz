@@ -1,4 +1,4 @@
-import React, { Component, createContext, useState } from 'react';
+import React, { Component, createContext, useState, useReducer } from 'react';
 import { StateChart, notificationsMachine } from './index';
 import styled from 'styled-components';
 import { Machine, assign, EventObject, State, Interpreter } from 'xstate';
@@ -10,9 +10,14 @@ import { User } from './User';
 import { examples } from './examples';
 import { Header, notificationsActor } from './Header';
 import { Logo } from './logo';
+import { Loader } from './Loader';
+import { LayoutButton, StyledLayoutButton } from './LayoutButton';
 
 const StyledApp = styled.main`
   --sidebar-width: 25rem;
+  --shadow: 0 0.5rem 1rem var(--shadow-color, rgba(0, 0, 0, 0.2));
+  --duration: 0.2s;
+  --easing: cubic-bezier(0.5, 0, 0.5, 1);
 
   height: 100%;
   display: grid;
@@ -21,6 +26,12 @@ const StyledApp = styled.main`
     'content content';
   grid-template-rows: 3rem auto;
   grid-template-columns: auto var(--sidebar-width);
+
+  > ${StyledLayoutButton} {
+    display: inline-block;
+    grid-row: 2;
+    grid-column: -1;
+  }
 `;
 
 export const StyledHeader = styled.header`
@@ -440,26 +451,56 @@ export const AppContext = createContext<{
   service: Interpreter<AppMachineContext>;
 }>({ state: appMachine.initialState, send: () => {}, service: {} as any });
 
+function layoutReducer(state: string, event: string) {
+  switch (state) {
+    case 'full':
+      switch (event) {
+        case 'TOGGLE':
+          return 'viz';
+        default:
+          return state;
+      }
+    case 'viz':
+      switch (event) {
+        case 'TOGGLE':
+          return 'full';
+        default:
+          return state;
+      }
+    default:
+      return state;
+  }
+}
+
 export function App() {
   const [current, send, service] = useMachine(appMachine);
-
-  if (current.matches({ gist: 'fetching' })) {
-    return <div>Loading...</div>;
-  }
-
-  console.log(current.value);
+  const [layout, dispatchLayout] = useReducer(
+    layoutReducer,
+    (query.layout as string) || 'full'
+  );
 
   return (
-    <StyledApp data-layout={current.context.query.layout}>
+    <StyledApp data-layout={layout}>
       <AppContext.Provider value={{ state: current, send, service }}>
         <User />
         <Header />
-        <StateChart
-          machine={current.context.example}
-          onSave={code => {
-            send('GIST.SAVE', { code });
-          }}
-        />
+        {current.matches({ gist: 'fetching' }) ? (
+          <Loader />
+        ) : (
+          <>
+            <StateChart
+              machine={current.context.example}
+              onSave={code => {
+                send('GIST.SAVE', { code });
+              }}
+            />
+            <LayoutButton onClick={() => dispatchLayout('TOGGLE')}>
+              {({ full: 'Hide', viz: 'Code' } as Record<string, string>)[
+                layout
+              ] || 'Show'}
+            </LayoutButton>
+          </>
+        )}
       </AppContext.Provider>
     </StyledApp>
   );

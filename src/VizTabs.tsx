@@ -8,17 +8,7 @@ interface StateChartContainerProps {
   onReset: () => void;
 }
 
-export const StyledVizTabsTabs = styled.ul`
-  list-style: none;
-  display: flex;
-  flex-direction: row;
-  justify-content: flex-start;
-  align-items: flex-end;
-  margin: 0;
-  padding: 0;
-`;
-
-export const StyledVizContainer = styled.section`
+export const StyledStateChartContainer = styled.section`
   display: grid;
   grid-column-gap: 1rem;
   grid-row-gap: 1rem;
@@ -34,13 +24,13 @@ export const StateChartContainer: React.SFC<StateChartContainerProps> = ({
   onReset
 }) => {
   return (
-    <StyledVizContainer>
+    <StyledStateChartContainer>
       <StateChartVisualization
         service={service}
         visible={true}
         onSelectService={() => void 0}
         onReset={onReset}
       />
-    </StyledVizContainer>
+    </StyledStateChartContainer>
   );
 };

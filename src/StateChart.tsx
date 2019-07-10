@@ -15,11 +15,12 @@ import {
 } from 'xstate';
 import * as XState from 'xstate';
 import { Editor } from './Editor';
-import { StateChartContainer, StyledVizTabsTabs } from './VizTabs';
+import { StateChartContainer, StyledStateChartContainer } from './VizTabs';
 import { StatePanel } from './StatePanel';
 import { EventPanel } from './EventPanel';
 import { CodePanel } from './CodePanel';
 import { raise } from 'xstate/lib/actions';
+import { LayoutButton } from './LayoutButton';
 
 const StyledViewTab = styled.li`
   padding: 0 1rem;
@@ -64,7 +65,7 @@ const StyledSidebar = styled.div`
   grid-template-columns: 1fr;
   grid-template-rows: 2rem 1fr;
   border-top-left-radius: 1rem;
-  box-shadow: 0 0.5rem 1rem rgba(0, 0, 0, 0.2);
+  box-shadow: var(--shadow);
   transition: transform 0.6s cubic-bezier(0.5, 0, 0.5, 1);
   z-index: 1;
 `;
@@ -85,7 +86,7 @@ export const StyledStateChart = styled.div`
     grid-area: sidebar;
   }
 
-  > :not(${StyledSidebar}) {
+  > ${StyledStateChartContainer} {
     grid-area: content;
   }
 
@@ -300,11 +301,12 @@ export class StateChart extends React.Component<
     );
   }
   render() {
+    const { className } = this.props;
     const { code, service } = this.state;
 
     return (
       <StyledStateChart
-        className={this.props.className}
+        className={className}
         key={code}
         style={{
           background: 'var(--color-app-background)',
@@ -339,7 +341,6 @@ export class StateChart extends React.Component<
                 </StyledViewTab>
               );
             })}
-            <button>Hide</button>
           </StyledViewTabs>
           {this.renderView()}
         </StyledSidebar>

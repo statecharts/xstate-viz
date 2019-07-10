@@ -229,6 +229,7 @@ const StyledStateNodeState = styled.div`
   color: #313131;
   min-height: 1rem;
   z-index: 1;
+  transition: border-color var(--duration) var(--easing);
 
   &[data-type='parallel'] > ${StyledChildStates} > ${StyledStateNode} > & {
     border-style: dashed;
@@ -319,6 +320,7 @@ const StyledEventButton = styled.button`
     background-color: var(--color-event);
     cursor: inherit;
     text-align: left;
+    transition: background var(--duration) var(--easing);
 
     &:empty {
       display: none;

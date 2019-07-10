@@ -1,6 +1,6 @@
 import React from 'react';
 
-export const Logo: React.FunctionComponent<{ className: string }> = ({
+export const Logo: React.FunctionComponent<{ className?: string }> = ({
   className
 }) => (
   <svg
