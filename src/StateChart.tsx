@@ -14,13 +14,11 @@ import {
   StateMachine
 } from 'xstate';
 import * as XState from 'xstate';
-import { Editor } from './Editor';
 import { StateChartContainer, StyledStateChartContainer } from './VizTabs';
 import { StatePanel } from './StatePanel';
 import { EventPanel } from './EventPanel';
 import { CodePanel } from './CodePanel';
 import { raise } from 'xstate/lib/actions';
-import { LayoutButton } from './LayoutButton';
 
 const StyledViewTab = styled.li`
   padding: 0 1rem;
