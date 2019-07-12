@@ -14,6 +14,20 @@ import { Loader } from './Loader';
 import { LayoutButton, StyledLayoutButton } from './LayoutButton';
 
 const StyledApp = styled.main`
+  --color-app-background: #fff;
+  --color-border: #dedede;
+  --color-primary: rgba(87, 176, 234, 1);
+  --color-primary-faded: rgba(87, 176, 234, 0.5);
+  --color-primary-shadow: rgba(87, 176, 234, 0.1);
+  --color-link: rgba(87, 176, 234, 1);
+  --color-disabled: #c7c5c5;
+  --color-edge: rgba(0, 0, 0, 0.2);
+  --color-edge-active: var(--color-primary);
+  --color-secondary: rgba(255, 152, 0, 1);
+  --color-secondary-light: rgba(255, 152, 0, 0.5);
+  --color-sidebar: #272722;
+  --radius: 0.2rem;
+  --border-width: 2px;
   --sidebar-width: 25rem;
   --shadow: 0 0.5rem 1rem var(--shadow-color, rgba(0, 0, 0, 0.2));
   --duration: 0.2s;
@@ -26,6 +40,7 @@ const StyledApp = styled.main`
     'content content';
   grid-template-rows: 3rem auto;
   grid-template-columns: auto var(--sidebar-width);
+  overflow: hidden;
 
   > ${StyledLayoutButton} {
     display: inline-block;
@@ -179,7 +194,7 @@ function createAuthActor() {
   };
 }
 
-function updateQuery(query: Record<string, string>): void {
+function updateQuery(query: Record<string, string | undefined>): void {
   if (!window.history) return;
 
   const fullQuery = {

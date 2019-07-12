@@ -20,6 +20,7 @@ import { StyledButton } from './Button';
 import { actionTypes } from 'xstate/lib/actions';
 import { StateChartAction } from './StateChartAction';
 import { StateChartGuard } from './StateChartGuard';
+import { Loader } from './Loader';
 
 const StyledChildStates = styled.div`
   padding: 1rem;
@@ -514,11 +515,12 @@ export class StateChartNode extends React.Component<StateChartNodeProps> {
             }}
           >
             {dataType === 'history' && <StyledToken>H</StyledToken>}
-            <strong>{stateNode.key}</strong>
+            <strong title={`#${stateNode.id}`}>{stateNode.key}</strong>
             {stateNode.path.length === 0 ? (
               <StyledButton
-                data-variant="reset"
+                data-variant="link"
                 onClick={onReset ? () => onReset() : undefined}
+                title="Reset machine to its initial state"
               >
                 Reset
               </StyledButton>
@@ -555,8 +557,6 @@ export class StateChartNode extends React.Component<StateChartNodeProps> {
           )}
           <StyledStateNodeActions data-title="invoke">
             {stateNode.invoke.map(invocation => {
-              console.log(invocation);
-
               return (
                 <StateChartAction
                   key={invocation.id}
@@ -673,12 +673,9 @@ export class StateChartNode extends React.Component<StateChartNodeProps> {
                 {!!(edge.transition.actions.length || edge.transition.cond) && (
                   <StyledStateNodeActions>
                     {edge.transition.actions.map((action, i) => {
-                      const actionString =
-                        action.type === actionTypes.assign
-                          ? JSON.stringify(action.assignments!)
-                          : action.type;
                       return (
                         <StateChartAction
+                          key={i}
                           action={action}
                           data-action-type="do"
                         />

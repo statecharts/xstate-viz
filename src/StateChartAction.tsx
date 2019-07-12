@@ -25,9 +25,10 @@ interface StateChartActionProps {
 }
 
 const StyledStateChartAction = styled.li`
-  white-space: nowrap;
-  // overflow: hidden;
-  text-overflow: ellipsis;
+  display: flex;
+  flex-direction: row;
+  justify-content: flex-start;
+  align-items: baseline;
   max-width: 30ch;
   padding: 0 0.25rem;
   line-height: 1rem;
@@ -42,7 +43,14 @@ const StyledStateChartAction = styled.li`
     margin-right: 0.25rem;
     font-size: 75%;
     content: attr(data-action-type) ' /';
+    white-space: nowrap;
   }
+`;
+
+const StyledStateChartActionText = styled.span`
+  overflow: hidden;
+  white-space: nowrap;
+  text-overflow: ellipsis;
 `;
 
 export const StateChartAction: React.SFC<StateChartActionProps> = ({
@@ -52,7 +60,7 @@ export const StateChartAction: React.SFC<StateChartActionProps> = ({
   switch (action.type) {
     case actionTypes.assign:
       return typeof action.assignment === 'function' ? (
-        <StyledStateChartAction {...dataAttrs}>
+        <StyledStateChartAction {...dataAttrs} title="assign">
           <strong>assign</strong>
         </StyledStateChartAction>
       ) : (
@@ -67,7 +75,9 @@ export const StateChartAction: React.SFC<StateChartActionProps> = ({
                 <Popover>
                   <Code>{action.assignment[key].toString()}</Code>
                 </Popover>
-                <strong>assign</strong> {key}
+                <StyledStateChartActionText>
+                  <strong>assign</strong> {key}
+                </StyledStateChartActionText>
               </StyledStateChartAction>
             );
           })}
@@ -76,8 +86,8 @@ export const StateChartAction: React.SFC<StateChartActionProps> = ({
 
     case actionTypes.invoke:
       return (
-        <StyledStateChartAction {...dataAttrs}>
-          {action.id}
+        <StyledStateChartAction {...dataAttrs} title={`invoke ${action.id}`}>
+          <StyledStateChartActionText>{action.id}</StyledStateChartActionText>
         </StyledStateChartAction>
       );
 
@@ -89,16 +99,25 @@ export const StateChartAction: React.SFC<StateChartActionProps> = ({
       }
 
       return (
-        <StyledStateChartAction {...dataAttrs}>
-          <em>send</em> {sendAction.event.type}{' '}
-          {sendAction.to ? `to ${JSON.stringify(sendAction.to)}` : ''}
+        <StyledStateChartAction
+          {...dataAttrs}
+          title={`send ${sendAction.event.type} to "${JSON.stringify(
+            sendAction.to
+          )}"`}
+        >
+          <StyledStateChartActionText>
+            <em>send</em> {sendAction.event.type}{' '}
+            {sendAction.to ? `to ${JSON.stringify(sendAction.to)}` : ''}
+          </StyledStateChartActionText>
         </StyledStateChartAction>
       );
 
     case actionTypes.log:
       return (
-        <StyledStateChartAction {...dataAttrs}>
-          <em>log</em>
+        <StyledStateChartAction {...dataAttrs} title="log">
+          <StyledStateChartActionText>
+            <em>log</em>
+          </StyledStateChartActionText>
         </StyledStateChartAction>
       );
 
@@ -111,8 +130,8 @@ export const StateChartAction: React.SFC<StateChartActionProps> = ({
       }
 
       return (
-        <StyledStateChartAction {...dataAttrs}>
-          {action.type}
+        <StyledStateChartAction {...dataAttrs} title={action.type}>
+          <StyledStateChartActionText>{action.type}</StyledStateChartActionText>
         </StyledStateChartAction>
       );
   }

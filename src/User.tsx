@@ -1,6 +1,7 @@
 import React, { useContext } from 'react';
 import { AppContext } from './App';
 import styled from 'styled-components';
+import { StyledButton } from './Button';
 
 const StyledUserName = styled.a`
   font-weight: bold;
@@ -25,12 +26,13 @@ const StyledUser = styled.div`
   > figure {
     margin: 0;
     grid-area: avatar;
-
-    > img {
-      height: 100%;
-      border-radius: 0.5rem;
-    }
   }
+`;
+
+const StyledImg = styled.img`
+  height: 100%;
+  border-radius: 0.5rem;
+  background: gray;
 `;
 
 export const User: React.FunctionComponent = () => {
@@ -44,19 +46,25 @@ export const User: React.FunctionComponent = () => {
 
   return (
     <div>
-      {!state.matches({ auth: 'authorized' }) ? (
-        <button onClick={() => send('LOGIN')}>Login</button>
-      ) : (
-        <StyledUser>
-          <StyledUserName>{user!.login}</StyledUserName>
-          <StyledUserActions>
-            <button onClick={() => send('LOGOUT')}>Log out</button>
-          </StyledUserActions>
-          <figure>
-            <img src={user!.avatar_url} />
-          </figure>
-        </StyledUser>
-      )}
+      <StyledUser>
+        <StyledUserName>{user ? user.login : <em>--</em>}</StyledUserName>
+        <StyledUserActions>
+          {state.matches({ auth: 'unauthorized' }) ? (
+            <StyledButton data-variant="link" onClick={() => send('LOGIN')}>
+              Login
+            </StyledButton>
+          ) : !state.matches({ auth: 'authorized' }) ? (
+            <div>Authorizing...</div>
+          ) : (
+            <StyledButton data-variant="link" onClick={() => send('LOGOUT')}>
+              Log out
+            </StyledButton>
+          )}
+        </StyledUserActions>
+        <figure>
+          {user ? <StyledImg src={user.avatar_url} /> : <StyledImg as="div" />}
+        </figure>
+      </StyledUser>
     </div>
   );
 };

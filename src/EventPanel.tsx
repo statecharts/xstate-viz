@@ -1,4 +1,4 @@
-import React, { useEffect, useRef } from 'react';
+import React, { useEffect, useRef, useCallback } from 'react';
 import { EventObject, State, Interpreter, Machine, assign } from 'xstate';
 import AceEditor from 'react-ace';
 import { isBuiltInEvent } from './utils';
@@ -101,14 +101,6 @@ const sendEventMachine = Machine<typeof sendEventContext>({
             'moveCursor'
           ]
         },
-        UPDATE_AND_SEND: {
-          actions: [
-            assign({
-              eventCode: (_, e) => e.value
-            }),
-            'sendToService'
-          ]
-        },
         SEND: {
           actions: 'sendToService'
         }
@@ -130,7 +122,6 @@ export const EventPanel: React.FunctionComponent<{
 
   useEffect(() => {
     sendEventService.execute(current, {
-      sendToService: ctx => service.send(JSON.parse(ctx.eventCode)),
       moveCursor: () => {
         if (editorRef.current) {
           editorRef.current.moveCursorTo(1);
@@ -146,6 +137,15 @@ export const EventPanel: React.FunctionComponent<{
       eventsRef.current.scrollTop = eventsRef.current.scrollHeight;
     }
   }, [eventsRef.current, records.length]);
+
+  const sendToService = useCallback(
+    (event: EventObject) => {
+      if (!isBuiltInEvent(event.type)) {
+        service.send(event);
+      }
+    },
+    [service]
+  );
 
   return (
     <StyledEventPanel>
@@ -169,10 +169,8 @@ export const EventPanel: React.FunctionComponent<{
                       <strong title={event.type}>{event.type}</strong>
                       <StyledButton
                         data-size="small"
-                        onClick={e => {
-                          !isBuiltIn
-                            ? send('UPDATE_AND_SEND', { value: pastEventCode })
-                            : undefined;
+                        onClick={() => {
+                          sendToService(event);
                         }}
                       >
                         Replay
@@ -243,7 +241,7 @@ export const EventPanel: React.FunctionComponent<{
           cursorStart={3}
         />
         <StyledButton
-          onClick={() => service.send(JSON.parse(current.context.eventCode))}
+          onClick={() => sendToService(JSON.parse(current.context.eventCode))}
         >
           Send
         </StyledButton>

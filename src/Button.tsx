@@ -37,21 +37,12 @@ export const StyledButton = styled.button`
     border: none;
   }
 
-  &[data-variant='reset'] {
-    background: var(--color-secondary);
-    border: none;
-    margin: 0;
-    margin-left: 0.5rem;
-    padding: 0.25rem 0.5rem;
-    height: auto;
+  &[data-variant='link'] {
+    background: transparent;
+    color: var(--color-link);
     letter-spacing: 0;
-    font-size: 50%;
-    opacity: 0.8;
-    transition: opacity 0.3s ease;
-
-    &:hover {
-      opacity: 1;
-    }
+    height: auto;
+    padding: 0;
   }
 
   &[data-size='small'] {
