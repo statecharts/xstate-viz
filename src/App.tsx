@@ -272,9 +272,9 @@ const appMachine = Machine<AppMachineContext>({
           invoke: {
             src: (ctx, e) => {
               return fetch(
-                `http://xstate-gist.azurewebsites.net/api/GistPost?code=${
+                `https://xstate-gist.azurewebsites.net/api/GistPost?code=${
                   e.code
-                }`
+                }&redirect_uri=${encodeURI(window.location.href)}`
               )
                 .then(response => {
                   if (!response.ok) {
