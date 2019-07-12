@@ -39,9 +39,13 @@ export const Editor: React.FunctionComponent<EditorProps> = props => {
     changeText = 'Update',
     mode = 'javascript'
   } = props;
-  const isSaving = state.matches({
-    auth: { authorized: { gist: 'patching' } }
-  });
+  const isSaving =
+    state.matches({
+      auth: { authorized: { gist: 'patching' } }
+    }) ||
+    state.matches({
+      auth: { authorized: { gist: 'posting' } }
+    });
 
   return (
     <StyledEditor>
@@ -74,8 +78,14 @@ export const Editor: React.FunctionComponent<EditorProps> = props => {
             onSave(code);
           }}
         >
-          {isSaving
+          {state.matches({
+            auth: { authorized: { gist: 'patching' } }
+          })
             ? 'Saving...'
+            : state.matches({
+                auth: { authorized: { gist: 'posting' } }
+              })
+            ? 'Uploading...'
             : state.matches({
                 auth: { authorized: { gist: { idle: 'patched' } } }
               })
@@ -83,7 +93,7 @@ export const Editor: React.FunctionComponent<EditorProps> = props => {
             : state.matches({
                 auth: { authorized: { gist: { idle: 'posted' } } }
               })
-            ? 'Created!'
+            ? 'Uploaded!'
             : state.matches({ auth: 'authorized' })
             ? 'Save'
             : 'Sign in to Save'}

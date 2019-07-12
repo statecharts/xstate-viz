@@ -16,8 +16,7 @@ export const StyledButton = styled.button`
   letter-spacing: 1px;
 
   &:hover {
-    background: var(--color-secondary);
-    color: white;
+    background: white;
   }
 
   &:focus {
@@ -42,11 +41,11 @@ export const StyledButton = styled.button`
     color: var(--color-link);
     letter-spacing: 0;
     height: auto;
-    padding: 0;
+    padding: 0 0.5rem;
   }
 
-  &[data-size='small'] {
-    height: 1rem;
+  &[data-size='full'] {
+    width: 100%;
   }
 
   &:disabled {

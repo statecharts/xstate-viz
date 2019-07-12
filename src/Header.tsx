@@ -4,24 +4,24 @@ import { StyledHeader, StyledLogo, StyledLinks, StyledLink } from './App';
 import { interpret } from 'xstate';
 import { Actor } from 'xstate/lib/Actor';
 
+import { Notification } from './Notifications';
+
 const notificationsService = interpret(notificationsMachine)
   .onTransition(s => console.log(s))
   .start();
 
 export const notificationsActor: Actor & {
-  notify: (message: string) => void;
+  notify: (message: string | Notification) => void;
 } = {
   toJSON: () => ({ id: 'notifications' }),
   id: 'notifications',
   send: notificationsService.send.bind(notificationsService),
   subscribe: notificationsService.subscribe.bind(notificationsService),
-  notify: (message: string) =>
+  notify: (message: string | Notification) =>
     notificationsService.send({
       type: 'NOTIFICATIONS.QUEUE',
-      data: {
-        type: 'success',
-        message
-      }
+      data:
+        typeof message === 'string' ? { message, severity: 'info' } : message
     })
 };
 

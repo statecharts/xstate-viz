@@ -6,9 +6,10 @@ import { useMachine } from '@xstate/react';
 import { log } from 'xstate/lib/actions';
 import styled from 'styled-components';
 
-interface Notification {
-  type: 'info' | 'success' | 'warning' | 'error';
+export interface Notification {
   message: string;
+  description?: string;
+  severity: 'success' | 'warning' | 'error';
 }
 
 interface NotificationsContext {
@@ -45,7 +46,7 @@ export const notificationsMachine = Machine<NotificationsContext>(
           assign<NotificationsContext>({
             notifications: (ctx, e) =>
               produce(ctx.notifications, draft => {
-                draft.push(e.data);
+                draft.unshift(e.data);
               })
           }),
           actions.send('NOTIFICATION.DISMISS', { delay: 'TIMEOUT' })
@@ -64,19 +65,10 @@ interface NotificationsProps {
   notifier: Actor<State<NotificationsContext>>;
 }
 
-const StyledNotifications = styled.div`
-  position: absolute;
-  width: 100%;
-  height: 100%;
-  pointer-events: none;
-  display: flex;
-  flex-direction: column;
-  justify-content: flex-start;
-  align-items: center;
-
-  > * {
-    pointer-events: auto;
-  }
+const StyledNotificationDismissButton = styled.button`
+  appearance: none;
+  background: transparent;
+  color: white;
 `;
 
 const StyledNotification = styled.div`
@@ -89,12 +81,21 @@ const StyledNotification = styled.div`
   animation: notification-slideDown calc(var(--timeout, 4000) * 1ms) ease both;
   will-change: transform;
 
-  &[data-type='success'] {
+  &[data-severity='success'] {
     background: #40d38d;
   }
 
-  &[data-type='info'] {
+  &[data-severity='info'] {
     background: #2f86eb;
+  }
+
+  &[data-severity='error'] {
+    background: red;
+  }
+
+  > ${StyledNotificationDismissButton} {
+    position: absolute;
+    right: 0;
   }
 
   @keyframes notification-slideDown {
@@ -116,6 +117,22 @@ const StyledNotification = styled.div`
   }
 `;
 
+const StyledNotifications = styled.div`
+  position: absolute;
+  width: 100%;
+  height: 100%;
+  pointer-events: none;
+  display: flex;
+  flex-direction: column;
+  justify-content: flex-start;
+  align-items: center;
+
+  > ${StyledNotification} {
+    position: absolute;
+    pointer-events: auto;
+  }
+`;
+
 export const Notifications: React.FunctionComponent<NotificationsProps> = ({
   notifier
 }) => {
@@ -133,26 +150,33 @@ export const Notifications: React.FunctionComponent<NotificationsProps> = ({
     return null;
   }
 
+  const { notifications } = current.context;
+
   return (
     <StyledNotifications>
-      {current.context.notifications.map((notification, i) => {
+      {notifications.map((notification, i) => {
         return (
           <StyledNotification
-            key={i}
-            data-type={notification.type}
+            key={notifications.length - i}
+            data-severity={notification.severity}
             style={{
               // @ts-ignore
               '--timeout': 5000
             }}
           >
-            {notification.message}
-            <button
+            <strong>{notification.message}</strong>
+            {notification.description && (
+              <div>
+                <small>{notification.description}</small>
+              </div>
+            )}
+            <StyledNotificationDismissButton
               onClick={() =>
                 notifier.send({ type: 'NOTIFICATION.DISMISS', index: i })
               }
             >
               x
-            </button>
+            </StyledNotificationDismissButton>
           </StyledNotification>
         );
       })}

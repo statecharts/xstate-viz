@@ -12,6 +12,8 @@ import { Header, notificationsActor } from './Header';
 import { Logo } from './logo';
 import { Loader } from './Loader';
 import { LayoutButton, StyledLayoutButton } from './LayoutButton';
+import { toMachine } from './StateChart';
+import { getEdges } from 'xstate/lib/graph';
 
 const StyledApp = styled.main`
   --color-app-background: #fff;
@@ -103,7 +105,7 @@ interface AppMachineContext {
 }
 
 const invokeSaveGist = (ctx: AppMachineContext, e: EventObject) => {
-  return fetch(`https://api.github.com/gists/` + ctx.query.gist!, {
+  return fetch(`https://api.github.com/gists/` + ctx.gist!, {
     method: 'post',
     body: JSON.stringify({
       description: 'XState test',
@@ -114,9 +116,9 @@ const invokeSaveGist = (ctx: AppMachineContext, e: EventObject) => {
     headers: {
       Authorization: `token ${ctx.token}`
     }
-  }).then(response => {
+  }).then(async response => {
     if (!response.ok) {
-      throw new Error('Unable to save gist');
+      throw new Error((await response.json()).message);
     }
 
     return response.json();
@@ -344,6 +346,15 @@ const appMachine = Machine<AppMachineContext>({
                         log(),
                         ctx => notificationsActor.notify('Gist saved!')
                       ]
+                    },
+                    onError: {
+                      target: 'idle',
+                      actions: (ctx, e) =>
+                        notificationsActor.notify({
+                          message: 'Unable to save machine',
+                          severity: 'error',
+                          description: e.data.message
+                        })
                     }
                   }
                 },
@@ -356,13 +367,11 @@ const appMachine = Machine<AppMachineContext>({
                         assign<AppMachineContext>({
                           gist: (_, e) => e.data.id
                         }),
-                        () => notificationsActor.notify('Gist created!')
+                        () => notificationsActor.notify('Gist created!'),
+                        ({ gist }) => updateQuery({ gist: gist! })
                       ]
                     }
                   }
-                },
-                posted: {
-                  entry: ({ gist }) => updateQuery({ gist: gist! })
                 }
               },
               on: {
@@ -374,6 +383,24 @@ const appMachine = Machine<AppMachineContext>({
                   cond: ctx => ctx.pendingSave
                 },
                 'GIST.SAVE': [
+                  {
+                    target: '.idle',
+                    cond: (_, e) => {
+                      try {
+                        const machine = toMachine(e.code);
+                        getEdges(machine);
+                      } catch (e) {
+                        notificationsActor.notify({
+                          message: 'Failed to save machine',
+                          severity: 'error',
+                          description: e.message
+                        });
+                        return true;
+                      }
+
+                      return false;
+                    }
+                  },
                   { target: '.patching', cond: ctx => !!ctx.gist },
                   { target: '.posting' }
                 ]

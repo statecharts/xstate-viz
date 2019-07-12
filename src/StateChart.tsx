@@ -19,6 +19,8 @@ import { StatePanel } from './StatePanel';
 import { EventPanel } from './EventPanel';
 import { CodePanel } from './CodePanel';
 import { raise } from 'xstate/lib/actions';
+import { getEdges } from 'xstate/lib/graph';
+import { notificationsActor } from './Header';
 
 const StyledViewTab = styled.li`
   padding: 0 1rem;
@@ -253,11 +255,14 @@ export class StateChart extends React.Component<
 
     try {
       machine = toMachine(code);
+      getEdges(machine);
     } catch (e) {
+      notificationsActor.notify({
+        message: 'Failed to update machine',
+        severity: 'error',
+        description: e.message
+      });
       console.error(e);
-      alert(
-        'Error: unable to update the machine.\nCheck the console for more info.'
-      );
       return;
     }
 

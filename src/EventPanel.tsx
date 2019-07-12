@@ -26,7 +26,6 @@ const StyledEventPanelEvent = styled.li`
   display: flex;
   flex-direction: row;
   align-items: center;
-  padding: 0.5rem;
   border-bottom: 1px solid #444;
 
   > pre {
@@ -49,9 +48,14 @@ const StyledEventPanelEvent = styled.li`
     flex-direction: row;
     justify-content: flex-start;
     align-items: center;
+    height: 2rem;
+    padding: 0 0.5rem;
 
     > :first-child {
       margin-right: auto;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
     }
   }
 `;
@@ -63,9 +67,19 @@ const StyledEventPanel = styled.section`
   overflow: hidden;
 `;
 
+const StyledEventPanelButtons = styled.div`
+  margin-bottom: 0.5rem;
+  display: flex;
+  flex-direction: row;
+  justify-content: flex-start;
+  align-content: flex-start;
+  flex-wrap: wrap;
+`;
+
 const StyledEventPanelButton = styled.button`
   appearance: none;
   margin-right: 0.5rem;
+  margin-bottom: 0.5rem;
   background-color: var(--color-primary);
   border: none;
   color: white;
@@ -75,7 +89,22 @@ const StyledEventPanelButton = styled.button`
   font-weight: bold;
 `;
 
-const StyledEventPanelEditor = styled.div``;
+const StyledEventPanelEditor = styled.div`
+  display: grid;
+  grid-template-columns: 60% 40%;
+  grid-template-rows: 1fr auto;
+  grid-template-areas: 'code events' 'code send';
+  padding: 1rem;
+  border-top: 2px solid #444;
+
+  > ${StyledButton} {
+    grid-area: send;
+  }
+
+  > ${StyledEventPanelButtons} {
+    grid-area events;
+  }
+`;
 
 const sendEventContext = {
   eventCode: JSON.stringify({ type: '' }, null, 2)
@@ -168,7 +197,7 @@ export const EventPanel: React.FunctionComponent<{
                     <>
                       <strong title={event.type}>{event.type}</strong>
                       <StyledButton
-                        data-size="small"
+                        data-variant="link"
                         onClick={() => {
                           sendToService(event);
                         }}
@@ -176,7 +205,7 @@ export const EventPanel: React.FunctionComponent<{
                         Replay
                       </StyledButton>
                       <StyledButton
-                        data-size="small"
+                        data-variant="link"
                         onClick={e => {
                           e.stopPropagation();
 
@@ -198,27 +227,29 @@ export const EventPanel: React.FunctionComponent<{
         })}
       </StyledEventPanelEvents>
       <StyledEventPanelEditor>
-        {getNextEvents(state).map(nextEvent => {
-          return (
-            <StyledEventPanelButton
-              key={nextEvent}
-              onClick={e => {
-                e.stopPropagation();
-                send('AUTOFILL', {
-                  value: JSON.stringify(
-                    {
-                      type: nextEvent
-                    },
-                    null,
-                    2
-                  )
-                });
-              }}
-            >
-              {nextEvent}
-            </StyledEventPanelButton>
-          );
-        })}
+        <StyledEventPanelButtons>
+          {getNextEvents(state).map(nextEvent => {
+            return (
+              <StyledEventPanelButton
+                key={nextEvent}
+                onClick={e => {
+                  e.stopPropagation();
+                  send('AUTOFILL', {
+                    value: JSON.stringify(
+                      {
+                        type: nextEvent
+                      },
+                      null,
+                      2
+                    )
+                  });
+                }}
+              >
+                {nextEvent}
+              </StyledEventPanelButton>
+            );
+          })}
+        </StyledEventPanelButtons>
         <AceEditor
           ref={r => {
             if (!r) {
@@ -235,12 +266,14 @@ export const EventPanel: React.FunctionComponent<{
           }}
           setOptions={{ tabSize: 2, fontSize: '12px' }}
           width="100%"
-          height={'8em'}
+          height={'5em'}
           showGutter={false}
           readOnly={false}
           cursorStart={3}
         />
         <StyledButton
+          data-variant="primary"
+          data-size="full"
           onClick={() => sendToService(JSON.parse(current.context.eventCode))}
         >
           Send
