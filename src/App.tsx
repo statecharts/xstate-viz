@@ -13,7 +13,6 @@ import { Logo } from './logo';
 import { Loader } from './Loader';
 import { LayoutButton, StyledLayoutButton } from './LayoutButton';
 import { toMachine } from './StateChart';
-import { getEdges } from 'xstate/lib/graph';
 
 const StyledApp = styled.main`
   --color-app-background: #fff;
@@ -92,6 +91,11 @@ export const StyledLinks = styled.nav`
   }
 `;
 
+interface GithubUser {
+  login: string;
+  avatar_url: string;
+}
+
 interface AppMachineContext {
   query: {
     gist?: string;
@@ -99,20 +103,19 @@ interface AppMachineContext {
     layout?: string;
   };
   token?: string;
-  example: any;
-  user: any;
+  machine: any;
+  user?: GithubUser;
   /**
    * Gist ID
    */
-  gist?: string;
-  /**
-   * Saving deferred until authorization
-   */
-  pendingSave: boolean;
+  gist?: {
+    id: string;
+    owner: GithubUser;
+  };
 }
 
 const invokeSaveGist = (ctx: AppMachineContext, e: EventObject) => {
-  return fetch(`https://api.github.com/gists/` + ctx.gist!, {
+  return fetch(`https://api.github.com/gists/` + ctx.gist!.id, {
     method: 'post',
     body: JSON.stringify({
       description: 'XState test',
@@ -232,10 +235,9 @@ const appMachine = Machine<AppMachineContext>(
       query,
       token: undefined,
       // token: process.env.REACT_APP_TEST_TOKEN,
-      gist: (query.gist as string) || undefined,
-      example: examples.omni,
-      user: undefined,
-      pendingSave: false
+      gist: undefined,
+      machine: examples.basic,
+      user: undefined
     },
     invoke: [
       {
@@ -270,7 +272,7 @@ const appMachine = Machine<AppMachineContext>(
                 {
                   target: 'unauthorized',
                   actions: assign<AppMachineContext>({
-                    example: examples.light
+                    machine: examples.basic
                   })
                 }
               ]
@@ -324,6 +326,7 @@ const appMachine = Machine<AppMachineContext>(
               onError: {
                 target: 'unauthorized',
                 actions: (_, e) => {
+                  console.error(e);
                   notificationsActor.notify({
                     message: 'Authorization failed',
                     description: e.data.message,
@@ -362,18 +365,25 @@ const appMachine = Machine<AppMachineContext>(
                       onDone: {
                         target: 'idle.patched',
                         actions: [
-                          log(),
-                          ctx => notificationsActor.notify('Gist saved!')
+                          ctx =>
+                            notificationsActor.notify({
+                              message: 'Saved!',
+                              description:
+                                'Copy and paste the URL to share the visualization.',
+                              severity: 'success'
+                            })
                         ]
                       },
                       onError: {
                         target: 'idle',
-                        actions: (ctx, e) =>
+                        actions: (ctx, e) => {
+                          console.error(e);
                           notificationsActor.notify({
-                            message: 'Unable to save machine',
+                            message: 'Failed to save machine',
                             severity: 'error',
                             description: e.data.message
-                          })
+                          });
+                        }
                       }
                     }
                   },
@@ -384,33 +394,32 @@ const appMachine = Machine<AppMachineContext>(
                         target: 'idle.posted',
                         actions: [
                           assign<AppMachineContext>({
-                            gist: (_, e) => e.data.id
+                            gist: (_, e) => e.data
                           }),
-                          () => notificationsActor.notify('Gist created!'),
-                          ({ gist }) => updateQuery({ gist: gist! })
+                          () =>
+                            notificationsActor.notify({
+                              message: 'Visualization uploaded!',
+                              description:
+                                'Copy and paste the URL to share the visualization.',
+                              severity: 'success'
+                            }),
+                          ({ gist }) => updateQuery({ gist: gist!.id })
                         ]
                       }
                     }
                   }
                 },
                 on: {
-                  '': {
-                    actions: [
-                      assign<AppMachineContext>({ pendingSave: false }),
-                      send('GIST.SAVE')
-                    ],
-                    cond: ctx => ctx.pendingSave
-                  },
                   'GIST.SAVE': [
                     {
                       target: '.idle',
-                      cond: (_, e) => {
+                      cond: (ctx, e) => {
                         try {
-                          const machine = toMachine(e.code);
-                          getEdges(machine);
+                          toMachine(e.code);
                         } catch (e) {
+                          console.error(e);
                           notificationsActor.notify({
-                            message: 'Failed to save machine',
+                            message: 'Failed to upload machine',
                             severity: 'error',
                             description: e.message
                           });
@@ -420,7 +429,14 @@ const appMachine = Machine<AppMachineContext>(
                         return false;
                       }
                     },
-                    { target: '.patching', cond: ctx => !!ctx.gist },
+                    {
+                      target: '.patching',
+                      cond: ctx => {
+                        return (
+                          !!ctx.gist && ctx.gist.owner.login === ctx.user!.login
+                        );
+                      }
+                    },
                     { target: '.posting' }
                   ]
                 }
@@ -439,10 +455,7 @@ const appMachine = Machine<AppMachineContext>(
           unauthorized: {
             on: {
               LOGIN: 'pendingAuthorization',
-              'GIST.SAVE': {
-                target: 'pendingAuthorization',
-                actions: assign<AppMachineContext>({ pendingSave: true })
-              }
+              'GIST.SAVE': 'pendingAuthorization'
             }
           },
           pendingAuthorization: {
@@ -493,8 +506,9 @@ const appMachine = Machine<AppMachineContext>(
               onDone: {
                 target: 'loaded',
                 actions: assign<AppMachineContext>({
+                  gist: (_, e) => e.data,
                   // @ts-ignore
-                  example: (_, e) => {
+                  machine: (_, e) => {
                     return e.data.files['machine.js'].content;
                   }
                 })
@@ -573,7 +587,7 @@ export function App() {
         ) : (
           <>
             <StateChart
-              machine={current.context.example}
+              machine={current.context.machine}
               onSave={code => {
                 send('GIST.SAVE', { code });
               }}

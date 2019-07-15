@@ -270,8 +270,6 @@ export class StateChart extends React.Component<
       return;
     }
 
-    notificationsActor.notify('Machine updated!');
-
     this.reset(code, machine);
   }
   reset(code = this.state.code, machine = this.state.machine) {

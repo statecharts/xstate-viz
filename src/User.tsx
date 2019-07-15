@@ -1,5 +1,5 @@
 import React, { useContext } from 'react';
-import { AppContext } from './App';
+import { AppContext, StyledLink } from './App';
 import styled from 'styled-components';
 import { StyledButton } from './Button';
 
@@ -69,9 +69,7 @@ export const User: React.FunctionComponent = () => {
             <StyledUserName>
               {user ? user.login : <em>Anonymous</em>}
             </StyledUserName>
-            <StyledButton data-variant="link" onClick={() => send('LOGOUT')}>
-              Log out
-            </StyledButton>
+            <StyledLink onClick={() => send('LOGOUT')}>Log out</StyledLink>
             <figure>
               {user ? (
                 <StyledImg src={user.avatar_url} />

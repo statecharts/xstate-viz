@@ -104,7 +104,7 @@ const StyledNotification = styled.div`
     }
     20%,
     to {
-      transform: translateY(calc(var(--index) * 50%));
+      transform: translateY(calc(var(--index) * 100% + 0.5rem));
     }
     to {
       opacity: 0;
@@ -128,6 +128,10 @@ const StyledNotifications = styled.div`
     position: absolute;
     pointer-events: auto;
   }
+`;
+
+const StyledNotificationDescription = styled.div`
+  color: #111;
 `;
 
 export const Notifications: React.FunctionComponent<NotificationsProps> = ({
@@ -170,14 +174,14 @@ export const Notifications: React.FunctionComponent<NotificationsProps> = ({
           >
             <strong>{notification.message}</strong>
             {notification.description && (
-              <div>
+              <StyledNotificationDescription>
                 <small>
                   {notification.description}{' '}
                   {notification.severity === 'error'
                     ? '(See console for more details)'
                     : ''}
                 </small>
-              </div>
+              </StyledNotificationDescription>
             )}
           </StyledNotification>
         );

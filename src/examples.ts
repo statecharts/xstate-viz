@@ -1,3 +1,5 @@
+import { assign } from 'xstate';
+
 const examples = {
   omni: `Machine({
     id: 'example',
@@ -104,125 +106,48 @@ const examples = {
       }
     }
   })`,
-  light: `
+  basic: `
   // Available variables:
-  // Machine (machine factory function)
-  // assign (action)
-  // XState (all XState exports)
+  // - Machine
+  // - interpret
+  // - assign
+  // - send
+  // - sendParent
+  // - spawn
+  // - raise
+  // - actions
+  // - XState (all XState exports)
   
   const fetchMachine = Machine({
     id: 'fetch',
-    context: { attempts: 0 },
     initial: 'idle',
-    invoke: {
-      id: 'child',
-      src: () => Machine({
-        initial: 'foo',
-        context: { value: 3 },
-        states: {
-          foo: {
-            invoke: Machine({ initial: 'yah', states: { yah: {
-              on: {
-                FOO: { target: 'yah' }
-              }
-            }}}),
-            on: { EVENT: 'bar' }
-          },
-          bar: {}
-        }
-      })
+    context: {
+      retries: 0
     },
     states: {
       idle: {
         on: {
-          FETCH: {
-            target: 'pending',
-            cond: function canFetch() { return true },
-            actions: 'fetchData'
-          }
-        },
-        entry: ['one', 'two', 'three'],
-        exit: [send('EVENT', { to: 'child' }), 'foobar']
+          FETCH: 'loading'
+        }
       },
-      pending: {
-        entry: assign({
-          attempts: ctx => ctx.attempts + 1
-        }),
-        after: {
-          TIMEOUT: 'rejected'
-        },
+      loading: {
         on: {
-          RESOLVE: 'fulfilled',
-          REJECT: 'rejected'
+          RESOLVE: 'success',
+          REJECT: 'failure'
         }
       },
-      fulfilled: {
-        initial: 'first',
-        states: {
-          first: {
-            on: {
-              NEXT: 'second'
-            }
-          },
-          second: {
-            on: {
-              NEXT: 'third'
-            }
-          },
-          third: {
-            type: 'final'
-          }
-        }
+      success: {
+        type: 'final'
       },
-      rejected: {
-        entry: assign({
-          ref: () => spawn(Machine({ initial: 'foo', states: {foo: {}}}))
-        }),
-        initial: 'can retry',
-        states: {
-          'can retry': {
-            on: {
-              '': {
-                target: 'failure',
-                cond: 'maxAttempts'
-              }
-            }
-          },
-          failure: {
-            on: {
-              RETRY: undefined,
-            },
-            type: 'final'
-          }
-        },
+      failure: {
         on: {
-          RETRY: 'pending'
-        }
-      }
-    }
-  }, {
-    guards: {
-      maxAttempts: ctx =>  ctx.attempts >= 5
-    },
-    delays: {
-      TIMEOUT: 2000
-    }
-  });
-  `,
-  another: `
-  const m = Machine({
-    initial: 'b',
-    context: {
-      foo: undefined
-    },
-    states: {
-      b: { on: {T:'yeah'}},
-      yeah: {
-        entry: assign({
-          foo: () => {
-            return spawn(Promise.resolve(42));
+          RETRY: {
+            target: 'loading',
+            actions: assign({
+              retries: (context, event) => context.retries + 1
+            })
           }
-        })
+        }
       }
     }
   });

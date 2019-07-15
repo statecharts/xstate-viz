@@ -96,9 +96,10 @@ export const Editor: React.FunctionComponent<EditorProps> = props => {
             ? 'Uploaded!'
             : state.matches({ auth: 'authorized' })
             ? 'Save'
-            : state.matches({ auth: 'pendingAuthorization' })
+            : !state.matches({ auth: 'authorized' }) &&
+              !state.matches({ auth: 'unauthorized' })
             ? 'Logging in...'
-            : 'Login + Save'}
+            : 'Login to save'}
         </StyledButton>
       </StyledButtons>
     </StyledEditor>
