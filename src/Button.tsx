@@ -42,6 +42,7 @@ export const StyledButton = styled.button`
     letter-spacing: 0;
     height: auto;
     padding: 0;
+    margin-left: 0.5rem;
   }
 
   &[data-size='full'] {

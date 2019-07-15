@@ -58,7 +58,7 @@ export const StyledHeader = styled.header`
   justify-content: stretch;
   grid-area: header;
   padding: 0.5rem 1rem;
-  z-index: 1;
+  z-index: 10;
 `;
 
 export const StyledLogo = styled(Logo)`
@@ -223,7 +223,8 @@ const appMachine = Machine<AppMachineContext>(
     id: 'app',
     context: {
       query,
-      token: undefined,
+      // token: undefined,
+      token: process.env.REACT_APP_TEST_TOKEN,
       gist: (query.gist as string) || undefined,
       example: examples.omni,
       user: undefined,
@@ -313,7 +314,16 @@ const appMachine = Machine<AppMachineContext>(
                   user: (_, e) => e.data
                 })
               },
-              onError: 'unauthorized'
+              onError: {
+                target: 'unauthorized',
+                actions: (_, e) => {
+                  notificationsActor.notify({
+                    message: 'Authorization failed',
+                    description: e.data.message,
+                    severity: 'error'
+                  });
+                }
+              }
             }
           },
           authorized: {

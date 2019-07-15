@@ -7,6 +7,7 @@ import { useMachine } from '@xstate/react';
 import { StyledButton } from './Button';
 import { EventRecord } from './StateChart';
 import { format } from 'date-fns';
+import { notificationsActor } from './Header';
 
 function getNextEvents(state: State<any>): string[] {
   const { nextEvents } = state;
@@ -74,6 +75,7 @@ const StyledEventPanelButtons = styled.div`
   justify-content: flex-start;
   align-content: flex-start;
   flex-wrap: wrap;
+  overflow-y: auto;
 `;
 
 const StyledEventPanelButton = styled.button`
@@ -168,7 +170,20 @@ export const EventPanel: React.FunctionComponent<{
   }, [eventsRef.current, records.length]);
 
   const sendToService = useCallback(
-    (event: EventObject) => {
+    (eventJSON: string) => {
+      let event;
+
+      try {
+        event = JSON.parse(eventJSON);
+      } catch (e) {
+        notificationsActor.notify({
+          message: 'Failed to send event',
+          description: e.message,
+          severity: 'error'
+        });
+        return;
+      }
+
       if (!isBuiltInEvent(event.type)) {
         service.send(event);
       }
@@ -274,7 +289,7 @@ export const EventPanel: React.FunctionComponent<{
         <StyledButton
           data-variant="primary"
           data-size="full"
-          onClick={() => sendToService(JSON.parse(current.context.eventCode))}
+          onClick={() => sendToService(current.context.eventCode)}
         >
           Send
         </StyledButton>

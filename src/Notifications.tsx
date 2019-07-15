@@ -5,6 +5,7 @@ import { produce } from 'immer';
 import { useMachine } from '@xstate/react';
 import { log } from 'xstate/lib/actions';
 import styled from 'styled-components';
+import { notificationsActor } from './Header';
 
 export interface Notification {
   message: string;
@@ -16,50 +17,40 @@ interface NotificationsContext {
   notifications: Array<Notification>;
 }
 
-export const notificationsMachine = Machine<NotificationsContext>(
-  {
-    id: 'notifications',
-    context: {
-      notifications: []
-    },
-    initial: 'inactive',
-    states: {
-      inactive: {},
-      active: {
-        entry: log(),
-        on: {
-          'NOTIFICATION.DISMISS': {
-            actions: assign<NotificationsContext>({
-              notifications: (ctx, e) =>
-                produce(ctx.notifications, draft => {
-                  draft.pop();
-                })
-            })
-          }
-        }
-      }
-    },
-    on: {
-      'NOTIFICATIONS.QUEUE': {
-        target: '.active',
-        actions: [
-          assign<NotificationsContext>({
+export const notificationsMachine = Machine<NotificationsContext>({
+  id: 'notifications',
+  context: {
+    notifications: []
+  },
+  initial: 'inactive',
+  states: {
+    inactive: {},
+    active: {
+      entry: log(),
+      on: {
+        'NOTIFICATION.DISMISS': {
+          actions: assign<NotificationsContext>({
             notifications: (ctx, e) =>
               produce(ctx.notifications, draft => {
-                draft.unshift(e.data);
+                draft.splice(e.index, 1);
               })
-          }),
-          actions.send('NOTIFICATION.DISMISS', { delay: 'TIMEOUT' })
-        ]
+          })
+        }
       }
     }
   },
-  {
-    delays: {
-      TIMEOUT: 5000
+  on: {
+    'NOTIFICATIONS.QUEUE': {
+      target: '.active',
+      actions: assign<NotificationsContext>({
+        notifications: (ctx, e) =>
+          produce(ctx.notifications, draft => {
+            draft.unshift(e.data);
+          })
+      })
     }
   }
-);
+});
 
 interface NotificationsProps {
   notifier: Actor<State<NotificationsContext>>;
@@ -72,25 +63,31 @@ const StyledNotificationDismissButton = styled.button`
 `;
 
 const StyledNotification = styled.div`
-  padding: 0.5rem 1rem;
+  padding: 1rem;
   margin: 1rem;
-  border-radius: 1rem;
-  background: #2f86eb;
-  color: white;
-  font-weight: bold;
+  border-radius: var(--radius);
+  background: white;
+  box-shadow: var(--shadow);
   animation: notification-slideDown calc(var(--timeout, 4000) * 1ms) ease both;
   will-change: transform;
+  transition: transform var(--duration);
 
   &[data-severity='success'] {
-    background: #40d38d;
+    > strong {
+      color: #40d38d;
+    }
   }
 
   &[data-severity='info'] {
-    background: #2f86eb;
+    > strong {
+      color: #2f86eb;
+    }
   }
 
   &[data-severity='error'] {
-    background: red;
+    > strong {
+      color: #f16462;
+    }
   }
 
   > ${StyledNotificationDismissButton} {
@@ -102,17 +99,18 @@ const StyledNotification = styled.div`
     from {
       transform: translateY(-100%);
     }
-    20%,
-    to {
-      transform: none;
-    }
-    20%,
+    from,
     50% {
+      pointer-events: auto;
       opacity: 1;
     }
-    from,
+    20%,
+    to {
+      transform: translateY(calc(var(--index) * 50%));
+    }
     to {
       opacity: 0;
+      pointer-events: none;
     }
   }
 `;
@@ -126,6 +124,7 @@ const StyledNotifications = styled.div`
   flex-direction: column;
   justify-content: flex-start;
   align-items: center;
+  z-index: 10;
 
   > ${StyledNotification} {
     position: absolute;
@@ -161,8 +160,15 @@ export const Notifications: React.FunctionComponent<NotificationsProps> = ({
             data-severity={notification.severity}
             style={{
               // @ts-ignore
-              '--timeout': 5000
+              '--timeout': 5000,
+              '--index': i
             }}
+            onClick={() =>
+              notificationsActor.send({
+                type: 'NOTIFICATION.DISMISS',
+                index: i
+              })
+            }
           >
             <strong>{notification.message}</strong>
             {notification.description && (
@@ -170,13 +176,6 @@ export const Notifications: React.FunctionComponent<NotificationsProps> = ({
                 <small>{notification.description}</small>
               </div>
             )}
-            <StyledNotificationDismissButton
-              onClick={() =>
-                notifier.send({ type: 'NOTIFICATION.DISMISS', index: i })
-              }
-            >
-              x
-            </StyledNotificationDismissButton>
           </StyledNotification>
         );
       })}
