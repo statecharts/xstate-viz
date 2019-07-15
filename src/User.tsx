@@ -3,8 +3,25 @@ import { AppContext, StyledLink } from './App';
 import styled from 'styled-components';
 import { StyledButton } from './Button';
 
-const StyledUserName = styled.a`
+const StyledUserName = styled.div`
   font-weight: bold;
+  font-size: 0.8rem;
+`;
+
+const StyledUserDetails = styled.div`
+  text-align: right;
+  animation: fade-in-left 0.6s var(--easing);
+
+  @keyframes fade-in-left {
+    from {
+      transform: translateX(50%);
+      opacity: 0;
+    }
+    to: {
+      transform: none;
+      opacity: 1;
+    }
+  }
 `;
 
 const StyledUser = styled.div`
@@ -14,7 +31,7 @@ const StyledUser = styled.div`
   grid-column-gap: 1rem;
   grid-template-rows: 50% 50%;
   grid-template-areas:
-    'name avatar'
+    'details avatar'
     'details avatar';
   padding: 0.5rem;
 
@@ -24,7 +41,8 @@ const StyledUser = styled.div`
     align-items: center;
   }
 
-  > ${StyledUserName} {
+  > ${StyledUserDetails} {
+    grid-area: details;
     justify-self: end;
   }
 
@@ -66,10 +84,14 @@ export const User: React.FunctionComponent = () => {
           </div>
         ) : (
           <>
-            <StyledUserName>
-              {user ? user.login : <em>Anonymous</em>}
-            </StyledUserName>
-            <StyledLink onClick={() => send('LOGOUT')}>Log out</StyledLink>
+            <StyledUserDetails>
+              <StyledUserName>
+                {user ? user.login : <em>Anonymous</em>}
+              </StyledUserName>
+              <StyledButton data-variant="link" onClick={() => send('LOGOUT')}>
+                Log out
+              </StyledButton>
+            </StyledUserDetails>
             <figure>
               {user ? (
                 <StyledImg src={user.avatar_url} />
