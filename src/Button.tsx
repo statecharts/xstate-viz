@@ -41,7 +41,7 @@ export const StyledButton = styled.button`
     color: var(--color-link);
     letter-spacing: 0;
     height: auto;
-    padding: 0 0.5rem;
+    padding: 0;
   }
 
   &[data-size='full'] {

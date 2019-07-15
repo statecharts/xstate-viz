@@ -72,7 +72,7 @@ export const Editor: React.FunctionComponent<EditorProps> = props => {
         </StyledButton>
         <StyledButton
           data-variant="primary"
-          disabled={isSaving}
+          disabled={isSaving || state.matches({ auth: 'pendingAuthorization' })}
           onClick={() => {
             onChange(code);
             onSave(code);
@@ -96,7 +96,9 @@ export const Editor: React.FunctionComponent<EditorProps> = props => {
             ? 'Uploaded!'
             : state.matches({ auth: 'authorized' })
             ? 'Save'
-            : 'Sign in to Save'}
+            : state.matches({ auth: 'pendingAuthorization' })
+            ? 'Logging in...'
+            : 'Login + Save'}
         </StyledButton>
       </StyledButtons>
     </StyledEditor>

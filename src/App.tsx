@@ -218,276 +218,294 @@ const authActor = createAuthActor();
 
 const query = queryString.parse(window.location.search);
 
-const appMachine = Machine<AppMachineContext>({
-  id: 'app',
-  context: {
-    query,
-    // token: process.env.REACT_APP_TEST_TOKEN,
-    token: undefined,
-    gist: (query.gist as string) || undefined,
-    example: examples.omni,
-    user: undefined,
-    pendingSave: false
-  },
-  invoke: [
-    {
-      id: 'test',
-      src: () => cb => {
-        authActor.listen(code => {
-          cb({ type: 'CODE', code });
-        });
+const appMachine = Machine<AppMachineContext>(
+  {
+    id: 'app',
+    context: {
+      query,
+      token: undefined,
+      gist: (query.gist as string) || undefined,
+      example: examples.omni,
+      user: undefined,
+      pendingSave: false
+    },
+    invoke: [
+      {
+        id: 'test',
+        src: () => cb => {
+          authActor.listen(code => {
+            cb({ type: 'CODE', code });
+          });
+        }
       }
-    }
-  ],
-  type: 'parallel',
-  states: {
-    auth: {
-      initial: 'checkingCode',
-      states: {
-        checkingCode: {
-          on: {
-            '': [
-              {
-                target: 'authorizing',
-                cond: ctx => {
-                  return !!ctx.query.code;
+    ],
+    type: 'parallel',
+    states: {
+      auth: {
+        initial: 'checkingCode',
+        states: {
+          checkingCode: {
+            on: {
+              '': [
+                {
+                  target: 'authorizing',
+                  cond: ctx => {
+                    return !!ctx.query.code;
+                  }
+                },
+                {
+                  target: 'gettingUser',
+                  cond: ctx => {
+                    return !!ctx.token;
+                  }
+                },
+                {
+                  target: 'unauthorized',
+                  actions: assign<AppMachineContext>({
+                    example: examples.light
+                  })
                 }
+              ]
+            }
+          },
+          authorizing: {
+            invoke: {
+              src: (ctx, e) => {
+                return fetch(
+                  `https://xstate-gist.azurewebsites.net/api/GistPost?code=${
+                    e.code
+                  }&redirect_uri=${encodeURI(window.location.href)}`
+                )
+                  .then(response => {
+                    if (!response.ok) {
+                      throw new Error('unauthorized');
+                    }
+
+                    return response.json();
+                  })
+                  .then(data => {
+                    if (data.error) {
+                      throw new Error('expired code');
+                    }
+
+                    return data;
+                  });
               },
-              {
+              onDone: {
                 target: 'gettingUser',
-                cond: ctx => {
-                  return !!ctx.token;
-                }
+                actions: assign<AppMachineContext>({
+                  token: (ctx, e) => e.data.access_token
+                })
               },
-              {
+              onError: {
+                target: 'unauthorized',
+                actions: (_, e) => alert(e.data)
+              }
+            }
+          },
+          gettingUser: {
+            invoke: {
+              src: getUser,
+              onDone: {
+                target: 'authorized',
+                actions: assign<AppMachineContext>({
+                  // @ts-ignore
+                  user: (_, e) => e.data
+                })
+              },
+              onError: 'unauthorized'
+            }
+          },
+          authorized: {
+            type: 'parallel',
+            states: {
+              user: {},
+              gist: {
+                initial: 'idle',
+                states: {
+                  idle: {
+                    initial: 'default',
+                    states: {
+                      default: {},
+                      patched: {
+                        after: {
+                          1000: 'default'
+                        }
+                      },
+                      posted: {
+                        after: {
+                          1000: 'default'
+                        }
+                      }
+                    }
+                  },
+                  patching: {
+                    invoke: {
+                      src: invokeSaveGist,
+                      onDone: {
+                        target: 'idle.patched',
+                        actions: [
+                          log(),
+                          ctx => notificationsActor.notify('Gist saved!')
+                        ]
+                      },
+                      onError: {
+                        target: 'idle',
+                        actions: (ctx, e) =>
+                          notificationsActor.notify({
+                            message: 'Unable to save machine',
+                            severity: 'error',
+                            description: e.data.message
+                          })
+                      }
+                    }
+                  },
+                  posting: {
+                    invoke: {
+                      src: invokePostGist,
+                      onDone: {
+                        target: 'idle.posted',
+                        actions: [
+                          assign<AppMachineContext>({
+                            gist: (_, e) => e.data.id
+                          }),
+                          () => notificationsActor.notify('Gist created!'),
+                          ({ gist }) => updateQuery({ gist: gist! })
+                        ]
+                      }
+                    }
+                  }
+                },
+                on: {
+                  '': {
+                    actions: [
+                      assign<AppMachineContext>({ pendingSave: false }),
+                      send('GIST.SAVE')
+                    ],
+                    cond: ctx => ctx.pendingSave
+                  },
+                  'GIST.SAVE': [
+                    {
+                      target: '.idle',
+                      cond: (_, e) => {
+                        try {
+                          const machine = toMachine(e.code);
+                          getEdges(machine);
+                        } catch (e) {
+                          notificationsActor.notify({
+                            message: 'Failed to save machine',
+                            severity: 'error',
+                            description: e.message
+                          });
+                          return true;
+                        }
+
+                        return false;
+                      }
+                    },
+                    { target: '.patching', cond: ctx => !!ctx.gist },
+                    { target: '.posting' }
+                  ]
+                }
+              }
+            },
+            on: {
+              LOGOUT: {
                 target: 'unauthorized',
                 actions: assign<AppMachineContext>({
-                  example: examples.light
+                  token: undefined,
+                  user: undefined
                 })
               }
-            ]
-          }
-        },
-        authorizing: {
-          invoke: {
-            src: (ctx, e) => {
-              return fetch(
-                `https://xstate-gist.azurewebsites.net/api/GistPost?code=${
-                  e.code
-                }&redirect_uri=${encodeURI(window.location.href)}`
-              )
-                .then(response => {
-                  if (!response.ok) {
-                    throw new Error('unauthorized');
-                  }
-
-                  return response.json();
-                })
-                .then(data => {
-                  if (data.error) {
-                    throw new Error('expired code');
-                  }
-
-                  return data;
-                });
+            }
+          },
+          unauthorized: {
+            on: {
+              LOGIN: 'pendingAuthorization',
+              'GIST.SAVE': {
+                target: 'pendingAuthorization',
+                actions: assign<AppMachineContext>({ pendingSave: true })
+              }
+            }
+          },
+          pendingAuthorization: {
+            entry: () => {
+              window.open(
+                'https://github.com/login/oauth/authorize?client_id=39c1ec91c4ed507f6e4c&scope=gist',
+                'Login with GitHub',
+                'width=800,height=600'
+              );
             },
-            onDone: {
-              target: 'gettingUser',
-              actions: assign<AppMachineContext>({
-                token: (ctx, e) => e.data.access_token
-              })
+            on: {
+              CODE: 'authorizing',
+              'AUTH.CANCEL': 'unauthorized'
             },
-            onError: {
-              target: 'unauthorized',
-              actions: (_, e) => alert(e.data)
+            after: {
+              AUTH_TIMEOUT: {
+                target: 'unauthorized',
+                actions: () => {
+                  notificationsActor.notify({
+                    message: 'Authorization timed out',
+                    severity: 'error'
+                  });
+                }
+              }
             }
           }
         },
-        gettingUser: {
-          invoke: {
-            src: getUser,
-            onDone: {
-              target: 'authorized',
-              actions: assign<AppMachineContext>({
-                // @ts-ignore
-                user: (_, e) => e.data
-              })
-            },
-            onError: 'unauthorized'
-          }
-        },
-        authorized: {
-          type: 'parallel',
-          states: {
-            user: {},
-            gist: {
-              initial: 'idle',
-              states: {
-                idle: {
-                  initial: 'default',
-                  states: {
-                    default: {},
-                    patched: {
-                      after: {
-                        1000: 'default'
-                      }
-                    },
-                    posted: {
-                      after: {
-                        1000: 'default'
-                      }
-                    }
-                  }
-                },
-                patching: {
-                  invoke: {
-                    src: invokeSaveGist,
-                    onDone: {
-                      target: 'idle.patched',
-                      actions: [
-                        log(),
-                        ctx => notificationsActor.notify('Gist saved!')
-                      ]
-                    },
-                    onError: {
-                      target: 'idle',
-                      actions: (ctx, e) =>
-                        notificationsActor.notify({
-                          message: 'Unable to save machine',
-                          severity: 'error',
-                          description: e.data.message
-                        })
-                    }
-                  }
-                },
-                posting: {
-                  invoke: {
-                    src: invokePostGist,
-                    onDone: {
-                      target: 'idle.posted',
-                      actions: [
-                        assign<AppMachineContext>({
-                          gist: (_, e) => e.data.id
-                        }),
-                        () => notificationsActor.notify('Gist created!'),
-                        ({ gist }) => updateQuery({ gist: gist! })
-                      ]
-                    }
-                  }
-                }
-              },
-              on: {
-                '': {
-                  actions: [
-                    assign<AppMachineContext>({ pendingSave: false }),
-                    send('GIST.SAVE')
-                  ],
-                  cond: ctx => ctx.pendingSave
-                },
-                'GIST.SAVE': [
-                  {
-                    target: '.idle',
-                    cond: (_, e) => {
-                      try {
-                        const machine = toMachine(e.code);
-                        getEdges(machine);
-                      } catch (e) {
-                        notificationsActor.notify({
-                          message: 'Failed to save machine',
-                          severity: 'error',
-                          description: e.message
-                        });
-                        return true;
-                      }
+        on: {
+          LOGIN: '.pendingAuthorization'
+        }
+      },
+      gist: {
+        initial: 'checking',
+        states: {
+          checking: {
+            on: {
+              '': [
+                { target: 'fetching', cond: ctx => !!ctx.query.gist },
+                { target: 'idle' }
+              ]
+            }
+          },
+          idle: {},
 
-                      return false;
-                    }
-                  },
-                  { target: '.patching', cond: ctx => !!ctx.gist },
-                  { target: '.posting' }
+          fetching: {
+            invoke: {
+              src: invokeFetchGist,
+              onDone: {
+                target: 'loaded',
+                actions: assign<AppMachineContext>({
+                  // @ts-ignore
+                  example: (_, e) => {
+                    return e.data.files['machine.js'].content;
+                  }
+                })
+              },
+              onError: {
+                target: 'idle',
+                actions: [
+                  assign<AppMachineContext>({
+                    gist: undefined
+                  }),
+                  ctx => notificationsActor.notify('Gist not found.')
                 ]
               }
             }
           },
-          on: {
-            LOGOUT: {
-              target: 'unauthorized',
-              actions: assign<AppMachineContext>({
-                token: undefined,
-                user: undefined
-              })
-            }
+          loaded: {
+            entry: (ctx, e) => notificationsActor.notify('Gist loaded!')
           }
-        },
-        unauthorized: {
-          on: {
-            LOGIN: 'pendingAuthorization',
-            'GIST.SAVE': {
-              target: 'pendingAuthorization',
-              actions: assign<AppMachineContext>({ pendingSave: true })
-            }
-          }
-        },
-        pendingAuthorization: {
-          entry: () => {
-            window.open(
-              'https://github.com/login/oauth/authorize?client_id=39c1ec91c4ed507f6e4c&scope=gist',
-              'Login with GitHub',
-              'width=800,height=600'
-            );
-          },
-          on: {
-            CODE: 'authorizing'
-          }
-        }
-      },
-      on: {
-        LOGIN: '.pendingAuthorization'
-      }
-    },
-    gist: {
-      initial: 'checking',
-      states: {
-        checking: {
-          on: {
-            '': [
-              { target: 'fetching', cond: ctx => !!ctx.query.gist },
-              { target: 'idle' }
-            ]
-          }
-        },
-        idle: {},
-
-        fetching: {
-          invoke: {
-            src: invokeFetchGist,
-            onDone: {
-              target: 'loaded',
-              actions: assign<AppMachineContext>({
-                // @ts-ignore
-                example: (_, e) => {
-                  return e.data.files['machine.js'].content;
-                }
-              })
-            },
-            onError: {
-              target: 'idle',
-              actions: [
-                assign<AppMachineContext>({
-                  gist: undefined
-                }),
-                ctx => notificationsActor.notify('Gist not found.')
-              ]
-            }
-          }
-        },
-        loaded: {
-          entry: (ctx, e) => notificationsActor.notify('Gist loaded!')
         }
       }
     }
+  },
+  {
+    delays: {
+      AUTH_TIMEOUT: 15000
+    }
   }
-});
+);
 
 export const AppContext = createContext<{
   state: State<AppMachineContext>;

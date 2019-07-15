@@ -6,7 +6,6 @@ import { StyledButton } from './Button';
 const StyledUserName = styled.a`
   font-weight: bold;
 `;
-const StyledUserActions = styled.div``;
 
 const StyledUser = styled.div`
   height: 100%;
@@ -17,9 +16,15 @@ const StyledUser = styled.div`
   grid-template-areas:
     'name avatar'
     'details avatar';
-  padding: 0.5rem 0;
+  padding: 0.5rem;
 
-  > ${StyledUserName}, > ${StyledUserActions} {
+  &:not([data-state~='auth.authorized']) {
+    display: flex;
+    justify-content: flex-end;
+    align-items: center;
+  }
+
+  > ${StyledUserName} {
     justify-self: end;
   }
 
@@ -46,24 +51,38 @@ export const User: React.FunctionComponent = () => {
 
   return (
     <div>
-      <StyledUser>
-        <StyledUserName>{user ? user.login : <em>--</em>}</StyledUserName>
-        <StyledUserActions>
-          {state.matches({ auth: 'unauthorized' }) ? (
-            <StyledButton data-variant="link" onClick={() => send('LOGIN')}>
-              Login
+      <StyledUser data-state={state.toStrings().join(' ')}>
+        {state.matches({ auth: 'unauthorized' }) ? (
+          <StyledButton data-variant="link" onClick={() => send('LOGIN')}>
+            Login
+          </StyledButton>
+        ) : !state.matches({ auth: 'authorized' }) ? (
+          <div>
+            Authorizing...{' '}
+            <StyledButton
+              data-variant="link"
+              onClick={() => send('AUTH.CANCEL')}
+            >
+              Cancel
             </StyledButton>
-          ) : !state.matches({ auth: 'authorized' }) ? (
-            <div>Authorizing...</div>
-          ) : (
+          </div>
+        ) : (
+          <>
+            <StyledUserName>
+              {user ? user.login : <em>Anonymous</em>}
+            </StyledUserName>
             <StyledButton data-variant="link" onClick={() => send('LOGOUT')}>
               Log out
             </StyledButton>
-          )}
-        </StyledUserActions>
-        <figure>
-          {user ? <StyledImg src={user.avatar_url} /> : <StyledImg as="div" />}
-        </figure>
+            <figure>
+              {user ? (
+                <StyledImg src={user.avatar_url} />
+              ) : (
+                <StyledImg as="div" />
+              )}
+            </figure>
+          </>
+        )}
       </StyledUser>
     </div>
   );
