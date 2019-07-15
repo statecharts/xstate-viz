@@ -232,7 +232,7 @@ export class StateChart extends React.Component<
     }
   }
   renderView() {
-    const { view, current, machine, code, service, events } = this.state;
+    const { view, current, code, service, events } = this.state;
     const { onSave } = this.props;
 
     switch (view) {

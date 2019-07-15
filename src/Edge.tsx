@@ -88,6 +88,7 @@ export class Edge extends Component<EdgeProps, EdgeState> {
     const eventRect = relative(this.state.eventData!.rect!, svgRef);
     const targetRect = relative(this.state.targetData!.rect!, svgRef);
     const magic = 10;
+    const borderOffset = 5;
 
     const eventCenterPt = center(eventRect);
     const targetCenterPt = center(targetRect);
@@ -218,14 +219,22 @@ export class Edge extends Component<EdgeProps, EdgeState> {
       const dy = endPt.y - startPt.y;
 
       if (endPt.y === targetRect.top) {
+        endPt.y -= borderOffset;
         endSide = 'top';
+        if (endPt.x === targetRect.right) {
+          endPt.x -= magic;
+        } else if (endPt.x === targetRect.left) {
+          endPt.x += magic;
+        }
       } else if (endPt.y === targetRect.bottom) {
+        endPt.y += borderOffset;
         endSide = 'bottom';
       } else {
         if (endPt.x === targetRect.right) {
           endPt.y = targetRect.top;
           endSide = 'top';
         } else {
+          endPt.x -= borderOffset;
           endSide = 'left';
         }
       }
@@ -258,6 +267,13 @@ export class Edge extends Component<EdgeProps, EdgeState> {
         ptFns.push(prevPt => ({
           x: endPt.x,
           y: prevPt.y
+        }));
+      }
+
+      if (endSide === 'top') {
+        ptFns.push(() => ({
+          x: endPt.x,
+          y: endPt.y - magic
         }));
       }
 

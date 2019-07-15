@@ -108,6 +108,11 @@ const StyledEventPanelEditor = styled.div`
   }
 `;
 
+const StyledTime = styled.time`
+  color: #777;
+  margin-left: 0.5rem;
+`;
+
 const sendEventContext = {
   eventCode: JSON.stringify({ type: '' }, null, 2)
 };
@@ -233,7 +238,7 @@ export const EventPanel: React.FunctionComponent<{
                       </StyledButton>
                     </>
                   )}
-                  <time>{format(time, 'hh:mm:ss.SS')}</time>
+                  <StyledTime>{format(time, 'hh:mm:ss.SS')}</StyledTime>
                 </summary>
                 <pre>
                   {isBuiltIn ? event.type : JSON.stringify(event, null, 2)}

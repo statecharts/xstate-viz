@@ -45,7 +45,7 @@
     "react-ace": "^6.2.0",
     "react-syntax-highlighter": "^10.3.0",
     "styled-components": "^4.0.2",
-    "xstate": "^4.6.4"
+    "xstate": "^4.6.7"
   },
   "peerDependencies": {
     "react": "^16.8.6",
