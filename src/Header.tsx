@@ -26,7 +26,6 @@ export const notificationsActor: Actor & {
 export function Header() {
   return (
     <StyledHeader>
-      <Notifications notifier={notificationsActor} />
       <StyledLogo />
       <StyledLinks>
         <StyledLink
@@ -43,6 +42,9 @@ export function Header() {
           target="_statecharts-community"
         >
           Community
+        </StyledLink>
+        <StyledLink href="https://opencollective.com/xstate" target="_sponsor">
+          Sponsor 💙
         </StyledLink>
       </StyledLinks>
     </StyledHeader>

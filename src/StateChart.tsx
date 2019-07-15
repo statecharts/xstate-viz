@@ -161,17 +161,21 @@ export function toMachine(machine: StateNode<any> | string): StateNode<any> {
     return machine;
   };
 
-  createMachine(
-    machineProxy,
-    interpret,
-    assign,
-    send,
-    XState.sendParent,
-    spawn,
-    raise,
-    XState.actions,
-    XState
-  );
+  try {
+    createMachine(
+      machineProxy,
+      interpret,
+      assign,
+      send,
+      XState.sendParent,
+      spawn,
+      raise,
+      XState.actions,
+      XState
+    );
+  } catch (e) {
+    throw e;
+  }
 
   return machines[machines.length - 1]! as StateNode<any>;
 }
@@ -265,6 +269,8 @@ export class StateChart extends React.Component<
       console.error(e);
       return;
     }
+
+    notificationsActor.notify('Machine updated!');
 
     this.reset(code, machine);
   }

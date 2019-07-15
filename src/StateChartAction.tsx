@@ -39,7 +39,7 @@ const StyledStateChartAction = styled.li`
 
   &:before {
     font-weight: bold;
-    color: gray;
+    color: var(--color-gray);
     margin-right: 0.25rem;
     font-size: 75%;
     content: attr(data-action-type) ' /';

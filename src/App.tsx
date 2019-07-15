@@ -1,5 +1,5 @@
 import React, { Component, createContext, useState, useReducer } from 'react';
-import { StateChart, notificationsMachine } from './index';
+import { StateChart, notificationsMachine, Notifications } from './index';
 import styled from 'styled-components';
 import { Machine, assign, EventObject, State, Interpreter } from 'xstate';
 import queryString from 'query-string';
@@ -28,6 +28,9 @@ const StyledApp = styled.main`
   --color-secondary: rgba(255, 152, 0, 1);
   --color-secondary-light: rgba(255, 152, 0, 0.5);
   --color-sidebar: #272722;
+  --color-gray: #555;
+  --color-failure: #ee7170;
+  --color-success: #31ae00;
   --radius: 0.2rem;
   --border-width: 2px;
   --sidebar-width: 25rem;
@@ -58,21 +61,11 @@ export const StyledHeader = styled.header`
   justify-content: stretch;
   grid-area: header;
   padding: 0.5rem 1rem;
-  z-index: 10;
+  z-index: 1;
 `;
 
 export const StyledLogo = styled(Logo)`
   height: 2rem;
-`;
-
-export const StyledLinks = styled.nav`
-  display: flex;
-  flex-direction: row;
-  margin-left: auto;
-
-  &,
-  &:visited {
-  }
 `;
 
 export const StyledLink = styled.a`
@@ -83,6 +76,20 @@ export const StyledLink = styled.a`
   font-size: 75%;
   font-weight: bold;
   margin: 0 0.25rem;
+`;
+
+export const StyledLinks = styled.nav`
+  display: flex;
+  flex-direction: row;
+
+  > ${StyledLink} {
+    line-height: 2rem;
+    margin-left: 1rem;
+  }
+
+  &,
+  &:visited {
+  }
 `;
 
 interface AppMachineContext {
@@ -223,8 +230,8 @@ const appMachine = Machine<AppMachineContext>(
     id: 'app',
     context: {
       query,
-      // token: undefined,
-      token: process.env.REACT_APP_TEST_TOKEN,
+      token: undefined,
+      // token: process.env.REACT_APP_TEST_TOKEN,
       gist: (query.gist as string) || undefined,
       example: examples.omni,
       user: undefined,
@@ -498,7 +505,11 @@ const appMachine = Machine<AppMachineContext>(
                   assign<AppMachineContext>({
                     gist: undefined
                   }),
-                  ctx => notificationsActor.notify('Gist not found.')
+                  ctx =>
+                    notificationsActor.notify({
+                      message: 'Gist not found.',
+                      severity: 'error'
+                    })
                 ]
               }
             }
@@ -553,6 +564,7 @@ export function App() {
 
   return (
     <StyledApp data-layout={layout}>
+      <Notifications notifier={notificationsActor} />
       <AppContext.Provider value={{ state: current, send, service }}>
         <User />
         <Header />

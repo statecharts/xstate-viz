@@ -66,28 +66,26 @@ const StyledNotification = styled.div`
   padding: 1rem;
   margin: 1rem;
   border-radius: var(--radius);
+  border-top: 2px solid currentColor;
+  border-top-left-radius: 0;
+  border-top-right-radius: 0;
   background: white;
   box-shadow: var(--shadow);
   animation: notification-slideDown calc(var(--timeout, 4000) * 1ms) ease both;
   will-change: transform;
   transition: transform var(--duration);
+  cursor: default;
 
   &[data-severity='success'] {
-    > strong {
-      color: #40d38d;
-    }
+    color: #40d38d;
   }
 
   &[data-severity='info'] {
-    > strong {
-      color: #2f86eb;
-    }
+    color: #2f86eb;
   }
 
   &[data-severity='error'] {
-    > strong {
-      color: #f16462;
-    }
+    color: #f16462;
   }
 
   > ${StyledNotificationDismissButton} {
@@ -173,7 +171,12 @@ export const Notifications: React.FunctionComponent<NotificationsProps> = ({
             <strong>{notification.message}</strong>
             {notification.description && (
               <div>
-                <small>{notification.description}</small>
+                <small>
+                  {notification.description}{' '}
+                  {notification.severity === 'error'
+                    ? '(See console for more details)'
+                    : ''}
+                </small>
               </div>
             )}
           </StyledNotification>

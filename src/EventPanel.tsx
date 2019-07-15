@@ -170,21 +170,23 @@ export const EventPanel: React.FunctionComponent<{
   }, [eventsRef.current, records.length]);
 
   const sendToService = useCallback(
-    (eventJSON: string) => {
-      let event;
+    (eventOrJSON: string | EventObject) => {
+      let event = eventOrJSON;
 
-      try {
-        event = JSON.parse(eventJSON);
-      } catch (e) {
-        notificationsActor.notify({
-          message: 'Failed to send event',
-          description: e.message,
-          severity: 'error'
-        });
-        return;
+      if (typeof eventOrJSON === 'string') {
+        try {
+          event = JSON.parse(eventOrJSON);
+        } catch (e) {
+          notificationsActor.notify({
+            message: 'Failed to send event',
+            description: e.message,
+            severity: 'error'
+          });
+          return;
+        }
       }
 
-      if (!isBuiltInEvent(event.type)) {
+      if (!isBuiltInEvent((event as EventObject).type)) {
         service.send(event);
       }
     },
