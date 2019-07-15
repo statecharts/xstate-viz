@@ -6,9 +6,7 @@ import { Actor } from 'xstate/lib/Actor';
 
 import { Notification } from './Notifications';
 
-const notificationsService = interpret(notificationsMachine)
-  .onTransition(s => console.log(s))
-  .start();
+const notificationsService = interpret(notificationsMachine).start();
 
 export const notificationsActor: Actor & {
   notify: (message: string | Notification) => void;

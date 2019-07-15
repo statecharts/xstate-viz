@@ -47,8 +47,6 @@ export const User: React.FunctionComponent = () => {
     context: { user }
   } = state;
 
-  console.log(state);
-
   return (
     <div>
       <StyledUser data-state={state.toStrings().join(' ')}>
