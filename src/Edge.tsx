@@ -252,11 +252,6 @@ export class Edge extends Component<EdgeProps, EdgeState> {
             x: prevPt.x,
             y: Math.min(sourceRect.top - magic, targetRect.top - magic)
           }));
-
-          ptFns.push(prevPt => ({
-            x: endPt.x,
-            y: endPt.y - magic
-          }));
         } else {
           ptFns.push(prevPt => ({
             x: prevPt.x,

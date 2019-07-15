@@ -61,6 +61,7 @@ export const StyledHeader = styled.header`
   grid-area: header;
   padding: 0.5rem 1rem;
   z-index: 1;
+  white-space: nowrap;
 `;
 
 export const StyledLogo = styled(Logo)`
