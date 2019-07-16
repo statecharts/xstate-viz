@@ -294,6 +294,10 @@ const StyledEventDot = styled.div`
   }
 `;
 
+const StyledEventButtonLabel = styled.label`
+  white-space: nowrap;
+`;
+
 const StyledEventButton = styled.button`
   --color-event: var(--color-primary);
   padding: 0;
@@ -662,7 +666,9 @@ export class StateChartNode extends React.Component<StateChartNodeProps> {
                   data-id={serializeEdge(edge)}
                   title={ownEvent}
                 >
-                  <label>{friendlyEventName(ownEvent)}</label>
+                  <StyledEventButtonLabel>
+                    {friendlyEventName(ownEvent)}
+                  </StyledEventButtonLabel>
                   {edge.transition.cond && (
                     <StateChartGuard
                       guard={edge.transition.cond}
