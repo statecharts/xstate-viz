@@ -22,7 +22,7 @@ const StyledApp = styled.main`
   --color-primary-shadow: rgba(87, 176, 234, 0.1);
   --color-link: rgba(87, 176, 234, 1);
   --color-disabled: #c7c5c5;
-  --color-edge: rgba(0, 0, 0, 0.2);
+  --color-edge: #dedede;
   --color-edge-active: var(--color-primary);
   --color-secondary: rgba(255, 152, 0, 1);
   --color-secondary-light: rgba(255, 152, 0, 0.5);

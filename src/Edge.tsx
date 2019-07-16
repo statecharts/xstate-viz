@@ -86,6 +86,10 @@ export class Edge extends Component<EdgeProps, EdgeState> {
 
     const sourceRect = relative(this.state.sourceData!.rect!, svgRef);
     const eventRect = relative(this.state.eventData!.rect!, svgRef);
+    const eventContainerRect = relative(
+      this.state.eventData!.element!.parentElement!.getBoundingClientRect(),
+      svgRef
+    );
     const targetRect = relative(this.state.targetData!.rect!, svgRef);
     const magic = 10;
     const borderOffset = 5;
@@ -181,6 +185,10 @@ export class Edge extends Component<EdgeProps, EdgeState> {
           y: eventCenterPt.y
         }),
         () => ({
+          x: eventRect.left,
+          y: eventCenterPt.y
+        }),
+        () => ({
           x: eventRect.right,
           y: eventCenterPt.y
         })
@@ -210,8 +218,8 @@ export class Edge extends Component<EdgeProps, EdgeState> {
             ? targetRect.top
             : startPt.y < targetRect.bottom && startPt.y > targetRect.top
             ? startPt.y
-            : Math.abs(eventRect.bottom - targetRect.top) <
-              Math.abs(eventRect.bottom - targetRect.bottom)
+            : Math.abs(eventContainerRect.bottom - targetRect.top) <
+              Math.abs(eventContainerRect.bottom - targetRect.bottom)
             ? targetRect.top
             : targetRect.bottom
       };
@@ -229,6 +237,12 @@ export class Edge extends Component<EdgeProps, EdgeState> {
       } else if (endPt.y === targetRect.bottom) {
         endPt.y += borderOffset;
         endSide = 'bottom';
+
+        if (endPt.x === targetRect.right) {
+          endPt.x -= magic;
+        } else if (endPt.x === targetRect.left) {
+          endPt.x += magic;
+        }
       } else {
         if (endPt.x === targetRect.right) {
           endPt.y = targetRect.top;
@@ -255,20 +269,35 @@ export class Edge extends Component<EdgeProps, EdgeState> {
         } else {
           ptFns.push(prevPt => ({
             x: prevPt.x,
-            y: startPt.y + magic
+            y: Math.max(
+              startPt.y + magic,
+              sourceRect.bottom,
+              eventContainerRect.bottom
+            )
           }));
+
+          if (sourceRect.bottom > startPt.y + magic) {
+            ptFns.push(prevPt => ({
+              x: prevPt.x,
+              y: Math.min(sourceRect.bottom + magic, endPt.y)
+            }));
+            ptFns.push(prevPt => ({
+              x: prevPt.x + magic * xDir,
+              y: prevPt.y
+            }));
+          }
         }
-      } else if (startPt.x !== endPt.x) {
-        ptFns.push(prevPt => ({
-          x: endPt.x,
-          y: prevPt.y
-        }));
       }
 
       if (endSide === 'top') {
         ptFns.push(() => ({
           x: endPt.x,
           y: endPt.y - magic
+        }));
+      } else if (endSide === 'bottom') {
+        ptFns.push(() => ({
+          x: endPt.x,
+          y: endPt.y + magic
         }));
       }
 
@@ -335,19 +364,21 @@ export class Edge extends Component<EdgeProps, EdgeState> {
           markerEnd={isHighlighted ? `url(#marker-preview)` : `url(#marker)`}
           ref={this.ref}
         />
-        {/* {circles.map((circle, i) => {
-          const fill = i > pts.length ? 'red' : 'blue';
-          return (
-            <circle
-              cx={circle.x}
-              cy={circle.y}
-              r={i > pts.length ? 0.5 : 1}
-              fill={fill}
-            >
-              <text>{i}</text>
-            </circle>
-          );
-        })} */}
+        {process.env.NODE_ENV === 'development'
+          ? circles.map((circle, i) => {
+              const fill = i > pts.length ? 'red' : 'blue';
+              return (
+                <circle
+                  cx={circle.x}
+                  cy={circle.y}
+                  r={i > pts.length ? 0.5 : 1}
+                  fill={fill}
+                >
+                  <text>{i}</text>
+                </circle>
+              );
+            })
+          : null}
       </g>
     );
   }
