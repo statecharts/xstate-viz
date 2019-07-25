@@ -159,8 +159,18 @@ const invokePostGist = (ctx: AppMachineContext, e: EventObject) => {
   });
 };
 
+function parseGist(gistQuery: string): string | null {
+  const gistMatch = gistQuery.match(/([a-zA-Z0-9]{32})/);
+
+  return !gistMatch ? null : gistMatch[0];
+}
+
 const invokeFetchGist = (ctx: AppMachineContext) => {
-  return fetch(`https://api.github.com/gists/${ctx.query.gist}`, {
+  const gist = parseGist(ctx.query.gist!);
+  if (!gist) {
+    return Promise.reject('Invalid gist ID.');
+  }
+  return fetch(`https://api.github.com/gists/${gist}`, {
     headers: {
       Accept: 'application/json'
     }
@@ -521,11 +531,13 @@ const appMachine = Machine<AppMachineContext>(
                   assign<AppMachineContext>({
                     gist: undefined
                   }),
-                  ctx =>
+                  (ctx, e) => {
                     notificationsActor.notify({
-                      message: 'Gist not found.',
+                      message: `Gist not found`,
+                      description: `${e.data}`,
                       severity: 'error'
-                    })
+                    });
+                  }
                 ]
               }
             }

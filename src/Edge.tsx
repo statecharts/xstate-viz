@@ -114,12 +114,13 @@ export class Edge extends Component<EdgeProps, EdgeState> {
       }));
       if (!isSelf) {
         ptFns.push(
-          () => ({
-            x: targetRect.right + magic,
-            y: targetRect.top - magic
+          prevPt => ({
+            x: targetRect.right,
+            y: prevPt.y,
+            color: 'green'
           }),
           () => ({
-            x: targetRect.right,
+            x: targetRect.right - magic,
             y: targetRect.top - magic
           }),
           prevPt => ({
@@ -267,23 +268,28 @@ export class Edge extends Component<EdgeProps, EdgeState> {
             y: Math.min(sourceRect.top - magic, targetRect.top - magic)
           }));
         } else {
-          ptFns.push(prevPt => ({
-            x: prevPt.x,
-            y: Math.max(
-              startPt.y + magic,
-              sourceRect.bottom,
-              eventContainerRect.bottom
-            )
-          }));
+          // ptFns.push(prevPt => ({
+          //   x: prevPt.x,
+          //   y: Math.max(
+          //     startPt.y + magic,
+          //     sourceRect.bottom,
+          //     eventContainerRect.bottom
+          //   )
+          // }));
 
           if (sourceRect.bottom > startPt.y + magic) {
             ptFns.push(prevPt => ({
               x: prevPt.x,
-              y: Math.min(sourceRect.bottom + magic, endPt.y)
+              y: Math.min(sourceRect.bottom + magic, endPt.y - magic)
             }));
             ptFns.push(prevPt => ({
               x: prevPt.x + magic * xDir,
               y: prevPt.y
+            }));
+          } else {
+            ptFns.push(prevPt => ({
+              x: prevPt.x,
+              y: Math.min(eventContainerRect.bottom + magic, endPt.y - magic)
             }));
           }
         }
@@ -372,7 +378,7 @@ export class Edge extends Component<EdgeProps, EdgeState> {
                   cx={circle.x}
                   cy={circle.y}
                   r={i > pts.length ? 0.5 : 1}
-                  fill={fill}
+                  fill={circle.color || fill}
                 >
                   <text>{i}</text>
                 </circle>

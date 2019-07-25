@@ -139,6 +139,7 @@ export function stateActions(stateNode: StateNode): ActionObject<any, any>[] {
 export interface Point {
   x: number;
   y: number;
+  color?: string;
 }
 
 export function center(rect: ClientRect): Point {
