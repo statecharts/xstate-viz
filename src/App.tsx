@@ -14,6 +14,17 @@ import { Loader } from './Loader';
 import { LayoutButton, StyledLayoutButton } from './LayoutButton';
 import { toMachine } from './StateChart';
 
+export const StyledHeader = styled.header`
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+  justify-content: stretch;
+  grid-area: header;
+  padding: 0.5rem 1rem;
+  z-index: 1;
+  white-space: nowrap;
+`;
+
 const StyledApp = styled.main`
   --color-app-background: #fff;
   --color-border: #dedede;
@@ -51,17 +62,18 @@ const StyledApp = styled.main`
     grid-row: 2;
     grid-column: -1;
   }
-`;
 
-export const StyledHeader = styled.header`
-  display: flex;
-  flex-direction: row;
-  align-items: center;
-  justify-content: stretch;
-  grid-area: header;
-  padding: 0.5rem 1rem;
-  z-index: 1;
-  white-space: nowrap;
+  @media (max-width: 900px) {
+    grid-template-columns: 50% 50%;
+  }
+
+  &[data-embed] {
+    grid-template-rows: 0 auto;
+
+    > ${StyledHeader} {
+      display: none;
+    }
+  }
 `;
 
 export const StyledLogo = styled(Logo)`
@@ -591,7 +603,7 @@ export function App() {
   );
 
   return (
-    <StyledApp data-layout={layout}>
+    <StyledApp data-layout={layout} data-embed={query.embed}>
       <Notifications notifier={notificationsActor} />
       <AppContext.Provider value={{ state: current, send, service }}>
         <User />

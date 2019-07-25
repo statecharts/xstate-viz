@@ -12,7 +12,7 @@ export const StyledStateChartContainer = styled.section`
   display: grid;
   grid-column-gap: 1rem;
   grid-row-gap: 1rem;
-  padding-left: 1rem;
+  padding: 0 1rem;
 
   &[data-child] {
     grid-template-columns: 1fr 1fr;

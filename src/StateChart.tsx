@@ -82,6 +82,10 @@ export const StyledStateChart = styled.div`
   overflow: hidden;
   max-height: inherit;
 
+  @media (max-width: 900px) {
+    grid-template-columns: 1fr 1fr;
+  }
+
   > ${StyledSidebar} {
     grid-area: sidebar;
   }
