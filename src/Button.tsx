@@ -6,9 +6,8 @@ export const StyledButton = styled.button`
   background: transparent;
   color: white;
   height: 2rem;
-  margin: 1rem;
-  border-radius: 2rem;
-  border: 2px solid var(--color-secondary);
+  border-radius: 0.25rem;
+  border: none;
   font-weight: bold;
   cursor: pointer;
   transition: all 0.3s ease-in-out;
@@ -17,28 +16,41 @@ export const StyledButton = styled.button`
   letter-spacing: 1px;
 
   &:hover {
-    background: var(--color-secondary);
-    color: white;
+    background: white;
   }
 
   &:focus {
     outline: none;
   }
 
-  &[data-variant='reset'] {
-    background: var(--color-secondary);
+  &[data-variant='primary'] {
+    background: white;
+    color: #111;
+    border-radius: 2px;
     border: none;
-    margin: 0;
-    margin-left: 0.5rem;
-    padding: 0.25rem 0.5rem;
-    height: auto;
-    letter-spacing: 0;
-    font-size: 50%;
-    opacity: 0.8;
-    transition: opacity 0.3s ease;
+  }
 
-    &:hover {
-      opacity: 1;
-    }
+  &[data-variant='secondary'] {
+    background: #656565;
+    border-radius: 2px;
+    border: none;
+  }
+
+  &[data-variant='link'] {
+    background: transparent;
+    color: var(--color-link);
+    letter-spacing: 0;
+    height: auto;
+    padding: 0;
+    margin-left: 0.5rem;
+  }
+
+  &[data-size='full'] {
+    width: 100%;
+  }
+
+  &:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
   }
 `;

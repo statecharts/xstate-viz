@@ -4,7 +4,8 @@ import {
   Edge,
   Action,
   ActionObject,
-  Guard
+  Guard,
+  EventObject
 } from 'xstate';
 
 export function isChildOf(
@@ -62,10 +63,6 @@ export function friendlyEventName(event: string) {
 
   if (match) {
     return `done`;
-  }
-
-  if (event === '') {
-    return 'transient';
   }
 
   return event;
@@ -142,6 +139,7 @@ export function stateActions(stateNode: StateNode): ActionObject<any, any>[] {
 export interface Point {
   x: number;
   y: number;
+  color?: string;
 }
 
 export function center(rect: ClientRect): Point {
@@ -149,4 +147,12 @@ export function center(rect: ClientRect): Point {
     x: rect.left + rect.width / 2,
     y: rect.top + rect.height / 2
   };
+}
+
+export function isBuiltInEvent(eventType: string): boolean {
+  return (
+    eventType.indexOf('xstate.') === 0 ||
+    eventType.indexOf('done.') === 0 ||
+    eventType === ''
+  );
 }

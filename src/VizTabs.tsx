@@ -1,59 +1,36 @@
 import React, { useState, useMemo } from 'react';
-import { Interpreter } from 'xstate';
+import { Interpreter, Machine } from 'xstate';
 import { StateChartVisualization } from './StateChartVisualization';
 import styled from 'styled-components';
 
-interface VizTabsProps {
+interface StateChartContainerProps {
   service: Interpreter<any, any>;
-  selectedService?: Interpreter<any, any>;
+  onReset: () => void;
 }
 
-const StyledVizTabsTabs = styled.ul`
-  list-style: none;
-  display: flex;
-  flex-direction: row;
-  justify-content: flex-start;
-  align-items: flex-end;
-  margin: 0;
-  padding: 0;
-`;
+export const StyledStateChartContainer = styled.section`
+  display: grid;
+  grid-column-gap: 1rem;
+  grid-row-gap: 1rem;
+  padding: 0 1rem;
 
-const StyledVizTabsTab = styled.li`
-  padding: 0.5rem;
-  background: var(--color-border);
-
-  &:not(:last-child) {
-    border-right: 1px solid black;
-  }
-
-  &[data-active] {
-    background: var(--color-background);
+  &[data-child] {
+    grid-template-columns: 1fr 1fr;
   }
 `;
 
-export const VizTabs: React.SFC<VizTabsProps> = ({
+export const StateChartContainer: React.SFC<StateChartContainerProps> = ({
   service,
-  selectedService
+  onReset
 }) => {
-  const childServices = useMemo(() => {
-    return Array.from((service as any).children.values()).filter(
-      (child): child is Interpreter<any, any> => child instanceof Interpreter
-    );
-  }, [(service as any).children.size]);
-  const currentService = selectedService;
-
   return (
-    <div>
-      <StyledVizTabsTabs>
-        {[service, ...childServices].map(s => {
-          return <StyledVizTabsTab key={s.id}>{s.id} </StyledVizTabsTab>;
-        })}
-      </StyledVizTabsTabs>
-      <StateChartVisualization service={service} visible={!currentService} />
-
-      {selectedService && (
-        <StateChartVisualization service={selectedService} visible={true} />
-      )}
-    </div>
+    <StyledStateChartContainer>
+      <StateChartVisualization
+        service={service}
+        visible={true}
+        onSelectService={() => void 0}
+        onReset={onReset}
+      />
+    </StyledStateChartContainer>
   );
 };

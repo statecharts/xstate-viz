@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import styled from 'styled-components';
 import { getEdges } from 'xstate/lib/graph';
 import { serializeEdge, initialStateNodes } from './utils';
@@ -17,7 +17,10 @@ const StyledVisualization = styled.div`
 export const StateChartVisualization: React.SFC<{
   service: Interpreter<any, any>;
   visible: boolean;
-}> = ({ service, visible }) => {
+  onSelectService: (service: Interpreter<any>) => void;
+  onReset: () => void;
+}> = ({ service, visible, onSelectService, onReset }) => {
+  const [transitionCount, setTransitionCount] = useState(0);
   const [current, send] = useService(service);
   const [state, setState] = React.useState<{
     [key: string]: any;
@@ -28,9 +31,20 @@ export const StateChartVisualization: React.SFC<{
     preview: undefined
   });
   const svgRef = React.useRef<SVGSVGElement>(null);
-  const edges = getEdges(service.machine);
+  let edges: ReturnType<typeof getEdges> | null;
 
-  if (!visible) {
+  try {
+    edges = getEdges(service.machine);
+  } catch (err) {
+    edges = null;
+    console.error(err);
+  }
+
+  useEffect(() => {
+    setTransitionCount(transitionCount + 1);
+  }, [current]);
+
+  if (!visible || !edges) {
     return null;
   }
 
@@ -72,7 +86,7 @@ export const StateChartVisualization: React.SFC<{
             markerUnits="strokeWidth"
             orient="auto"
           >
-            <path d="M0,0 L0,4 L4,2 z" fill="gray" />
+            <path d="M0,0 L0,4 L4,2 z" fill="var(--color-edge-active)" />
           </marker>
         </defs>
         {edges.map(edge => {
@@ -118,8 +132,10 @@ export const StateChartVisualization: React.SFC<{
       <StateChartNode
         stateNode={service.machine}
         current={service.state}
+        transitionCount={transitionCount}
+        level={0}
         preview={state.preview}
-        onReset={() => {}}
+        onReset={onReset}
         onEvent={event => {
           send(event);
         }}
@@ -138,6 +154,13 @@ export const StateChartVisualization: React.SFC<{
             preview: undefined,
             previewEvent: undefined
           });
+        }}
+        onSelectServiceId={serviceId => {
+          const s = (service as any).children.get(serviceId);
+
+          if (s) {
+            onSelectService(s); // TODO: pass service via context
+          }
         }}
         toggledStates={state.toggledStates}
       />

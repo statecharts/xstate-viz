@@ -14,8 +14,13 @@ import {
   StateMachine
 } from 'xstate';
 import * as XState from 'xstate';
-import { Editor } from './Editor';
-import { VizTabs } from './VizTabs';
+import { StateChartContainer, StyledStateChartContainer } from './VizTabs';
+import { StatePanel } from './StatePanel';
+import { EventPanel } from './EventPanel';
+import { CodePanel } from './CodePanel';
+import { raise } from 'xstate/lib/actions';
+import { getEdges } from 'xstate/lib/graph';
+import { notificationsActor } from './Header';
 
 const StyledViewTab = styled.li`
   padding: 0 1rem;
@@ -48,6 +53,8 @@ const StyledViewTabs = styled.ul`
   padding: 0;
   flex-grow: 0;
   flex-shrink: 0;
+  position: sticky;
+  top: 0;
 `;
 
 const StyledSidebar = styled.div`
@@ -57,83 +64,62 @@ const StyledSidebar = styled.div`
   display: grid;
   grid-template-columns: 1fr;
   grid-template-rows: 2rem 1fr;
-  border-radius: 0.5rem;
-  box-shadow: 0 0.5rem 1rem rgba(0, 0, 0, 0.2);
-`;
-
-const StyledView = styled.div`
-  display: flex;
-  flex-direction: column;
-  justify-content: flex-start;
-  align-items: stretch;
-  overflow: hidden;
+  border-top-left-radius: 1rem;
+  box-shadow: var(--shadow);
+  transition: transform 0.6s cubic-bezier(0.5, 0, 0.5, 1);
+  z-index: 1;
 `;
 
 export const StyledStateChart = styled.div`
+  grid-area: content;
   display: grid;
-  grid-template-columns: 1fr 25rem;
-  grid-template-rows: 1fr 5rem;
+  grid-template-columns: 1fr var(--sidebar-width, 25rem);
+  grid-template-rows: 1fr;
+  grid-template-areas: 'content sidebar';
   font-family: sans-serif;
   font-size: 12px;
   overflow: hidden;
   max-height: inherit;
-  padding: 1rem;
 
-  > ${StyledSidebar} {
-    grid-column: 2 / 3;
-    grid-row: 1 / -1;
+  @media (max-width: 900px) {
+    grid-template-columns: 1fr 1fr;
   }
 
-  > footer {
-    grid-column: 1 / 2;
-    grid-row: -2 / -1;
+  > ${StyledSidebar} {
+    grid-area: sidebar;
+  }
+
+  > ${StyledStateChartContainer} {
+    grid-area: content;
   }
 
   > * {
     max-height: inherit;
     overflow-y: auto;
   }
-`;
 
-const StyledField = styled.div`
-  padding: 0.5rem 1rem;
-  width: 100%;
-  overflow: hidden;
+  [data-layout='viz'] & {
+    > :not(${StyledSidebar}) {
+      grid-column: 1 / -1;
+    }
 
-  > label {
-    text-transform: uppercase;
-    display: block;
-    margin-bottom: 0.5em;
-    font-weight: bold;
+    > ${StyledSidebar} {
+      transform: translateX(100%);
+    }
   }
 `;
-
-const StyledPre = styled.pre`
-  overflow: auto;
-`;
-interface FieldProps {
-  label: string;
-  children: any;
-  disabled?: boolean;
-  style?: any;
-}
-function Field({ label, children, disabled, style }: FieldProps) {
-  return (
-    <StyledField
-      style={{ ...style, ...(disabled ? { opacity: 0.5 } : undefined) }}
-    >
-      <label>{label}</label>
-      {children}
-    </StyledField>
-  );
-}
 
 interface StateChartProps {
   className?: string;
   machine: StateNode<any> | string;
+  onSave: (machineString: string) => void;
   height?: number | string;
 }
 
+export interface EventRecord {
+  event: EventObject;
+  time: number;
+}
 export interface StateChartState {
   machine: StateNode<any>;
   current: State<any, any>;
@@ -144,7 +130,7 @@ export interface StateChartState {
   toggledStates: Record<string, boolean>;
   service: Interpreter<any>;
   error?: any;
-  selectedService?: Interpreter<any>;
+  events: Array<EventRecord>;
 }
 
 export function toMachine(machine: StateNode<any> | string): StateNode<any> {
@@ -153,7 +139,6 @@ export function toMachine(machine: StateNode<any> | string): StateNode<any> {
   }
 
   let createMachine: Function;
-
   try {
     createMachine = new Function(
       'Machine',
@@ -162,6 +147,8 @@ export function toMachine(machine: StateNode<any> | string): StateNode<any> {
       'send',
       'sendParent',
       'spawn',
+      'raise',
+      'actions',
       'XState',
       machine
     );
@@ -169,41 +156,32 @@ export function toMachine(machine: StateNode<any> | string): StateNode<any> {
     throw e;
   }
 
-  let resultMachine: StateNode<any>;
+  const machines: Array<StateNode<any>> = [];
 
-  const machineProxy = (config: any, options: any, ctx: any) => {
-    if (resultMachine) {
-      console.log('already', config);
-      return Machine(config, options);
-    }
-    resultMachine = Machine(config, options);
-
-    return resultMachine;
+  const machineProxy = (config: any, options: any) => {
+    const machine = Machine(config, options);
+    machines.push(machine);
+    return machine;
   };
 
-  createMachine(
-    machineProxy,
-    interpret,
-    assign,
-    send,
-    XState.sendParent,
-    spawn,
-    XState
-  );
+  try {
+    createMachine(
+      machineProxy,
+      interpret,
+      assign,
+      send,
+      XState.sendParent,
+      spawn,
+      raise,
+      XState.actions,
+      XState
+    );
+  } catch (e) {
+    throw e;
+  }
 
-  return resultMachine! as StateNode<any>;
+  return machines[machines.length - 1]! as StateNode<any>;
 }
-
-const StyledStateViewActions = styled.ul`
-  margin: 0;
-  padding: 0;
-  list-style: none;
-`;
-
-const StyledStateViewAction = styled.li`
-  white-space: nowrap;
-  overflow-x: auto;
-`;
 
 export class StateChart extends React.Component<
   StateChartProps,
@@ -211,7 +189,6 @@ export class StateChart extends React.Component<
 > {
   state: StateChartState = (() => {
     const machine = toMachine(this.props.machine);
-    // const machine = this.props.machine;
 
     return {
       current: machine.initialState,
@@ -225,107 +202,57 @@ export class StateChart extends React.Component<
           : `Machine(${JSON.stringify(machine.config, null, 2)})`,
       toggledStates: {},
       service: interpret(machine, {}).onTransition(current => {
-        this.setState({ current }, () => {
-          if (this.state.previewEvent) {
-            // this.setState({
-            //   preview: this.state.service.nextState(this.state.previewEvent)
-            // });
-          }
-        });
+        this.handleTransition(current);
       }),
-      selectedService: undefined
+      events: []
     };
   })();
+  handleTransition(state: State<any>): void {
+    const formattedEvent = {
+      event: state.event,
+      time: Date.now()
+    };
+    this.setState(
+      { current: state, events: this.state.events.concat(formattedEvent) },
+      () => {
+        if (this.state.previewEvent) {
+          // this.setState({
+          //   preview: this.state.service.nextState(this.state.previewEvent)
+          // });
+        }
+      }
+    );
+  }
   svgRef = React.createRef<SVGSVGElement>();
   componentDidMount() {
     this.state.service.start();
   }
+  componentDidUpdate(prevProps: StateChartProps) {
+    const { machine } = this.props;
+
+    if (machine !== prevProps.machine) {
+      this.updateMachine(machine.toString());
+    }
+  }
   renderView() {
-    const { view, current, machine, code, service } = this.state;
+    const { view, current, code, service, events } = this.state;
+    const { onSave } = this.props;
 
     switch (view) {
       case 'definition':
         return (
-          <Editor
-            code={this.state.code}
+          <CodePanel
+            code={code}
             onChange={code => this.updateMachine(code)}
+            onSave={onSave}
           />
         );
       case 'state':
+        return <StatePanel state={current} service={service} />;
+      case 'events':
         return (
-          <>
-            <div style={{ overflowY: 'auto' }}>
-              <Field label="Value">
-                <StyledPre>{JSON.stringify(current.value, null, 2)}</StyledPre>
-              </Field>
-              <Field label="Context" disabled={!current.context}>
-                {current.context !== undefined ? (
-                  <StyledPre>
-                    {JSON.stringify(current.context, null, 2)}
-                  </StyledPre>
-                ) : null}
-              </Field>
-              <Field label="Actions" disabled={!current.actions.length}>
-                {!!current.actions.length && (
-                  <StyledPre>
-                    {JSON.stringify(current.actions, null, 2)}
-                  </StyledPre>
-                )}
-              </Field>
-            </div>
-            <Field
-              label="Event"
-              style={{
-                marginTop: 'auto',
-                borderTop: '1px solid #777',
-                flexShrink: 0,
-                background: 'var(--color-sidebar)'
-              }}
-            >
-              <Editor
-                height="5rem"
-                code={'{type: ""}'}
-                changeText="Send event"
-                onChange={code => {
-                  try {
-                    const eventData = eval(`(${code})`);
-
-                    this.state.service.send(eventData);
-                  } catch (e) {
-                    console.error(e);
-                    alert(
-                      'Unable to send event.\nCheck the console for more info.'
-                    );
-                  }
-                }}
-              />
-            </Field>
-          </>
+          <EventPanel state={current} service={service} records={events} />
         );
-      case 'children':
-        const foo = (parentService: Interpreter<any, any>) => {
-          return (
-            <div
-              key={parentService.id}
-              style={{ paddingLeft: '1rem' }}
-              onClick={e => {
-                e.stopPropagation();
-                this.setState({
-                  selectedService: parentService
-                });
-              }}
-            >
-              <strong>{parentService.id}</strong>
-              {Array.from<Interpreter<any, any>>(
-                (parentService as any).children.values()
-              ).map(childService => {
-                return foo(childService);
-              })}
-            </div>
-          );
-        };
-
-        return foo(service);
       default:
         return null;
     }
@@ -335,11 +262,14 @@ export class StateChart extends React.Component<
 
     try {
       machine = toMachine(code);
+      getEdges(machine);
     } catch (e) {
+      notificationsActor.notify({
+        message: 'Failed to update machine',
+        severity: 'error',
+        description: e.message
+      });
       console.error(e);
-      alert(
-        'Error: unable to update the machine.\nCheck the console for more info.'
-      );
       return;
     }
 
@@ -351,6 +281,7 @@ export class StateChart extends React.Component<
       {
         code,
         machine,
+        events: [],
         current: machine.initialState
       },
       () => {
@@ -358,15 +289,17 @@ export class StateChart extends React.Component<
           {
             service: interpret(this.state.machine)
               .onTransition(current => {
-                this.setState({ current }, () => {
-                  if (this.state.previewEvent) {
-                    this.setState({
-                      preview: this.state.service.nextState(
-                        this.state.previewEvent
-                      )
-                    });
-                  }
-                });
+                this.handleTransition(current);
+                // TODO: fix events
+                // this.setState({ current, events: [] }, () => {
+                //   if (this.state.previewEvent) {
+                //     this.setState({
+                //       preview: this.state.service.nextState(
+                //         this.state.previewEvent
+                //       )
+                //     });
+                //   }
+                // });
               })
               .start()
           },
@@ -378,59 +311,21 @@ export class StateChart extends React.Component<
     );
   }
   render() {
+    const { className } = this.props;
     const { code, service } = this.state;
 
     return (
       <StyledStateChart
-        className={this.props.className}
+        className={className}
         key={code}
         style={{
-          height: this.props.height || '100%',
-          background: 'var(--color-app-background)',
-          // @ts-ignore
-          '--color-app-background': '#FFF',
-          '--color-border': '#dedede',
-          '--color-primary': 'rgba(87, 176, 234, 1)',
-          '--color-primary-faded': 'rgba(87, 176, 234, 0.5)',
-          '--color-primary-shadow': 'rgba(87, 176, 234, 0.1)',
-          '--color-link': 'rgba(87, 176, 234, 1)',
-          '--color-disabled': '#c7c5c5',
-          '--color-edge': 'rgba(0, 0, 0, 0.2)',
-          '--color-secondary': 'rgba(255,152,0,1)',
-          '--color-secondary-light': 'rgba(255,152,0,.5)',
-          '--color-sidebar': '#272722',
-          '--radius': '0.2rem',
-          '--border-width': '2px'
+          background: 'var(--color-app-background)'
         }}
       >
-        <VizTabs
-          service={service}
-          selectedService={this.state.selectedService}
-        />
-        <footer>
-          <div>
-            <button>Send Event...</button>
-            <form
-              onSubmit={e => {
-                e.preventDefault();
-                e.persist();
-                console.log(e);
-              }}
-            >
-              <fieldset>
-                <label>Event type</label>
-                {service.state.nextEvents.map(eventType => {
-                  return <button key={eventType}>{eventType}</button>;
-                })}
-                <label htmlFor="">Properties</label>
-                <textarea />
-              </fieldset>
-            </form>
-          </div>
-        </footer>
+        <StateChartContainer service={service} onReset={() => this.reset()} />
         <StyledSidebar>
           <StyledViewTabs>
-            {['definition', 'state', 'children'].map(view => {
+            {['definition', 'state', 'events'].map(view => {
               return (
                 <StyledViewTab
                   onClick={() => this.setState({ view })}
@@ -442,7 +337,7 @@ export class StateChart extends React.Component<
               );
             })}
           </StyledViewTabs>
-          <StyledView>{this.renderView()}</StyledView>
+          {this.renderView()}
         </StyledSidebar>
       </StyledStateChart>
     );

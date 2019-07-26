@@ -13,8 +13,15 @@ class Tracker {
   public elements: Map<string, TrackerData> = new Map();
   constructor() {
     if (typeof window !== 'undefined') {
+      let timeout: number;
+
       window.addEventListener('resize', () => {
-        this.updateAll();
+        if (timeout) {
+          cancelAnimationFrame(timeout);
+        }
+        timeout = requestAnimationFrame(() => {
+          this.updateAll();
+        });
       });
     }
   }
