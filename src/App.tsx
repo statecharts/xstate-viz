@@ -532,8 +532,8 @@ const appMachine = Machine<AppMachineContext>(
                 actions: assign<AppMachineContext>({
                   gist: (_, e) => e.data,
                   // @ts-ignore
-                  machine: (_, e) => {
-                    return e.data.files['machine.js'].content;
+                  machine: (ctx, e) => {
+                    return e.data.files[ctx.query.file || 'machine.js'].content;
                   }
                 })
               },
