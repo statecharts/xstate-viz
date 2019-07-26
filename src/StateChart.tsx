@@ -76,7 +76,6 @@ export const StyledStateChart = styled.div`
   grid-template-columns: 1fr var(--sidebar-width, 25rem);
   grid-template-rows: 1fr;
   grid-template-areas: 'content sidebar';
-  grid-column-gap: 1rem;
   font-family: sans-serif;
   font-size: 12px;
   overflow: hidden;
