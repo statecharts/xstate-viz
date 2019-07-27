@@ -112,6 +112,7 @@ interface GithubUser {
 interface AppMachineContext {
   query: {
     gist?: string;
+    file?: string;
     code?: string;
     layout?: string;
   };
