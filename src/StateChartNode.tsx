@@ -11,9 +11,9 @@ import {
   condToString,
   serializeEdge,
   stateActions,
-  friendlyEventName,
   getEventDelay
 } from './utils';
+import { EventName } from './EventName';
 import { tracker } from './tracker';
 import { getEdges } from 'xstate/lib/graph';
 import { StyledButton } from './Button';
@@ -610,9 +610,7 @@ export class StateChartNode extends React.Component<StateChartNodeProps> {
         <StyledStateNodeEvents>
           {getEdges(stateNode, { depth: 0 }).map(edge => {
             const { event: ownEvent } = edge;
-            const isBuiltInEvent =
-              ownEvent.indexOf('xstate.') === 0 ||
-              ownEvent.indexOf('done.') === 0;
+            const isBuiltInEvent = ownEvent.indexOf('xstate.') === 0;
             const guard = edge.transition.cond;
             const valid =
               guard && guard.predicate
@@ -667,7 +665,7 @@ export class StateChartNode extends React.Component<StateChartNodeProps> {
                   title={ownEvent}
                 >
                   <StyledEventButtonLabel>
-                    {friendlyEventName(ownEvent)}
+                    <EventName event={ownEvent} />
                   </StyledEventButtonLabel>
                   {edge.transition.cond && (
                     <StateChartGuard
