@@ -232,7 +232,7 @@ const StyledStateNodeState = styled.div`
   z-index: 1;
   transition: border-color var(--duration) var(--easing);
 
-  &[data-type='parallel'] > ${StyledChildStates} > ${StyledStateNode} > & {
+  &[data-type~='parallel'] > ${StyledChildStates} > ${StyledStateNode} > & {
     border-style: dashed;
   }
 `;
