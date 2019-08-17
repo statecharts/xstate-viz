@@ -83,6 +83,7 @@ export function MonacoEditor(props: MonacoEditorProps) {
       wordWrap: 'bounded',
       readOnly: !onChange,
       fontSize: 12,
+      fixedOverflowWidgets: true, // in order to show suggestion boxes wider than the editor size
       model
     });
 
