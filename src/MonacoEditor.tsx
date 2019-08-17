@@ -1,8 +1,8 @@
-import React, { useRef, useState, useEffect, createContext } from 'react';
-import * as monaco from 'monaco-editor/esm/vs/editor/editor.api';
-import { KeyCode, KeyMod } from 'monaco-editor';
-import { format } from 'prettier/standalone';
-import tsParser from 'prettier/parser-typescript';
+import React, { useRef, useEffect } from "react";
+import * as monaco from "monaco-editor/esm/vs/editor/editor.api";
+import { KeyCode, KeyMod } from "monaco-editor";
+import { format } from "prettier/standalone";
+import tsParser from "prettier/parser-typescript";
 
 type Def = { fileName: string; content: string };
 
@@ -17,7 +17,7 @@ type MonacoEditorProps = {
 
 function prettify(code: string) {
   return format(code, {
-    parser: 'typescript',
+    parser: "typescript",
     plugins: [tsParser]
   });
 }
@@ -32,11 +32,10 @@ export function MonacoEditor(props: MonacoEditorProps) {
    * to avoid stale values considering React batches state updates and effect execution
    */
   useEffect(() => {
-    console.log('running effect');
     const {
       value,
       onChange,
-      mode = 'javascript',
+      mode = "javascript",
       registerEditorActions = []
     } = props;
     const definitions = props.definitions as Def[];
@@ -65,22 +64,22 @@ export function MonacoEditor(props: MonacoEditorProps) {
             var matchState: typeof _XState.matchState;
           }
         `,
-      'file:///global.d.ts'
+      "file:///global.d.ts"
     );
 
     const model = monaco.editor.createModel(
       value,
       mode,
-      monaco.Uri.parse('file:///main.tsx')
+      monaco.Uri.parse("file:///main.tsx")
     );
 
     editor = monaco.editor.create(editorRef.current, {
       language: mode,
       minimap: { enabled: false },
-      lineNumbers: 'off',
+      lineNumbers: "off",
       scrollBeyondLastLine: false,
-      theme: 'vs-dark',
-      wordWrap: 'bounded',
+      theme: "vs-dark",
+      wordWrap: "bounded",
       readOnly: !onChange,
       fontSize: 12,
       fixedOverflowWidgets: true, // in order to show suggestion boxes wider than the editor size
@@ -89,11 +88,11 @@ export function MonacoEditor(props: MonacoEditorProps) {
 
     // Register CTRL+S (CMD + S) to run format action
     editor.addAction({
-      id: 'run-prettier',
-      label: 'Run Prettier',
+      id: "run-prettier",
+      label: "Run Prettier",
       keybindings: [KeyMod.CtrlCmd | KeyCode.KEY_S],
       run: ed => {
-        ed.getAction('editor.action.formatDocument').run();
+        ed.getAction("editor.action.formatDocument").run();
       }
     });
 
@@ -103,11 +102,9 @@ export function MonacoEditor(props: MonacoEditorProps) {
     });
 
     // Register formatting action using Prettier
-    monaco.languages.registerDocumentFormattingEditProvider('javascript', {
+    monaco.languages.registerDocumentFormattingEditProvider("javascript", {
       provideDocumentFormattingEdits: model => {
         try {
-          console.log('trying to format');
-          console.log('formatted code');
           return [
             {
               text: prettify(editor.getValue()),
@@ -122,7 +119,7 @@ export function MonacoEditor(props: MonacoEditorProps) {
 
     monaco.languages.typescript.typescriptDefaults.setCompilerOptions({
       allowJs: true,
-      typeRoots: ['node_modules/@types'],
+      typeRoots: ["node_modules/@types"],
       target: monaco.languages.typescript.ScriptTarget.ES2016,
       allowNonTsExtensions: true,
       moduleResolution: monaco.languages.typescript.ModuleResolutionKind.NodeJs,
@@ -131,7 +128,7 @@ export function MonacoEditor(props: MonacoEditorProps) {
     });
 
     // Run format on initial code
-    editor.getAction('editor.action.formatDocument').run();
+    editor.getAction("editor.action.formatDocument").run();
 
     // Subscribe to editor model content change
     subscription = editor.onDidChangeModelContent(() => {
@@ -139,15 +136,11 @@ export function MonacoEditor(props: MonacoEditorProps) {
     });
 
     return () => {
-      console.log('cleanup');
-
       if (editor) {
-        console.log('cleaning editor');
         (editor.getModel() as monaco.IDisposable).dispose();
         editor.dispose();
       }
       if (subscription) {
-        console.log('cleaning subscription');
         subscription.dispose();
       }
     };
@@ -155,7 +148,7 @@ export function MonacoEditor(props: MonacoEditorProps) {
 
   return (
     <div
-      style={{ height: props.height || '100%', width: '100%' }}
+      style={{ height: props.height || "100%", width: "100%" }}
       ref={editorRef}
     />
   );
