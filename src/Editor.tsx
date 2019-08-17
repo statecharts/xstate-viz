@@ -75,23 +75,12 @@ export const EditorRenderer: React.FunctionComponent<EditorProps> = props => {
 
   return (
     <StyledEditor>
-      {/* <AceEditor
-        mode={mode}
-        theme="monokai"
-        editorProps={{ $blockScrolling: true }}
-        value={code}
-        onChange={value => setCode(value)}
-        setOptions={{ tabSize: 2, fontSize: '12px' }}
-        width="100%"
-        height={height as string}
-        showGutter={false}
-        readOnly={!onChange}
-        wrapEnabled
-      /> */}
       <MonacoEditor
         onChange={value => setCode(value)}
         value={code}
         definitions={definitions}
+        mode={mode}
+        height={height}
       />
       <StyledButtons>
         <StyledButton
@@ -165,7 +154,7 @@ function MonacoEditor(props: MonacoEditorProps) {
 
     // Register definition files in the lib registry
     for (const file of definitions) {
-      const fakePath = `node_modules/@types/xstate/${file.fileName}`;
+      const fakePath = `file:///node_modules/@types/xstate/${file.fileName}`;
       monaco.languages.typescript.javascriptDefaults.addExtraLib(
         file.content,
         fakePath
@@ -187,7 +176,7 @@ function MonacoEditor(props: MonacoEditorProps) {
             var matchState: typeof _XState.matchState;
           }
         `,
-      "global.d.ts"
+      "file:///global.d.ts"
     );
 
     const model = monaco.editor.createModel(
