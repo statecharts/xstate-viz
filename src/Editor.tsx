@@ -1,9 +1,9 @@
-import React, { useState, useContext } from "react";
-import { StyledButton } from "./Button";
-import styled from "styled-components";
-import { AppContext } from "./App";
-import defs from "./xstate-definitions.json";
-import { MonacoEditor } from "./MonacoEditor";
+import React, { useState, useContext } from 'react';
+import { StyledButton } from './Button';
+import styled from 'styled-components';
+import { AppContext } from './App';
+import defs from './xstate-definitions.json';
+import { MonacoEditor } from './MonacoEditor';
 
 interface EditorProps {
   code: string;
@@ -39,16 +39,16 @@ export const EditorRenderer: React.FunctionComponent<EditorProps> = props => {
   const {
     onChange,
     onSave,
-    height = "100%",
-    changeText = "Update",
-    mode = "javascript"
+    height = '100%',
+    changeText = 'Update',
+    mode = 'javascript'
   } = props;
   const isSaving =
     state.matches({
-      auth: { authorized: { gist: "patching" } }
+      auth: { authorized: { gist: 'patching' } }
     }) ||
     state.matches({
-      auth: { authorized: { gist: "posting" } }
+      auth: { authorized: { gist: 'posting' } }
     });
 
   return (
@@ -59,6 +59,22 @@ export const EditorRenderer: React.FunctionComponent<EditorProps> = props => {
         definitions={definitions}
         mode={mode}
         height={height}
+        registerEditorActions={[
+          // Register CTRL+R (CMD + R) to update the visualizer
+          {
+            id: 'update-viz',
+            label: 'Update Visualizer',
+            keybindings: [
+              MonacoEditor.KeyMod.CtrlCmd | MonacoEditor.KeyCode.KEY_R
+            ],
+            run: ed => {
+              console.log('update viz');
+              if (typeof onSave === 'function') {
+                onChange(ed.getValue());
+              }
+            }
+          }
+        ]}
       />
       <StyledButtons>
         <StyledButton
@@ -77,24 +93,24 @@ export const EditorRenderer: React.FunctionComponent<EditorProps> = props => {
           }}
         >
           {state.matches({
-            auth: { authorized: { gist: "patching" } }
+            auth: { authorized: { gist: 'patching' } }
           })
-            ? "Saving..."
+            ? 'Saving...'
             : state.matches({
-                auth: { authorized: { gist: "posting" } }
+                auth: { authorized: { gist: 'posting' } }
               })
-            ? "Uploading..."
+            ? 'Uploading...'
             : state.matches({
-                auth: { authorized: { gist: { idle: "patched" } } }
+                auth: { authorized: { gist: { idle: 'patched' } } }
               })
-            ? "Saved!"
+            ? 'Saved!'
             : state.matches({
-                auth: { authorized: { gist: { idle: "posted" } } }
+                auth: { authorized: { gist: { idle: 'posted' } } }
               })
-            ? "Uploaded!"
-            : state.matches({ auth: "authorized" })
-            ? "Save"
-            : "Sign in to Save"}
+            ? 'Uploaded!'
+            : state.matches({ auth: 'authorized' })
+            ? 'Save'
+            : 'Sign in to Save'}
         </StyledButton>
       </StyledButtons>
     </StyledEditor>
