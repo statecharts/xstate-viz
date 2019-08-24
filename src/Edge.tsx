@@ -375,6 +375,7 @@ export class Edge extends Component<EdgeProps, EdgeState> {
               const fill = i > pts.length ? 'red' : 'blue';
               return (
                 <circle
+                  key={i}
                   cx={circle.x}
                   cy={circle.y}
                   r={i > pts.length ? 0.5 : 1}
