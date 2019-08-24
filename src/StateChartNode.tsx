@@ -459,10 +459,20 @@ interface StateChartNodeProps {
   level: number;
 }
 
-export class StateChartNode extends React.Component<StateChartNodeProps> {
-  state = {
-    toggled: true
-  };
+interface StateChartNodeState {
+  toggled: boolean
+}
+
+export class StateChartNode extends React.Component<StateChartNodeProps, StateChartNodeState> {
+  constructor(props: StateChartNodeProps) {
+    super(props);
+
+    // get toggled value from localStorage
+    const toggledValue = localStorage.getItem(`${props.stateNode.id}_toggled`);
+    const toggled = toggledValue === null || toggledValue === '1';
+    this.state = { toggled };
+  }
+
 
   stateRef = React.createRef<any>();
 
@@ -600,7 +610,12 @@ export class StateChartNode extends React.Component<StateChartNodeProps> {
               title={this.state.toggled ? 'Hide children' : 'Show children'}
               onClick={e => {
                 e.stopPropagation();
-                this.setState({ toggled: !this.state.toggled }, () => {
+                
+                // remember toggled value
+                const toggled = !this.state.toggled;
+                localStorage.setItem(`${stateNode.id}_toggled`, toggled ? '1' : '');
+
+                this.setState({ toggled }, () => {
                   tracker.updateAll();
                 });
               }}
