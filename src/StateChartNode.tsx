@@ -11,9 +11,9 @@ import {
   condToString,
   serializeEdge,
   stateActions,
-  friendlyEventName,
   getEventDelay
 } from './utils';
+import { EventName } from './EventName';
 import { tracker } from './tracker';
 import { getEdges } from 'xstate/lib/graph';
 import { StyledButton } from './Button';
@@ -232,7 +232,7 @@ const StyledStateNodeState = styled.div`
   z-index: 1;
   transition: border-color var(--duration) var(--easing);
 
-  &[data-type='parallel'] > ${StyledChildStates} > ${StyledStateNode} > & {
+  &[data-type~='parallel'] > ${StyledChildStates} > ${StyledStateNode} > & {
     border-style: dashed;
   }
 `;
@@ -459,10 +459,20 @@ interface StateChartNodeProps {
   level: number;
 }
 
-export class StateChartNode extends React.Component<StateChartNodeProps> {
-  state = {
-    toggled: true
-  };
+interface StateChartNodeState {
+  toggled: boolean
+}
+
+export class StateChartNode extends React.Component<StateChartNodeProps, StateChartNodeState> {
+  constructor(props: StateChartNodeProps) {
+    super(props);
+
+    // get toggled value from localStorage
+    const toggledValue = localStorage.getItem(`${props.stateNode.id}_toggled`);
+    const toggled = toggledValue === null || toggledValue === '1';
+    this.state = { toggled };
+  }
+
 
   stateRef = React.createRef<any>();
 
@@ -600,7 +610,12 @@ export class StateChartNode extends React.Component<StateChartNodeProps> {
               title={this.state.toggled ? 'Hide children' : 'Show children'}
               onClick={e => {
                 e.stopPropagation();
-                this.setState({ toggled: !this.state.toggled }, () => {
+                
+                // remember toggled value
+                const toggled = !this.state.toggled;
+                localStorage.setItem(`${stateNode.id}_toggled`, toggled ? '1' : '');
+
+                this.setState({ toggled }, () => {
                   tracker.updateAll();
                 });
               }}
@@ -610,9 +625,7 @@ export class StateChartNode extends React.Component<StateChartNodeProps> {
         <StyledStateNodeEvents>
           {getEdges(stateNode, { depth: 0 }).map(edge => {
             const { event: ownEvent } = edge;
-            const isBuiltInEvent =
-              ownEvent.indexOf('xstate.') === 0 ||
-              ownEvent.indexOf('done.') === 0;
+            const isBuiltInEvent = ownEvent.indexOf('xstate.') === 0;
             const guard = edge.transition.cond;
             const valid =
               guard && guard.predicate
@@ -667,7 +680,7 @@ export class StateChartNode extends React.Component<StateChartNodeProps> {
                   title={ownEvent}
                 >
                   <StyledEventButtonLabel>
-                    {friendlyEventName(ownEvent)}
+                    <EventName event={ownEvent} />
                   </StyledEventButtonLabel>
                   {edge.transition.cond && (
                     <StateChartGuard

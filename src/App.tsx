@@ -27,13 +27,13 @@ export const StyledHeader = styled.header`
 
 const StyledApp = styled.main`
   --color-app-background: #fff;
-  --color-border: #dedede;
+  --color-border: #c9c9c9;
   --color-primary: rgba(87, 176, 234, 1);
   --color-primary-faded: rgba(87, 176, 234, 0.5);
   --color-primary-shadow: rgba(87, 176, 234, 0.1);
   --color-link: rgba(87, 176, 234, 1);
-  --color-disabled: #c7c5c5;
-  --color-edge: #dedede;
+  --color-disabled: #b3b3b3;
+  --color-edge: #c9c9c9;
   --color-edge-active: var(--color-primary);
   --color-secondary: rgba(255, 152, 0, 1);
   --color-secondary-light: rgba(255, 152, 0, 0.5);
