@@ -16,3 +16,8 @@ body {
 #root {
   height: 100%;
 }
+
+/* Having position:relative on *,*:before,*:after breaks monaco tooltip positioning. we need to reset it */
+.overflowingContentWidgets {
+  position: initial;
+}

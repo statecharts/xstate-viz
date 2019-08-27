@@ -1,12 +1,11 @@
-import React, { Component, useState, useEffect, useContext } from 'react';
-import AceEditor, { AceEditorProps } from 'react-ace';
-import 'brace/theme/monokai';
-import 'brace/mode/javascript';
-import { StyledButton } from './Button';
-import styled from 'styled-components';
-import { AppContext } from './App';
+import React, { useState, useContext } from "react";
+import { StyledButton } from "./Button";
+import styled from "styled-components";
+import { AppContext } from "./App";
+import defs from "./xstate-definitions.json";
+import { MonacoEditor } from "./MonacoEditor";
 
-interface EditorProps extends AceEditorProps {
+interface EditorProps {
   code: string;
   onChange: (code: string) => void;
   onSave: (code: string) => void;
@@ -30,37 +29,51 @@ export const StyledButtons = styled.div`
 `;
 
 export const Editor: React.FunctionComponent<EditorProps> = props => {
+  return <EditorRenderer {...props} />;
+};
+
+export const EditorRenderer: React.FunctionComponent<EditorProps> = props => {
+  const definitions = defs;
   const [code, setCode] = useState(props.code);
   const { state } = useContext(AppContext);
   const {
     onChange,
     onSave,
-    height = '100%',
-    changeText = 'Update',
-    mode = 'javascript'
+    height = "100%",
+    changeText = "Update",
+    mode = "javascript"
   } = props;
   const isSaving =
     state.matches({
-      auth: { authorized: { gist: 'patching' } }
+      auth: { authorized: { gist: "patching" } }
     }) ||
     state.matches({
-      auth: { authorized: { gist: 'posting' } }
+      auth: { authorized: { gist: "posting" } }
     });
 
   return (
     <StyledEditor>
-      <AceEditor
-        mode={mode}
-        theme="monokai"
-        editorProps={{ $blockScrolling: true }}
-        value={code}
+      <MonacoEditor
         onChange={value => setCode(value)}
-        setOptions={{ tabSize: 2, fontSize: '12px' }}
-        width="100%"
-        height={height as string}
-        showGutter={false}
-        readOnly={!onChange}
-        wrapEnabled
+        value={code}
+        definitions={definitions}
+        mode={mode}
+        height={height}
+        registerEditorActions={[
+          // Register CTRL+R (CMD + R) to update the visualizer
+          {
+            id: "update-viz",
+            label: "Update Visualizer",
+            keybindings: [
+              MonacoEditor.KeyMod.CtrlCmd | MonacoEditor.KeyCode.KEY_R
+            ],
+            run: ed => {
+              if (typeof onSave === "function") {
+                onChange(ed.getValue());
+              }
+            }
+          }
+        ]}
       />
       <StyledButtons>
         <StyledButton
@@ -79,19 +92,19 @@ export const Editor: React.FunctionComponent<EditorProps> = props => {
           }}
         >
           {state.matches({
-            auth: { authorized: { gist: 'patching' } }
+            auth: { authorized: { gist: "patching" } }
           })
-            ? 'Saving...'
+            ? "Saving..."
             : state.matches({
-                auth: { authorized: { gist: 'posting' } }
+                auth: { authorized: { gist: "posting" } }
               })
-            ? 'Uploading...'
+            ? "Uploading..."
             : state.matches({
-                auth: { authorized: { gist: { idle: 'patched' } } }
+                auth: { authorized: { gist: { idle: "patched" } } }
               })
-            ? 'Saved!'
+            ? "Saved!"
             : state.matches({
-                auth: { authorized: { gist: { idle: 'posted' } } }
+                auth: { authorized: { gist: { idle: "posted" } } }
               })
             ? 'Uploaded!'
             : state.matches({ auth: 'authorized' })

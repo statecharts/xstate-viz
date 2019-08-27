@@ -8,6 +8,8 @@ import { StyledButton } from './Button';
 import { EventRecord } from './StateChart';
 import { format } from 'date-fns';
 import { notificationsActor } from './Header';
+import 'brace/theme/monokai';
+import 'brace/mode/javascript';
 
 function getNextEvents(state: State<any>): string[] {
   const { nextEvents } = state;
