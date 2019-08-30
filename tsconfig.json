@@ -12,7 +12,8 @@
     "resolveJsonModule": true,
     "lib": ["dom", "es7"],
     "outDir": "./lib",
-    "declaration": true
+    "declaration": true,
+    "downlevelIteration": true
   },
   "include": ["src"]
 }

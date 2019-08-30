@@ -139,3 +139,14 @@ export function isBuiltInEvent(eventType: string): boolean {
     eventType === ''
   );
 }
+
+export function hashString(str: string) {
+  return str
+    .split("")
+    .reduce(
+      (prevHash, currVal) =>
+        ((prevHash << 5) - prevHash + currVal.charCodeAt(0)) | 0,
+      0
+    )
+    .toString();
+}
