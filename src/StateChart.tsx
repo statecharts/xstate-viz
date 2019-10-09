@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import styled from 'styled-components';
 import {
   Machine as _Machine,
@@ -21,6 +21,7 @@ import { CodePanel } from './CodePanel';
 import { raise } from 'xstate/lib/actions';
 import { getEdges } from 'xstate/lib/graph';
 import { notificationsActor } from './Header';
+import { useMachine, useService } from '@xstate/react';
 
 const StyledViewTab = styled.li`
   padding: 0 1rem;
@@ -183,67 +184,62 @@ export function toMachine(machine: StateNode<any> | string): StateNode<any> {
   return machines[machines.length - 1]! as StateNode<any>;
 }
 
-export class StateChart extends React.Component<
-  StateChartProps,
-  StateChartState
-> {
-  state: StateChartState = (() => {
-    const machine = toMachine(this.props.machine);
+export const StateChart: React.FC<StateChartProps> = ({
+  onSave,
+  className,
+  ...props
+}) => {
+  const [resetCount, setResetCount] = useState(0);
+  const [events, setEvents] = useState<EventRecord[]>([]);
 
-    return {
-      current: machine.initialState,
-      preview: undefined,
-      previewEvent: undefined,
-      view: 'definition', // or 'state'
-      machine: machine,
-      code:
-        typeof this.props.machine === 'string'
-          ? this.props.machine
-          : `Machine(${JSON.stringify(machine.config, null, 2)})`,
-      toggledStates: {},
-      service: interpret(machine, {}).onTransition(current => {
-        this.handleTransition(current);
-      }),
-      events: []
-    };
-  })();
-  handleTransition(state: State<any>): void {
+  const machine = useMemo(() => {
+    return toMachine(props.machine);
+  }, [props.machine]);
+  const service = useMemo(() => {
+    return interpret(machine).start();
+  }, [machine, resetCount]);
+
+  const [current] = useService(service);
+
+  useEffect(() => {
     const formattedEvent = {
-      event: state.event,
+      event: current.event,
       time: Date.now()
     };
-    this.setState(
-      { current: state, events: this.state.events.concat(formattedEvent) },
-      () => {
-        if (this.state.previewEvent) {
-          // this.setState({
-          //   preview: this.state.service.nextState(this.state.previewEvent)
-          // });
-        }
-      }
-    );
-  }
-  svgRef = React.createRef<SVGSVGElement>();
-  componentDidMount() {
-    this.state.service.start();
-  }
-  componentDidUpdate(prevProps: StateChartProps) {
-    const { machine } = this.props;
 
-    if (machine !== prevProps.machine) {
-      this.updateMachine(machine.toString());
-    }
-  }
-  renderView() {
-    const { view, current, code, service, events } = this.state;
-    const { onSave } = this.props;
+    setEvents(events.concat(formattedEvent));
+  }, [current]);
+
+  const [allState, setState] = useState<StateChartState>(
+    (() => {
+      const _machine = toMachine(props.machine);
+
+      return {
+        current: _machine.initialState,
+        preview: undefined,
+        previewEvent: undefined,
+        view: 'definition', // or 'state'
+        machine: _machine,
+        code:
+          typeof _machine === 'string'
+            ? _machine
+            : `Machine(${JSON.stringify(_machine.config, null, 2)})`,
+        toggledStates: {},
+        service: interpret(_machine),
+        events: []
+      };
+    })()
+  );
+
+  function renderView() {
+    const { view, current, code, service } = allState;
 
     switch (view) {
       case 'definition':
         return (
           <CodePanel
             code={code}
-            onChange={code => this.updateMachine(code)}
+            onChange={code => updateMachine(code)}
             onSave={onSave}
           />
         );
@@ -257,7 +253,8 @@ export class StateChart extends React.Component<
         return null;
     }
   }
-  updateMachine(code: string) {
+
+  function updateMachine(code: string) {
     let machine: StateNode;
 
     try {
@@ -273,73 +270,40 @@ export class StateChart extends React.Component<
       return;
     }
 
-    this.reset(code, machine);
+    reset(code, machine);
   }
-  reset(code = this.state.code, machine = this.state.machine) {
-    this.state.service.stop();
-    this.setState(
-      {
-        code,
-        machine,
-        events: [],
-        current: machine.initialState
-      },
-      () => {
-        this.setState(
-          {
-            service: interpret(this.state.machine)
-              .onTransition(current => {
-                this.handleTransition(current);
-                // TODO: fix events
-                // this.setState({ current, events: [] }, () => {
-                //   if (this.state.previewEvent) {
-                //     this.setState({
-                //       preview: this.state.service.nextState(
-                //         this.state.previewEvent
-                //       )
-                //     });
-                //   }
-                // });
-              })
-              .start()
-          },
-          () => {
-            console.log(this.state.service);
-          }
-        );
-      }
-    );
+  function reset(code = allState.code, machine = allState.machine) {
+    setEvents([]);
+    setResetCount(resetCount + 1);
   }
-  render() {
-    const { className } = this.props;
-    const { code, service } = this.state;
 
-    return (
-      <StyledStateChart
-        className={className}
-        key={code}
-        style={{
-          background: 'var(--color-app-background)'
-        }}
-      >
-        <StateChartContainer service={service} onReset={() => this.reset()} />
-        <StyledSidebar>
-          <StyledViewTabs>
-            {['definition', 'state', 'events'].map(view => {
-              return (
-                <StyledViewTab
-                  onClick={() => this.setState({ view })}
-                  key={view}
-                  data-active={this.state.view === view || undefined}
-                >
-                  {view}
-                </StyledViewTab>
-              );
-            })}
-          </StyledViewTabs>
-          {this.renderView()}
-        </StyledSidebar>
-      </StyledStateChart>
-    );
-  }
-}
+  const { code } = allState;
+
+  return (
+    <StyledStateChart
+      className={className}
+      key={code}
+      style={{
+        background: 'var(--color-app-background)'
+      }}
+    >
+      <StateChartContainer service={service} onReset={() => reset()} />
+      <StyledSidebar>
+        <StyledViewTabs>
+          {['definition', 'state', 'events'].map(view => {
+            return (
+              <StyledViewTab
+                onClick={() => setState({ ...allState, view })}
+                key={view}
+                data-active={allState.view === view || undefined}
+              >
+                {view}
+              </StyledViewTab>
+            );
+          })}
+        </StyledViewTabs>
+        {renderView()}
+      </StyledSidebar>
+    </StyledStateChart>
+  );
+};
