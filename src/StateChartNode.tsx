@@ -475,6 +475,8 @@ export const StateChartNode: React.FC<StateChartNodeProps> = props => {
     tracker.updateAll();
   }, [toggledState]);
 
+  const [timerRestarts, setTimerRestarts] = useState(0);
+
   const {
     stateNode,
     current,
@@ -485,6 +487,19 @@ export const StateChartNode: React.FC<StateChartNodeProps> = props => {
     onReset,
     transitionCount
   } = props;
+
+  useEffect(() => {
+    if (
+      current.actions.some(action => {
+        return (
+          action.type === 'xstate.cancel' &&
+          action.sendId.indexOf(stateNode.id) > 0
+        );
+      })
+    ) {
+      setTimerRestarts(timerRestarts + 1);
+    }
+  }, [current]);
 
   const isActive =
     !stateNode.parent || current.matches(stateNode.path.join('.')) || undefined;
@@ -668,6 +683,7 @@ export const StateChartNode: React.FC<StateChartNodeProps> = props => {
                   (edge.transition as DelayedTransitionDefinition<any, any>)
                     .delay
                 }
+                key={timerRestarts}
                 data-builtin={isBuiltInEvent || undefined}
                 data-transient={isTransient || undefined}
                 data-id={serializeEdge(edge)}

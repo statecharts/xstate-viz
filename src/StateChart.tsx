@@ -192,9 +192,11 @@ export const StateChart: React.FC<StateChartProps> = ({
   const [resetCount, setResetCount] = useState(0);
   const [events, setEvents] = useState<EventRecord[]>([]);
 
-  const machine = useMemo(() => {
-    return toMachine(props.machine);
+  const [machine, setMachine] = useState(toMachine(props.machine));
+  useEffect(() => {
+    setMachine(toMachine(props.machine));
   }, [props.machine]);
+
   const service = useMemo(() => {
     return interpret(machine).start();
   }, [machine, resetCount]);
@@ -275,6 +277,7 @@ export const StateChart: React.FC<StateChartProps> = ({
   function reset(code = allState.code, machine = allState.machine) {
     setEvents([]);
     setResetCount(resetCount + 1);
+    setMachine(machine);
   }
 
   const { code } = allState;
