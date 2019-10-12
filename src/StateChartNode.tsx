@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState, useRef, useEffect } from 'react';
 import {
   Machine as _Machine,
   StateNode,
@@ -459,254 +459,247 @@ interface StateChartNodeProps {
   level: number;
 }
 
-interface StateChartNodeState {
-  toggled: boolean
-}
+export const StateChartNode: React.FC<StateChartNodeProps> = props => {
+  // get toggled value from localStorage
+  const toggledValue = localStorage.getItem(`${props.stateNode.id}_toggled`);
+  const toggled = toggledValue === null || toggledValue === '1';
+  const [toggledState, setToggledState] = useState(toggled);
 
-export class StateChartNode extends React.Component<StateChartNodeProps, StateChartNodeState> {
-  constructor(props: StateChartNodeProps) {
-    super(props);
+  const stateRef = useRef<any>();
 
-    // get toggled value from localStorage
-    const toggledValue = localStorage.getItem(`${props.stateNode.id}_toggled`);
-    const toggled = toggledValue === null || toggledValue === '1';
-    this.state = { toggled };
-  }
+  useEffect(() => {
+    tracker.update(props.stateNode.id, stateRef.current);
+  });
 
+  useEffect(() => {
+    tracker.updateAll();
+  }, [toggledState]);
 
-  stateRef = React.createRef<any>();
+  const {
+    stateNode,
+    current,
+    preview,
+    onEvent,
+    onPreEvent,
+    onExitPreEvent,
+    onReset,
+    transitionCount
+  } = props;
 
-  public componentDidUpdate() {
-    tracker.update(this.props.stateNode.id, this.stateRef.current);
-  }
-  public render(): JSX.Element {
-    const {
-      stateNode,
-      current,
-      preview,
-      onEvent,
-      onPreEvent,
-      onExitPreEvent,
-      onReset
-    } = this.props;
-    const isActive =
-      !stateNode.parent ||
-      current.matches(stateNode.path.join('.')) ||
-      undefined;
-    const isPreview = preview
-      ? preview.matches(stateNode.path.join('.')) || undefined
-      : undefined;
+  const isActive =
+    !stateNode.parent || current.matches(stateNode.path.join('.')) || undefined;
+  const isPreview = preview
+    ? preview.matches(stateNode.path.join('.')) || undefined
+    : undefined;
 
-    const dataType = stateNode.parent
-      ? stateNode.type
-      : `machine ${stateNode.type}`;
+  const dataType = stateNode.parent
+    ? stateNode.type
+    : `machine ${stateNode.type}`;
 
-    return (
-      <StyledStateNode
-        key={stateNode.id}
-        data-key={stateNode.key}
-        data-type={dataType}
-        data-active={isActive && stateNode.parent}
-        data-preview={isPreview && stateNode.parent}
-        data-open={this.state.toggled || undefined}
-        ref={this.stateRef}
-        // data-open={true}
-      >
-        <StyledStateNodeState data-id={stateNode.id} data-type={dataType}>
-          {isActive && (dataType === 'atomic' || dataType === 'final') && (
-            <StyledActiveAnim
-              key={this.props.transitionCount}
-              style={{
-                // @ts-ignore
-                '--level': this.props.level
-              }}
-            />
-          )}
-          <StyledStateNodeHeader
+  return (
+    <StyledStateNode
+      key={stateNode.id}
+      data-key={stateNode.key}
+      data-type={dataType}
+      data-active={isActive && stateNode.parent}
+      data-preview={isPreview && stateNode.parent}
+      data-open={toggledState || undefined}
+      ref={stateRef}
+      // data-open={true}
+    >
+      <StyledStateNodeState data-id={stateNode.id} data-type={dataType}>
+        {isActive && (dataType === 'atomic' || dataType === 'final') && (
+          <StyledActiveAnim
+            key={transitionCount}
             style={{
               // @ts-ignore
-              '--depth': stateNode.path.length
+              '--level': props.level
             }}
-          >
-            {dataType === 'history' && <StyledToken>H</StyledToken>}
-            <strong title={`#${stateNode.id}`}>{stateNode.key}</strong>
-            {stateNode.path.length === 0 ? (
-              <StyledButton
-                data-variant="link"
-                onClick={onReset ? () => onReset() : undefined}
-                title="Reset machine to its initial state"
-              >
-                Reset
-              </StyledButton>
-            ) : null}
-          </StyledStateNodeHeader>
-          {!!stateActions(stateNode).length && (
-            <>
-              <StyledStateNodeActions>
-                {stateNode.definition.onEntry.map(action => {
-                  const actionString = action.type;
-
-                  return (
-                    <StateChartAction
-                      key={actionString}
-                      data-action-type="entry"
-                      action={action}
-                    />
-                  );
-                })}
-              </StyledStateNodeActions>
-              <StyledStateNodeActions>
-                {stateNode.definition.onExit.map(action => {
-                  const actionString = action.type;
-                  return (
-                    <StateChartAction
-                      key={actionString}
-                      data-action-type="exit"
-                      action={action}
-                    />
-                  );
-                })}
-              </StyledStateNodeActions>
-            </>
-          )}
-          <StyledStateNodeActions data-title="invoke">
-            {stateNode.invoke.map(invocation => {
-              return (
-                <StateChartAction
-                  key={invocation.id}
-                  data-action-type="invoke"
-                  action={invocation}
-                >
-                  {invocation.id}
-                </StateChartAction>
-              );
-            })}
-          </StyledStateNodeActions>
-          {Object.keys(stateNode.states).length ? (
-            <StyledChildStates>
-              {Object.keys(stateNode.states || []).map(key => {
-                const childStateNode = stateNode.states[key];
+          />
+        )}
+        <StyledStateNodeHeader
+          style={{
+            // @ts-ignore
+            '--depth': stateNode.path.length
+          }}
+        >
+          {dataType === 'history' && <StyledToken>H</StyledToken>}
+          <strong title={`#${stateNode.id}`}>{stateNode.key}</strong>
+          {stateNode.path.length === 0 ? (
+            <StyledButton
+              data-variant="link"
+              onClick={onReset ? () => onReset() : undefined}
+              title="Reset machine to its initial state"
+            >
+              Reset
+            </StyledButton>
+          ) : null}
+        </StyledStateNodeHeader>
+        {!!stateActions(stateNode).length && (
+          <>
+            <StyledStateNodeActions>
+              {stateNode.definition.onEntry.map(action => {
+                const actionString = action.type;
 
                 return (
-                  <StateChartNode
-                    stateNode={childStateNode}
-                    level={this.props.level + 1}
-                    current={current}
-                    preview={preview}
-                    key={childStateNode.id}
-                    onEvent={onEvent}
-                    onPreEvent={onPreEvent}
-                    onExitPreEvent={onExitPreEvent}
-                    toggledStates={this.props.toggledStates}
-                    onSelectServiceId={this.props.onSelectServiceId}
-                    transitionCount={this.props.transitionCount}
+                  <StateChartAction
+                    key={actionString}
+                    data-action-type="entry"
+                    action={action}
                   />
                 );
               })}
-            </StyledChildStates>
-          ) : null}
-          {Object.keys(stateNode.states).length > 0 ? (
-            <StyledChildStatesToggle
-              title={this.state.toggled ? 'Hide children' : 'Show children'}
-              onClick={e => {
-                e.stopPropagation();
-                
-                // remember toggled value
-                const toggled = !this.state.toggled;
-                localStorage.setItem(`${stateNode.id}_toggled`, toggled ? '1' : '');
-
-                this.setState({ toggled }, () => {
-                  tracker.updateAll();
-                });
-              }}
-            />
-          ) : null}
-        </StyledStateNodeState>
-        <StyledStateNodeEvents>
-          {getEdges(stateNode, { depth: 0 }).map(edge => {
-            const { event: ownEvent } = edge;
-            const isBuiltInEvent = ownEvent.indexOf('xstate.') === 0;
-            const guard = edge.transition.cond;
-            const valid =
-              guard && guard.predicate
-                ? guard.predicate(current.context, current.event, {
-                    cond: guard
-                  })
-                : true;
-            const disabled: boolean =
-              !valid ||
-              !isActive ||
-              current.nextEvents.indexOf(ownEvent) === -1;
-            // || (!!edge.cond &&
-            //   typeof edge.cond === 'function' &&
-            //   !edge.cond(current.context, { type: ownEvent }, { cond: undefined, }));
-
-            let delay = isBuiltInEvent ? getEventDelay(ownEvent) : false;
-
-            if (typeof delay === 'string') {
-              const delayExpr = stateNode.machine.options.delays[delay];
-              delay =
-                typeof delayExpr === 'number'
-                  ? delayExpr
-                  : delayExpr(current.context, current.event);
-            }
-
-            const isTransient = ownEvent === '';
-
+            </StyledStateNodeActions>
+            <StyledStateNodeActions>
+              {stateNode.definition.onExit.map(action => {
+                const actionString = action.type;
+                return (
+                  <StateChartAction
+                    key={actionString}
+                    data-action-type="exit"
+                    action={action}
+                  />
+                );
+              })}
+            </StyledStateNodeActions>
+          </>
+        )}
+        <StyledStateNodeActions data-title="invoke">
+          {stateNode.invoke.map(invocation => {
             return (
-              <StyledEvent
-                style={{
-                  //@ts-ignore
-                  '--delay': delay || 0
-                }}
-                data-disabled={disabled || undefined}
-                key={serializeEdge(edge)}
-                data-internal={edge.transition.internal || undefined}
+              <StateChartAction
+                key={invocation.id}
+                data-action-type="invoke"
+                action={invocation}
               >
-                <StyledEventButton
-                  onClick={() =>
-                    !isBuiltInEvent ? onEvent(ownEvent) : undefined
-                  }
-                  onMouseOver={() => onPreEvent(ownEvent)}
-                  onMouseOut={() => onExitPreEvent()}
-                  disabled={disabled}
-                  data-delay={
-                    (edge.transition as DelayedTransitionDefinition<any, any>)
-                      .delay
-                  }
-                  data-builtin={isBuiltInEvent || undefined}
-                  data-transient={isTransient || undefined}
-                  data-id={serializeEdge(edge)}
-                  title={ownEvent}
-                >
-                  <StyledEventButtonLabel>
-                    <EventName event={ownEvent} />
-                  </StyledEventButtonLabel>
-                  {edge.transition.cond && (
-                    <StateChartGuard
-                      guard={edge.transition.cond}
-                      state={current}
-                    />
-                  )}
-                </StyledEventButton>
-                {!!(edge.transition.actions.length || edge.transition.cond) && (
-                  <StyledStateNodeActions>
-                    {edge.transition.actions.map((action, i) => {
-                      return (
-                        <StateChartAction
-                          key={i}
-                          action={action}
-                          data-action-type="do"
-                        />
-                      );
-                    })}
-                  </StyledStateNodeActions>
-                )}
-              </StyledEvent>
+                {invocation.id}
+              </StateChartAction>
             );
           })}
-        </StyledStateNodeEvents>
-      </StyledStateNode>
-    );
-  }
-}
+        </StyledStateNodeActions>
+        {Object.keys(stateNode.states).length ? (
+          <StyledChildStates>
+            {Object.keys(stateNode.states || []).map(key => {
+              const childStateNode = stateNode.states[key];
+
+              return (
+                <StateChartNode
+                  stateNode={childStateNode}
+                  level={props.level + 1}
+                  current={current}
+                  preview={preview}
+                  key={childStateNode.id}
+                  onEvent={onEvent}
+                  onPreEvent={onPreEvent}
+                  onExitPreEvent={onExitPreEvent}
+                  toggledStates={props.toggledStates}
+                  onSelectServiceId={props.onSelectServiceId}
+                  transitionCount={props.transitionCount}
+                />
+              );
+            })}
+          </StyledChildStates>
+        ) : null}
+        {Object.keys(stateNode.states).length > 0 ? (
+          <StyledChildStatesToggle
+            title={toggledState ? 'Hide children' : 'Show children'}
+            onClick={e => {
+              e.stopPropagation();
+
+              // remember toggled value
+              const toggled = !toggledState;
+              localStorage.setItem(
+                `${stateNode.id}_toggled`,
+                toggled ? '1' : ''
+              );
+
+              setToggledState(toggled);
+            }}
+          />
+        ) : null}
+      </StyledStateNodeState>
+      <StyledStateNodeEvents>
+        {getEdges(stateNode, { depth: 0 }).map(edge => {
+          const { event: ownEvent } = edge;
+          const isBuiltInEvent = ownEvent.indexOf('xstate.') === 0;
+          const guard = edge.transition.cond;
+          const valid =
+            guard && guard.predicate
+              ? guard.predicate(current.context, current.event, {
+                  cond: guard
+                })
+              : true;
+          const disabled: boolean =
+            !valid || !isActive || current.nextEvents.indexOf(ownEvent) === -1;
+          // || (!!edge.cond &&
+          //   typeof edge.cond === 'function' &&
+          //   !edge.cond(current.context, { type: ownEvent }, { cond: undefined, }));
+
+          let delay = isBuiltInEvent ? getEventDelay(ownEvent) : false;
+
+          if (typeof delay === 'string') {
+            const delayExpr = stateNode.machine.options.delays[delay];
+            delay =
+              typeof delayExpr === 'number'
+                ? delayExpr
+                : delayExpr(current.context, current.event);
+          }
+
+          const isTransient = ownEvent === '';
+
+          return (
+            <StyledEvent
+              style={{
+                //@ts-ignore
+                '--delay': delay || 0
+              }}
+              data-disabled={disabled || undefined}
+              key={serializeEdge(edge)}
+              data-internal={edge.transition.internal || undefined}
+            >
+              <StyledEventButton
+                onClick={() =>
+                  !isBuiltInEvent ? onEvent(ownEvent) : undefined
+                }
+                onMouseOver={() => onPreEvent(ownEvent)}
+                onMouseOut={() => onExitPreEvent()}
+                disabled={disabled}
+                data-delay={
+                  (edge.transition as DelayedTransitionDefinition<any, any>)
+                    .delay
+                }
+                data-builtin={isBuiltInEvent || undefined}
+                data-transient={isTransient || undefined}
+                data-id={serializeEdge(edge)}
+                title={ownEvent}
+              >
+                <StyledEventButtonLabel>
+                  <EventName event={ownEvent} />
+                </StyledEventButtonLabel>
+                {edge.transition.cond && (
+                  <StateChartGuard
+                    guard={edge.transition.cond}
+                    state={current}
+                  />
+                )}
+              </StyledEventButton>
+              {!!(edge.transition.actions.length || edge.transition.cond) && (
+                <StyledStateNodeActions>
+                  {edge.transition.actions.map((action, i) => {
+                    return (
+                      <StateChartAction
+                        key={i}
+                        action={action}
+                        data-action-type="do"
+                      />
+                    );
+                  })}
+                </StyledStateNodeActions>
+              )}
+            </StyledEvent>
+          );
+        })}
+      </StyledStateNodeEvents>
+    </StyledStateNode>
+  );
+};
