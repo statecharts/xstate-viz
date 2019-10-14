@@ -94,7 +94,9 @@ export const StateChartAction: React.SFC<StateChartActionProps> = ({
     case actionTypes.send:
       const sendAction = action as SendActionObject<any, any>;
 
-      if (sendAction.event.type.indexOf('xstate.after') === 0) {
+      if (
+        sendAction.event.type &&
+        sendAction.event.type.indexOf('xstate.after') === 0) {
         return null;
       }
 
