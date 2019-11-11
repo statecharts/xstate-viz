@@ -124,13 +124,11 @@ export interface EventRecord {
 }
 export interface StateChartState {
   machine: StateNode<any>;
-  current: State<any, any>;
   preview?: State<any, any>;
   previewEvent?: string;
   view: string; //"definition" | "state";
   code: string;
   toggledStates: Record<string, boolean>;
-  service: Interpreter<any>;
   error?: any;
   events: Array<EventRecord>;
 }
@@ -219,7 +217,6 @@ export const StateChart: React.FC<StateChartProps> = ({
       const _machine = toMachine(props.machine);
 
       return {
-        current: _machine.initialState,
         preview: undefined,
         previewEvent: undefined,
         view: previewOnly? 'state' : 'definition', // or 'state'
@@ -229,14 +226,13 @@ export const StateChart: React.FC<StateChartProps> = ({
             ? _machine
             : `Machine(${JSON.stringify(_machine.config, null, 2)})`,
         toggledStates: {},
-        service: interpret(_machine),
         events: []
       };
     })()
   );
 
-  function renderView() {
-    const { view, current, code, service } = allState;
+  function renderView(current: State<any, any>, service: Interpreter<any, any, EventObject>) {
+    const { view, code } = allState;
 
     switch (view) {
       case 'definition':
@@ -308,7 +304,7 @@ export const StateChart: React.FC<StateChartProps> = ({
             );
           })}
         </StyledViewTabs>
-        {renderView()}
+        {renderView(current, service)}
       </StyledSidebar>
     </StyledStateChart>
   );
