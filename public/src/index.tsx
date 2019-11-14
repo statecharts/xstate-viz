@@ -1,20 +1,14 @@
 import React from 'react';
 import ReactDOM from 'react-dom';
 import './index.css';
-import App from './App';
+import {Preview} from '@statecharts/xstate-viz';
 import * as serviceWorker from './serviceWorker';
-import queryString from 'query-string';
+import { lightMachine as machine } from './machines/lightMachine'
+import './App.css';
 
-const query = queryString.parse(window.location.search);
+ReactDOM.render(<Preview machine={machine}/>, document.getElementById('root'));
 
-if (query.code && window.opener) {
-  window.opener.authCallback(query.code);
-  setTimeout(() => window.close());
-} else {
-  ReactDOM.render(<App />, document.getElementById('root'));
-
-  // If you want your app to work offline and load faster, you can change
-  // unregister() to register() below. Note this comes with some pitfalls.
-  // Learn more about service workers: http://bit.ly/CRA-PWA
-  serviceWorker.unregister();
-}
+// If you want your app to work offline and load faster, you can change
+// unregister() to register() below. Note this comes with some pitfalls.
+// Learn more about service workers: http://bit.ly/CRA-PWA
+serviceWorker.unregister();

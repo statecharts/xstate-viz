@@ -27,7 +27,7 @@ interface LightContext {
 }
 export const lightMachine = Machine<LightContext, LightStateSchema, LightEvent>({
   key: 'light',
-  initial: 'yellow',
+  initial: 'green',
   context: { elapsed: 0 },
   states: {
     green: {
