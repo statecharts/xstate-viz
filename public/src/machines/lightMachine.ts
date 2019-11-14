@@ -1,4 +1,4 @@
-import {Machine, assign} from 'xstate'
+import {Machine} from 'xstate'
 
 // The hierarchical (recursive) schema for the states
 interface LightStateSchema {
@@ -25,41 +25,6 @@ type LightEvent =
 interface LightContext {
   elapsed: number;
 }
-
-export const fetchMaschine = Machine({
-  id: 'fetch',
-  initial: 'idle',
-  context: {
-    retries: 0
-  },
-  states: {
-    idle: {
-      on: {
-        FETCH: 'loading'
-      }
-    },
-    loading: {
-      on: {
-        RESOLVE: 'success',
-        REJECT: 'failure'
-      }
-    },
-    success: {
-      type: 'final'
-    },
-    failure: {
-      on: {
-        RETRY: {
-          target: 'loading',
-          actions: assign({
-            retries: (context:any) => context.retries + 1
-          })
-        }
-      }
-    }
-  }
-})
-
 export const lightMachine = Machine<LightContext, LightStateSchema, LightEvent>({
   key: 'light',
   initial: 'yellow',
