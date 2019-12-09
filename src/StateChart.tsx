@@ -274,6 +274,7 @@ export const StateChart: React.FC<StateChartProps> = ({
     setEvents([]);
     setResetCount(resetCount + 1);
     setMachine(machine);
+    setState({...allState, code});
   }
 
   const { code } = allState;
