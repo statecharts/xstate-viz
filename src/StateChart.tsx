@@ -115,6 +115,7 @@ interface StateChartProps {
   machine: StateNode<any> | string;
   onSave: (machineString: string) => void;
   height?: number | string;
+  previewOnly?: boolean;
 }
 
 export interface EventRecord {
@@ -185,6 +186,7 @@ export function toMachine(machine: StateNode<any> | string): StateNode<any> {
 export const StateChart: React.FC<StateChartProps> = ({
   onSave,
   className,
+  previewOnly,
   ...props
 }) => {
   const [resetCount, setResetCount] = useState(0);
@@ -217,7 +219,7 @@ export const StateChart: React.FC<StateChartProps> = ({
       return {
         preview: undefined,
         previewEvent: undefined,
-        view: 'definition', // or 'state'
+        view: previewOnly? 'state' : 'definition', // or 'state'
         machine: _machine,
         code:
           typeof _machine === 'string'
@@ -278,6 +280,7 @@ export const StateChart: React.FC<StateChartProps> = ({
   }
 
   const { code } = allState;
+  const views = previewOnly ?  ['state', 'events']:  ['definition', 'state', 'events']
 
   return (
     <StyledStateChart
@@ -290,7 +293,7 @@ export const StateChart: React.FC<StateChartProps> = ({
       <StateChartContainer service={service} onReset={() => reset()} />
       <StyledSidebar>
         <StyledViewTabs>
-          {['definition', 'state', 'events'].map(view => {
+          { views.map(view => {
             return (
               <StyledViewTab
                 onClick={() => setState({ ...allState, view })}
