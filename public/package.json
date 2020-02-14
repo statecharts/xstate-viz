@@ -8,9 +8,9 @@
     "@types/jest": "23.3.9",
     "@types/node": "10.12.1",
     "@xstate/react": "^0.6.1",
-    "query-string": "^6.8.0",
-    "react-scripts": "^3.0.1",
-    "styled-components": "^4.2.0"
+    "query-string": "^6.11.0",
+    "react-scripts": "^3.3.1",
+    "styled-components": "^4.4.1"
   },
   "scripts": {
     "start": "react-scripts start",
@@ -30,10 +30,10 @@
     "not op_mini all"
   ],
   "devDependencies": {
-    "@types/react": "^16.8.22",
-    "@types/react-dom": "^16.8.4",
-    "@types/styled-components": "^4.1.12",
-    "gh-pages": "^2.0.1",
-    "typescript": "^3.4.5"
+    "@types/react": "^16.9.19",
+    "@types/react-dom": "^16.9.5",
+    "@types/styled-components": "^4.4.3",
+    "gh-pages": "^2.2.0",
+    "typescript": "^3.7.5"
   }
 }
