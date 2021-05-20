@@ -696,6 +696,7 @@ export const StateChartNode: React.FC<StateChartNodeProps> = props => {
                   <StateChartGuard
                     guard={edge.transition.cond}
                     state={current}
+                    event={ownEvent}
                   />
                 )}
               </StyledEventButton>
