@@ -141,6 +141,7 @@ export function toMachine(machine: StateNode<any> | string): StateNode<any> {
   try {
     createMachine = new Function(
       'Machine',
+      'createMachine',
       'interpret',
       'assign',
       'send',
@@ -165,6 +166,7 @@ export function toMachine(machine: StateNode<any> | string): StateNode<any> {
 
   try {
     createMachine(
+      machineProxy,
       machineProxy,
       interpret,
       assign,
