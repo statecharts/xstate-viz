@@ -1,5 +1,11 @@
 # xstate-viz
 
+---
+
+ℹ️ Please see the newest [Stately visualizer](https://github.com/statelyai/xstate-viz). 
+
+---
+
 This is a visualizer for finite state machines and statecharts, specifically.
 
 See it in action at https://statecharts.github.io/xstate-viz/.
