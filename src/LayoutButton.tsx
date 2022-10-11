@@ -1,5 +1,5 @@
-import React from 'react';
-import styled from 'styled-components';
+import React from "react";
+import styled from "styled-components";
 
 export const StyledLayoutButton = styled.button`
   appearance: none;
@@ -13,7 +13,7 @@ export const StyledLayoutButton = styled.button`
   color: black;
   border: none;
   position: absolute;
-  top: 0;
+  top: 2rem;
   right: 0;
   cursor: pointer;
   z-index: 2;
@@ -32,7 +32,7 @@ export const StyledLayoutButton = styled.button`
     transform: none;
   }
 
-  [data-layout='viz'] & {
+  [data-layout="viz"] & {
     right: 100%;
     color: black;
   }
