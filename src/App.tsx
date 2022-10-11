@@ -30,9 +30,11 @@ const StyledBanner = styled.p`
   align-items: center;
   margin: 0 auto;
   grid-area: banner;
+  width: 100%;
+  background-color: #ff9044;
 
   > a {
-    color: var(--black)
+    color: #000;
   }
 `
 
