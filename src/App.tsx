@@ -25,6 +25,21 @@ export const StyledHeader = styled.header`
   white-space: nowrap;
 `;
 
+const StyledBanner = styled.p`
+  display: flex;
+  align-items: center;
+  margin: 0 auto;
+  grid-area: banner;
+  width: 100%;
+  background-color: #ff9044;
+  > a {
+    color: #000;
+    display: block;
+    width: 100%;
+    text-align: center;
+  }
+`
+
 const StyledApp = styled.main`
   --color-app-background: #fff;
   --color-border: #c9c9c9;
@@ -51,9 +66,10 @@ const StyledApp = styled.main`
   height: 100%;
   display: grid;
   grid-template-areas:
+    'banner banner'
     'header sidebar'
     'content content';
-  grid-template-rows: 3rem auto;
+  grid-template-rows: 2rem 3rem auto;
   grid-template-columns: auto var(--sidebar-width);
   overflow: hidden;
 
@@ -606,6 +622,9 @@ export function App() {
     <StyledApp data-layout={layout} data-embed={query.embed}>
       <Notifications notifier={notificationsActor} />
       <AppContext.Provider value={{ state: current, send, service }}>
+        <StyledBanner>
+          <a href="https://stately.ai/viz" target="_blank">Try out the new Stately Visualizer</a>
+        </StyledBanner>
         <User />
         <Header />
         {current.matches({ gist: 'fetching' }) ? (
