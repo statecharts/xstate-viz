@@ -9,7 +9,7 @@
     "@types/node": "10.12.1",
     "@xstate/react": "^0.6.1",
     "query-string": "^6.11.0",
-    "react-scripts": "^3.3.1",
+    "react-scripts": "^5.0.1",
     "styled-components": "^4.4.1"
   },
   "scripts": {
