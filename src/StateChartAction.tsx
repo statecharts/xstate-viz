@@ -73,7 +73,7 @@ export const StateChartAction: React.SFC<StateChartActionProps> = ({
                 {...dataAttrs}
               >
                 <Popover>
-                  <Code>{action.assignment[key].toString()}</Code>
+                  <Code>{action.assignment[key] + ''}</Code>
                 </Popover>
                 <StyledStateChartActionText>
                   <strong>assign</strong> {key}
