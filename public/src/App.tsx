@@ -1,5 +1,5 @@
-import React, { Component, createContext, useState } from 'react';
-import './App.css';
-import { App } from '@statecharts/xstate-viz';
+import React, { Component, createContext, useState } from 'react'
+import './App.css'
+import { App } from '@statecharts/xstate-viz'
 
-export default App;
+export default App

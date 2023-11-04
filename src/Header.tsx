@@ -1,35 +1,52 @@
-import React, { useContext } from 'react';
-import { Notifications, notificationsMachine } from './Notifications';
-import { StyledHeader, StyledLogo, StyledLinks, StyledLink } from './App';
-import { interpret } from 'xstate';
-import { Actor } from 'xstate/lib/Actor';
+import React from 'react'
+import styled from 'styled-components'
+import { Logo } from './logo'
 
-import { Notification } from './Notifications';
+const StyledHeader = styled.header`
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+  justify-content: stretch;
+  grid-area: header;
+  padding: 0.5rem 1rem;
+  z-index: 1;
+  white-space: nowrap;
+`
 
-const notificationsService = interpret(notificationsMachine).start();
+const StyledLogo = styled(Logo)`
+  height: 2rem;
+`
 
-export const notificationsActor: Actor & {
-  notify: (message: string | Notification) => void;
-} = {
-  toJSON: () => ({ id: 'notifications' }),
-  id: 'notifications',
-  send: notificationsService.send.bind(notificationsService),
-  subscribe: notificationsService.subscribe.bind(notificationsService),
-  notify: (message: string | Notification) =>
-    notificationsService.send({
-      type: 'NOTIFICATIONS.QUEUE',
-      data:
-        typeof message === 'string' ? { message, severity: 'info' } : message
-    })
-};
+const StyledLink = styled.a`
+  text-decoration: none;
+  color: #57b0ea;
+  text-transform: uppercase;
+  display: block;
+  font-size: 75%;
+  font-weight: bold;
+  margin: 0 0.25rem;
+`
 
+const StyledLinks = styled.nav`
+  display: flex;
+  flex-direction: row;
+
+  > ${StyledLink} {
+    line-height: 2rem;
+    margin-left: 1rem;
+  }
+
+  &,
+  &:visited {
+  }
+`
 export function Header() {
   return (
     <StyledHeader>
       <StyledLogo />
       <StyledLinks>
         <StyledLink
-          href="https://github.com/davidkpiano/xstate"
+          href="https://github.com/statelyai/xstate"
           target="_xstate-github"
         >
           GitHub
@@ -38,7 +55,7 @@ export function Header() {
           Docs
         </StyledLink>
         <StyledLink
-          href="https://spectrum.chat/statecharts"
+          href="https://discord.gg/xstate"
           target="_statecharts-community"
         >
           Community
@@ -48,5 +65,5 @@ export function Header() {
         </StyledLink>
       </StyledLinks>
     </StyledHeader>
-  );
+  )
 }

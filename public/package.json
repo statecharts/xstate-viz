@@ -18,7 +18,7 @@
     "test": "react-scripts test",
     "eject": "react-scripts eject",
     "predeploy": "react-scripts build",
-    "deploy": "./node_modules/.bin/gh-pages -d build --repo https://github.com/davidkpiano/xstate.git --dest viz"
+    "deploy": "./node_modules/.bin/gh-pages -d build --repo https://github.com/statelyai/xstate.git --dest viz"
   },
   "eslintConfig": {
     "extends": "react-app"
